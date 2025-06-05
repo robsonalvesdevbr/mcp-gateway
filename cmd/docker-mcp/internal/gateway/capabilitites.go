@@ -27,11 +27,8 @@ type ServerResourceTemplate struct {
 //nolint:gocyclo
 func (g *Gateway) listCapabilities(ctx context.Context, configuration Configuration, serverNames []string) (*Capabilities, error) {
 	var (
-		lock                    sync.Mutex
-		serverTools             []server.ServerTool
-		serverPrompts           []server.ServerPrompt
-		serverResources         []server.ServerResource
-		serverResourceTemplates []ServerResourceTemplate
+		lock            sync.Mutex
+		allCapabilities []Capabilities
 	)
 
 	errs, ctx := errgroup.WithContext(ctx)
@@ -53,75 +50,74 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				}
 				defer client.Close()
 
-				var log string
+				var capabilities Capabilities
 
 				tools, err := client.ListTools(ctx, mcp.ListToolsRequest{})
 				if err != nil {
 					logf("  > Can't list tools %s: %s", serverConfig.Name, err)
-				} else if len(tools.Tools) > 0 {
-					log += fmt.Sprintf(" (%d tools)", len(tools.Tools))
-					for _, tool := range tools.Tools {
-						if !isToolEnabled(serverConfig.Name, serverConfig.Spec.Image, tool.Name, g.ToolNames) {
-							continue
-						}
-
-						lock.Lock()
-						serverTools = append(serverTools, server.ServerTool{
-							Tool:    tool,
-							Handler: g.mcpServerToolHandler(*serverConfig, tool.Annotations),
-						})
-						lock.Unlock()
+				}
+				for _, tool := range tools.Tools {
+					if !isToolEnabled(serverConfig.Name, serverConfig.Spec.Image, tool.Name, g.ToolNames) {
+						continue
 					}
+					capabilities.Tools = append(capabilities.Tools, server.ServerTool{
+						Tool:    tool,
+						Handler: g.mcpServerToolHandler(*serverConfig, tool.Annotations),
+					})
 				}
 
 				prompts, err := client.ListPrompts(ctx, mcp.ListPromptsRequest{})
-				if err == nil && len(prompts.Prompts) > 0 {
-					log += fmt.Sprintf(" (%d prompts)", len(prompts.Prompts))
-					lock.Lock()
-					for _, prompt := range prompts.Prompts {
-						serverPrompts = append(serverPrompts, server.ServerPrompt{
-							Prompt:  prompt,
-							Handler: g.mcpServerPromptHandler(*serverConfig),
-						})
-					}
-					lock.Unlock()
+				for _, prompt := range prompts.Prompts {
+					capabilities.Prompts = append(capabilities.Prompts, server.ServerPrompt{
+						Prompt:  prompt,
+						Handler: g.mcpServerPromptHandler(*serverConfig),
+					})
 				}
 
 				resources, err := client.ListResources(ctx, mcp.ListResourcesRequest{})
-				if err == nil && len(resources.Resources) > 0 {
-					log += fmt.Sprintf(" (%d resources)", len(resources.Resources))
-					lock.Lock()
-					for _, resource := range resources.Resources {
-						serverResources = append(serverResources, server.ServerResource{
-							Resource: resource,
-							Handler:  g.mcpServerResourceHandler(*serverConfig),
-						})
-					}
-					lock.Unlock()
+				for _, resource := range resources.Resources {
+					capabilities.Resources = append(capabilities.Resources, server.ServerResource{
+						Resource: resource,
+						Handler:  g.mcpServerResourceHandler(*serverConfig),
+					})
 				}
 
 				resourceTemplates, err := client.ListResourceTemplates(ctx, mcp.ListResourceTemplatesRequest{})
-				if err == nil && len(resourceTemplates.ResourceTemplates) > 0 {
-					log += fmt.Sprintf(" (%d resourceTemplates)", len(resourceTemplates.ResourceTemplates))
-					lock.Lock()
-					for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
-						serverResourceTemplates = append(serverResourceTemplates, ServerResourceTemplate{
-							ResourceTemplate: resourceTemplate,
-							Handler:          g.mcpServerResourceTemplateHandler(*serverConfig),
-						})
-					}
-					lock.Unlock()
+				for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
+					capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ServerResourceTemplate{
+						ResourceTemplate: resourceTemplate,
+						Handler:          g.mcpServerResourceTemplateHandler(*serverConfig),
+					})
 				}
 
+				var log string
+				if len(capabilities.Tools) > 0 {
+					log += fmt.Sprintf(" (%d tools)", len(capabilities.Tools))
+				}
+				if len(capabilities.Prompts) > 0 {
+					log += fmt.Sprintf(" (%d prompts)", len(capabilities.Prompts))
+				}
+				if len(capabilities.Resources) > 0 {
+					log += fmt.Sprintf(" (%d resources)", len(capabilities.Resources))
+				}
+				if len(capabilities.ResourceTemplates) > 0 {
+					log += fmt.Sprintf(" (%d resourceTemplates)", len(capabilities.ResourceTemplates))
+				}
 				if log != "" {
 					logf("  > %s:%s", serverConfig.Name, log)
 				}
+
+				lock.Lock()
+				allCapabilities = append(allCapabilities, capabilities)
+				lock.Unlock()
 
 				return nil
 			})
 
 		// It's a POCI
 		case toolGroup != nil:
+			var capabilities Capabilities
+
 			for _, tool := range *toolGroup {
 				if !isToolEnabled(serverName, "", tool.Name, g.ToolNames) {
 					continue
@@ -139,20 +135,32 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 					mcpTool.InputSchema.Required = tool.Parameters.Required
 				}
 
-				serverTool := server.ServerTool{
+				capabilities.Tools = append(capabilities.Tools, server.ServerTool{
 					Tool:    mcpTool,
 					Handler: g.mcpToolHandler(tool),
-				}
-
-				lock.Lock()
-				serverTools = append(serverTools, serverTool)
-				lock.Unlock()
+				})
 			}
+
+			lock.Lock()
+			allCapabilities = append(allCapabilities, capabilities)
+			lock.Unlock()
 		}
 	}
 
 	if err := errs.Wait(); err != nil {
 		return nil, err
+	}
+
+	// Merge all capabilities
+	var serverTools []server.ServerTool
+	var serverPrompts []server.ServerPrompt
+	var serverResources []server.ServerResource
+	var serverResourceTemplates []ServerResourceTemplate
+	for _, capabilities := range allCapabilities {
+		serverTools = append(serverTools, capabilities.Tools...)
+		serverPrompts = append(serverPrompts, capabilities.Prompts...)
+		serverResources = append(serverResources, capabilities.Resources...)
+		serverResourceTemplates = append(serverResourceTemplates, capabilities.ResourceTemplates...)
 	}
 
 	return &Capabilities{
