@@ -12,8 +12,20 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+type Capabilities struct {
+	Tools             []server.ServerTool
+	Prompts           []server.ServerPrompt
+	Resources         []server.ServerResource
+	ResourceTemplates []ServerResourceTemplate
+}
+
+type ServerResourceTemplate struct {
+	ResourceTemplate mcp.ResourceTemplate
+	Handler          server.ResourceTemplateHandlerFunc
+}
+
 //nolint:gocyclo
-func (g *Gateway) listEverything(ctx context.Context, configuration Configuration, serverNames []string) (*Everything, error) {
+func (g *Gateway) listCapabilities(ctx context.Context, configuration Configuration, serverNames []string) (*Capabilities, error) {
 	var (
 		lock                    sync.Mutex
 		serverTools             []server.ServerTool
@@ -143,7 +155,7 @@ func (g *Gateway) listEverything(ctx context.Context, configuration Configuratio
 		return nil, err
 	}
 
-	return &Everything{
+	return &Capabilities{
 		Tools:             serverTools,
 		Prompts:           serverPrompts,
 		Resources:         serverResources,

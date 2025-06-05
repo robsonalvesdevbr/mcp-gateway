@@ -112,11 +112,11 @@ func (g *Gateway) Run(ctx context.Context) error {
 	// List all the available tools.
 	startList := time.Now()
 	log("- Listing MCP tools...")
-	resources, err := g.listEverything(ctx, configuration, serverNames)
+	capabilities, err := g.listCapabilities(ctx, configuration, serverNames)
 	if err != nil {
 		return fmt.Errorf("listing resources: %w", err)
 	}
-	log(">", len(resources.Tools), "tools listed in", time.Since(startList))
+	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
 
 	toolCallbacks := callbacks(g.LogCalls, g.BlockSecrets)
 
@@ -127,10 +127,10 @@ func (g *Gateway) Run(ctx context.Context) error {
 			server.WithToolHandlerMiddleware(toolCallbacks),
 		)
 
-		mcpServer.AddTools(resources.Tools...)
-		mcpServer.AddPrompts(resources.Prompts...)
-		mcpServer.AddResources(resources.Resources...)
-		for _, v := range resources.ResourceTemplates {
+		mcpServer.AddTools(capabilities.Tools...)
+		mcpServer.AddPrompts(capabilities.Prompts...)
+		mcpServer.AddResources(capabilities.Resources...)
+		for _, v := range capabilities.ResourceTemplates {
 			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 		}
 
