@@ -13,7 +13,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
-	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/signatures"
 )
 
 type Config struct {
@@ -94,24 +93,8 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	// Which docker images are used?
 	// Pull them and verify them if possible.
-	dockerImages := configuration.DockerImages()
-	if len(dockerImages) > 0 {
-		var verifiableImages []string
-		log("- Using images:")
-		for _, image := range dockerImages {
-			log("  - " + image)
-			if strings.HasPrefix(image, "mcp/") {
-				verifiableImages = append(verifiableImages, image)
-			}
-		}
-
-		if err := g.pullImages(ctx, dockerImages); err != nil {
-			return err
-		}
-
-		if err := g.verifyImages(ctx, verifiableImages); err != nil {
-			return err
-		}
+	if err := g.pullAndVerify(ctx, configuration); err != nil {
+		return err
 	}
 
 	// List all the available tools.
@@ -172,25 +155,9 @@ func (g *Gateway) Run(ctx context.Context) error {
 				case configuration := <-configurationUpdates:
 					log("> Configuration updated, reloading...")
 
-					// TODO Remove this duplication
-					dockerImages := configuration.DockerImages()
-					if len(dockerImages) > 0 {
-						var verifiableImages []string
-						log("- Using images:")
-						for _, image := range dockerImages {
-							log("  - " + image)
-							if strings.HasPrefix(image, "mcp/") {
-								verifiableImages = append(verifiableImages, image)
-							}
-						}
-
-						if err := g.pullImages(ctx, dockerImages); err != nil {
-							// return err
-						}
-
-						if err := g.verifyImages(ctx, verifiableImages); err != nil {
-							// return err
-						}
+					if err := g.pullAndVerify(ctx, configuration); err != nil {
+						logf("> Unable to pull and verify images: %s", err)
+						continue
 					}
 
 					capabilities, err := g.listCapabilities(ctx, configuration, configuration.ServerNames())
@@ -232,53 +199,6 @@ func (g *Gateway) Run(ctx context.Context) error {
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio' or 'sse'", g.Transport)
 	}
-}
-
-func (g *Gateway) pullImages(ctx context.Context, images []string) error {
-	start := time.Now()
-	log("- Pulling images", imageBaseNames(images))
-
-	if err := g.dockerClient.PullImages(ctx, images...); err != nil {
-		return fmt.Errorf("pulling docker images: %w", err)
-	}
-
-	log("> Images pulled in", time.Since(start))
-	return nil
-}
-
-func (g *Gateway) verifyImages(ctx context.Context, images []string) error {
-	if !g.VerifySignatures {
-		return nil
-	}
-
-	start := time.Now()
-	log("- Verifying images", imageBaseNames(images))
-
-	if err := signatures.Verify(ctx, images); err != nil {
-		return fmt.Errorf("verifying docker images: %w", err)
-	}
-
-	log("> Images verified in", time.Since(start))
-	return nil
-}
-
-func imageBaseNames(names []string) []string {
-	baseNames := make([]string, len(names))
-
-	for i, name := range names {
-		baseNames[i] = imageBaseName(name)
-	}
-
-	return baseNames
-}
-
-func imageBaseName(name string) string {
-	before, _, found := strings.Cut(name, "@sha256:")
-	if found {
-		return before
-	}
-
-	return name
 }
 
 func toolNames(tools []server.ServerTool) []string {
