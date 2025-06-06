@@ -108,7 +108,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	toolCallbacks := callbacks(g.LogCalls, g.BlockSecrets)
 
-	// TODO: cleanup stopped servers.
+	// TODO: cleanup stopped servers. That happens in stdio over TCP mode.
 	var (
 		lock            sync.Mutex
 		changeListeners []func(*Capabilities)
