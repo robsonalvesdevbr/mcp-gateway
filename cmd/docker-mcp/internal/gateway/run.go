@@ -13,6 +13,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/interceptors"
 )
 
 type Config struct {
@@ -106,7 +107,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
 
-	toolCallbacks := callbacks(g.LogCalls, g.BlockSecrets)
+	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets)
 
 	// TODO: cleanup stopped servers. That happens in stdio over TCP mode.
 	var (
