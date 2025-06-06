@@ -54,7 +54,12 @@ func rootCommand(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.
 			if err := plugin.PersistentPreRunE(cmd, args); err != nil {
 				return err
 			}
-			return desktop.CheckFeatureIsEnabled(ctx, "enableDockerMCPToolkit", "Docker MCP Toolkit")
+
+			if os.Getenv("DOCKER_MCP_IN_CONTAINER") != "1" {
+				return desktop.CheckFeatureIsEnabled(ctx, "enableDockerMCPToolkit", "Docker MCP Toolkit")
+			}
+
+			return nil
 		},
 		Version: fmt.Sprintf("%s, commit %s", version.Version, version.Commit()),
 	}

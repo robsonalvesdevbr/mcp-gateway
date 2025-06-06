@@ -67,3 +67,17 @@ ARG DOCKER_MCP_PLUGIN_BINARY
 RUN --mount=from=binary-docker-mcp mkdir -p /out && cp ${DOCKER_MCP_PLUGIN_BINARY}* /out/
 FROM scratch AS package-docker-mcp
 COPY --from=packager-docker-mcp /out .
+
+
+# Build the agents_gateway image
+FROM golang:1.24.4-alpine3.22@sha256:68932fa6d4d4059845c8f40ad7e654e626f3ebd3706eef7846f319293ab5cb7a AS build_agents_gateway
+WORKDIR /app
+RUN --mount=type=cache,target=/root/.cache/go-build,id=agents_gateway \
+    --mount=source=.,target=. \
+    go build -o / ./cmd/docker-mcp/
+
+FROM alpine:3.22@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be023728e11715 AS agents_gateway
+RUN apk add --no-cache docker-cli
+ENV DOCKER_MCP_IN_CONTAINER=1
+ENTRYPOINT ["/docker-mcp", "gateway", "run"]
+COPY --from=build_agents_gateway /docker-mcp /

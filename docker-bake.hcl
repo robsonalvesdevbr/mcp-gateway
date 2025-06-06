@@ -7,6 +7,7 @@ group default {
 
 group all {
   targets = [
+    "agents_gateway",
     "jcat",
   ]
 }
@@ -17,12 +18,6 @@ target "docker-metadata-action" {}
 target _base {
   inherits = ["docker-metadata-action"]
   output = ["type=docker"]
-}
-
-target jcat {
-  inherits = ["_base"]
-  context = "jcat"
-  output = ["type=image,name=docker/jcat"]
   platforms = ["linux/arm64", "linux/amd64"]
   attest = [
     {
@@ -33,4 +28,17 @@ target jcat {
       type = "sbom",
     }
   ]
+}
+
+target jcat {
+  inherits = ["_base"]
+  context = "tools/jcat"
+  output = ["type=image,name=docker/jcat"]
+}
+
+target agents_gateway {
+  inherits = ["_base"]
+  context = "."
+  target = "agents_gateway"
+  output = ["type=image,name=docker/agents_gateway:v2"]
 }
