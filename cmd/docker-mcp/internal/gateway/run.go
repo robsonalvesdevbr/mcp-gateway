@@ -172,6 +172,27 @@ func (g *Gateway) Run(ctx context.Context) error {
 				case configuration := <-configurationUpdates:
 					log("> Configuration updated, reloading...")
 
+					// TODO Remove this duplication
+					dockerImages := configuration.DockerImages()
+					if len(dockerImages) > 0 {
+						var verifiableImages []string
+						log("- Using images:")
+						for _, image := range dockerImages {
+							log("  - " + image)
+							if strings.HasPrefix(image, "mcp/") {
+								verifiableImages = append(verifiableImages, image)
+							}
+						}
+
+						if err := g.pullImages(ctx, dockerImages); err != nil {
+							// return err
+						}
+
+						if err := g.verifyImages(ctx, verifiableImages); err != nil {
+							// return err
+						}
+					}
+
 					capabilities, err := g.listCapabilities(ctx, configuration, configuration.ServerNames())
 					if err != nil {
 						logf("> Unable to list capabilities: %s", err)
