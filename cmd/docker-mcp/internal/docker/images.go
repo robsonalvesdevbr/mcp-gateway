@@ -65,7 +65,7 @@ func (c *Client) pullImage(ctx context.Context, imageName, registryAuth string) 
 		return fmt.Errorf("parsing image reference %s: %w", imageName, err)
 	}
 
-	if _, ok := ref.(reference.Tagged); !ok {
+	if _, digested := ref.(reference.Digested); !digested {
 		// Useful for tests. Assume that the untagged image we have locally is the right one.
 		return nil
 	}
