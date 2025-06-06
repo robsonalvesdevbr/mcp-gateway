@@ -55,39 +55,46 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				tools, err := client.ListTools(ctx, mcp.ListToolsRequest{})
 				if err != nil {
 					logf("  > Can't list tools %s: %s", serverConfig.Name, err)
-				}
-				for _, tool := range tools.Tools {
-					if !isToolEnabled(serverConfig.Name, serverConfig.Spec.Image, tool.Name, g.ToolNames) {
-						continue
+				} else {
+					for _, tool := range tools.Tools {
+						if !isToolEnabled(serverConfig.Name, serverConfig.Spec.Image, tool.Name, g.ToolNames) {
+							continue
+						}
+						capabilities.Tools = append(capabilities.Tools, server.ServerTool{
+							Tool:    tool,
+							Handler: g.mcpServerToolHandler(*serverConfig, tool.Annotations),
+						})
 					}
-					capabilities.Tools = append(capabilities.Tools, server.ServerTool{
-						Tool:    tool,
-						Handler: g.mcpServerToolHandler(*serverConfig, tool.Annotations),
-					})
 				}
 
 				prompts, err := client.ListPrompts(ctx, mcp.ListPromptsRequest{})
-				for _, prompt := range prompts.Prompts {
-					capabilities.Prompts = append(capabilities.Prompts, server.ServerPrompt{
-						Prompt:  prompt,
-						Handler: g.mcpServerPromptHandler(*serverConfig),
-					})
+				if err == nil {
+					for _, prompt := range prompts.Prompts {
+						capabilities.Prompts = append(capabilities.Prompts, server.ServerPrompt{
+							Prompt:  prompt,
+							Handler: g.mcpServerPromptHandler(*serverConfig),
+						})
+					}
 				}
 
 				resources, err := client.ListResources(ctx, mcp.ListResourcesRequest{})
-				for _, resource := range resources.Resources {
-					capabilities.Resources = append(capabilities.Resources, server.ServerResource{
-						Resource: resource,
-						Handler:  g.mcpServerResourceHandler(*serverConfig),
-					})
+				if err == nil {
+					for _, resource := range resources.Resources {
+						capabilities.Resources = append(capabilities.Resources, server.ServerResource{
+							Resource: resource,
+							Handler:  g.mcpServerResourceHandler(*serverConfig),
+						})
+					}
 				}
 
 				resourceTemplates, err := client.ListResourceTemplates(ctx, mcp.ListResourceTemplatesRequest{})
-				for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
-					capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ServerResourceTemplate{
-						ResourceTemplate: resourceTemplate,
-						Handler:          g.mcpServerResourceTemplateHandler(*serverConfig),
-					})
+				if err == nil {
+					for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
+						capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ServerResourceTemplate{
+							ResourceTemplate: resourceTemplate,
+							Handler:          g.mcpServerResourceTemplateHandler(*serverConfig),
+						})
+					}
 				}
 
 				var log string
