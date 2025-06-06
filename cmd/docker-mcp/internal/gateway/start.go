@@ -82,7 +82,7 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 	runArgs = append(runArgs, args...)
 	runArgs = append(runArgs, image)
 	runArgs = append(runArgs, command...)
-	client := mcpclient.NewStdioCmdClient("docker", env, runArgs...)
+	client := mcpclient.NewStdioCmdClient(serverConfig.Name, "docker", env, runArgs...)
 
 	initRequest := mcp.InitializeRequest{}
 	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION

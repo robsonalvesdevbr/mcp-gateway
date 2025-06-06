@@ -31,6 +31,7 @@ type StdioClient interface {
 }
 
 type stdioMCPClient struct {
+	name    string
 	command string
 	env     []string
 	args    []string
@@ -42,8 +43,9 @@ type stdioMCPClient struct {
 	initialized atomic.Bool
 }
 
-func NewStdioCmdClient(command string, env []string, args ...string) StdioClient {
+func NewStdioCmdClient(name string, command string, env []string, args ...string) StdioClient {
 	return &stdioMCPClient{
+		name:    name,
 		command: command,
 		env:     env,
 		args:    args,
@@ -67,7 +69,7 @@ func (c *stdioMCPClient) Initialize(ctx context.Context, request mcp.InitializeR
 
 	var stderr bytes.Buffer
 	if debug {
-		cmd.Stderr = io.MultiWriter(&stderr, os.Stderr)
+		cmd.Stderr = io.MultiWriter(&stderr, newPrefixer(os.Stderr, "  > "+c.name+": "))
 	} else {
 		cmd.Stderr = &stderr
 	}
