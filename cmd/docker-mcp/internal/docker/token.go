@@ -17,7 +17,8 @@ type info struct {
 func getRegistryAuth(ctx context.Context) (string, error) {
 	var info info
 	if err := desktop.ClientBackend.Get(ctx, "/registry/info", &info); err != nil {
-		return "", fmt.Errorf("getting auth token: %w", err)
+		log("error getting registry info:", err)
+		return "", nil
 	}
 
 	authConfig := map[string]string{
