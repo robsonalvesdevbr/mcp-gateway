@@ -103,10 +103,13 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 	}
 
 	options := gateway.Config{
+		CatalogPath:  "docker-mcp.yaml",
+		RegistryPath: "registry.yaml",
+		ConfigPath:   "config.yaml",
 		Options: gateway.Options{
+			Transport:    "stdio",
 			LogCalls:     true,
 			BlockSecrets: true,
-			Transport:    "stdio",
 		},
 	}
 	runCmd := &cobra.Command{
@@ -119,9 +122,9 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 	}
 
 	runCmd.Flags().StringArrayVar(&options.ServerNames, "servers", nil, "names of the servers to enable (if non empty, ignore --registry flag)")
-	runCmd.Flags().StringVar(&options.CatalogPath, "catalog", "docker-mcp.yaml", "path to the docker-mcp.yaml catalog (absolute or relative to ~/.docker/mcp/catalogs/)")
-	runCmd.Flags().StringVar(&options.RegistryPath, "registry", "registry.yaml", "path to the registry.yaml (absolute or relative to ~/.docker/mcp/)")
-	runCmd.Flags().StringVar(&options.ConfigPath, "config", "config.yaml", "path to the config.yaml (absolute or relative to ~/.docker/mcp/)")
+	runCmd.Flags().StringVar(&options.CatalogPath, "catalog", options.CatalogPath, "path to the docker-mcp.yaml catalog (absolute or relative to ~/.docker/mcp/catalogs/)")
+	runCmd.Flags().StringVar(&options.RegistryPath, "registry", options.RegistryPath, "path to the registry.yaml (absolute or relative to ~/.docker/mcp/)")
+	runCmd.Flags().StringVar(&options.ConfigPath, "config", options.ConfigPath, "path to the config.yaml (absolute or relative to ~/.docker/mcp/)")
 	runCmd.Flags().StringVar(&options.SecretsPath, "secrets", "", "path to a .env file containing secrets (default to using Docker Deskop's secrets API)")
 	runCmd.Flags().StringArrayVar(&options.ToolNames, "tools", options.ToolNames, "List of tools to enable")
 	runCmd.Flags().IntVar(&options.Port, "port", options.Port, "TCP port to listen on (default is to listen on stdio)")
@@ -132,6 +135,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 	runCmd.Flags().BoolVar(&options.DryRun, "dry-run", options.DryRun, "Start the gateway but do not listen for connections (useful for testing the configuration)")
 	runCmd.Flags().BoolVar(&options.Verbose, "verbose", options.Verbose, "Verbose output")
 	runCmd.Flags().BoolVar(&options.KeepContainers, "keep", options.KeepContainers, "Keep stopped containers")
+	runCmd.Flags().BoolVar(&options.Watch, "watch", options.Watch, "Watch for changes and reconfigure the gateway")
 
 	cmd.AddCommand(runCmd)
 

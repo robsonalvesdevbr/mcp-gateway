@@ -11,6 +11,7 @@ require (
 	github.com/docker/cli v28.1.1+incompatible
 	github.com/docker/docker v28.1.1+incompatible
 	github.com/docker/docker-credential-helpers v0.9.3
+	github.com/fsnotify/fsnotify v1.8.0
 	github.com/google/go-containerregistry v0.20.3
 	github.com/mark3labs/mcp-go v0.27.1
 	github.com/mikefarah/yq/v4 v4.45.1
@@ -55,7 +56,6 @@ require (
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/fvbommel/sortorder v1.1.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect

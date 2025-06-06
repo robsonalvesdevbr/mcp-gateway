@@ -34,6 +34,7 @@ type Options struct {
 	BlockSecrets     bool
 	VerifySignatures bool
 	DryRun           bool
+	Watch            bool
 }
 
 type Gateway struct {
@@ -52,6 +53,7 @@ func NewGateway(config Config, dockerCli command.Cli) *Gateway {
 			RegistryPath: config.RegistryPath,
 			ConfigPath:   config.ConfigPath,
 			SecretsPath:  config.SecretsPath,
+			Watch:        config.Watch,
 			DockerClient: dockerCli.Client(),
 		},
 	}
@@ -74,10 +76,12 @@ func (g *Gateway) Run(ctx context.Context) error {
 		}
 	}
 
-	configuration, err := g.configurator.Read(ctx)
+	// Read the configuration.
+	configuration, configurationUpdates, stopConfigWatcher, err := g.configurator.Read(ctx)
 	if err != nil {
 		return err
 	}
+	defer func() { _ = stopConfigWatcher() }()
 
 	// Which servers are enabled in the registry.yaml?
 	serverNames := configuration.ServerNames()
@@ -134,7 +138,24 @@ func (g *Gateway) Run(ctx context.Context) error {
 			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 		}
 
+		// TODO: listen for the configuration updates and reconfigure ourselves.
+
 		return mcpServer
+	}
+
+	// Optionally watch for configuration updates.
+	if configurationUpdates != nil {
+		log("- Watching for configuration updates...")
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-configurationUpdates:
+					log("> Configuration updated, reloading...")
+				}
+			}
+		}()
 	}
 
 	log("> Initialized in", time.Since(start))

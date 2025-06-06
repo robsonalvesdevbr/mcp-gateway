@@ -23,15 +23,9 @@ func WriteRegistry(content []byte) error {
 }
 
 func ReadConfigFile(ctx context.Context, dockerClient VolumeInspecter, name string) ([]byte, error) {
-	var path string
-	if filepath.IsAbs(name) {
-		path = name
-	} else {
-		var err error
-		path, err = pathConfigFile(name)
-		if err != nil {
-			return nil, err
-		}
+	path, err := FilePath(name)
+	if err != nil {
+		return nil, err
 	}
 
 	buf, err := os.ReadFile(path)
@@ -58,7 +52,7 @@ func ReadConfigFile(ctx context.Context, dockerClient VolumeInspecter, name stri
 }
 
 func writeConfigFile(name string, content []byte) error {
-	path, err := pathConfigFile(name)
+	path, err := FilePath(name)
 	if err != nil {
 		return err
 	}
@@ -69,7 +63,11 @@ func writeConfigFile(name string, content []byte) error {
 	return os.WriteFile(path, content, 0644)
 }
 
-func pathConfigFile(name string) (string, error) {
+func FilePath(name string) (string, error) {
+	if filepath.IsAbs(name) {
+		return name, nil
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err

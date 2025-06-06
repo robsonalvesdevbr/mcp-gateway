@@ -9,12 +9,14 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
+
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/catalog"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/config"
 )
 
 type Configurator interface {
-	Read(context.Context) (Configuration, error)
+	Read(context.Context) (Configuration, chan Configuration, func() error, error)
 }
 
 type Configuration struct {
@@ -94,12 +96,14 @@ type FileBasedConfiguration struct {
 	RegistryPath string
 	ConfigPath   string
 	SecretsPath  string // Optional, if not set, use Docker Desktop's secrets API
+	Watch        bool
 
 	DockerClient config.VolumeInspecter
 }
 
-func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, error) {
+func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, error) {
 	var serverNames []string
+
 	if len(c.ServerNames) > 0 {
 		serverNames = c.ServerNames
 	} else {
@@ -107,6 +111,7 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, error
 		if err != nil {
 			return Configuration{}, fmt.Errorf("reading registry: %w", err)
 		}
+
 		serverNames = registryConfig.ServerNames()
 	}
 
@@ -142,6 +147,72 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, error
 		config:      serversConfig,
 		secrets:     secrets,
 	}, nil
+}
+
+//nolint:gocyclo
+func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan Configuration, func() error, error) {
+	configuration, err := c.readOnce(ctx)
+	if err != nil {
+		return Configuration{}, nil, nil, err
+	}
+	if !c.Watch {
+		return configuration, nil, func() error { return nil }, nil
+	}
+
+	var registryPath string
+	if len(c.ServerNames) == 0 {
+		registryPath, err = config.FilePath(c.RegistryPath)
+		if err != nil {
+			return Configuration{}, nil, nil, err
+		}
+	}
+
+	configPath, err := config.FilePath(c.ConfigPath)
+	if err != nil {
+		return Configuration{}, nil, nil, err
+	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return Configuration{}, nil, nil, err
+	}
+
+	updates := make(chan Configuration)
+	go func() {
+		for {
+			select {
+			case _, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				// TODO: implement debounce
+				configuration, err := c.readOnce(ctx)
+				if err != nil {
+					updates <- configuration
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				logf("watch error: %s", err)
+			}
+		}
+	}()
+
+	if registryPath != "" {
+		if err := watcher.Add(registryPath); err != nil {
+			_ = watcher.Close()
+			return Configuration{}, nil, nil, err
+		}
+	}
+	if configPath != "" {
+		if err := watcher.Add(configPath); err != nil {
+			_ = watcher.Close()
+			return Configuration{}, nil, nil, err
+		}
+	}
+
+	return configuration, updates, watcher.Close, nil
 }
 
 func (c *FileBasedConfiguration) readCatalog(context.Context) (catalog.Catalog, error) {
