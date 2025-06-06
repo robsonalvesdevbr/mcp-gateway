@@ -41,10 +41,11 @@ func startStdioOverTCPServer(ctx context.Context, newMCPServer func() *server.MC
 				continue
 			}
 
+			newServer := server.NewStdioServer(newMCPServer())
 			go func() {
 				defer conn.Close()
 
-				if err := server.NewStdioServer(newMCPServer()).Listen(ctx, conn, conn); err != nil {
+				if err := newServer.Listen(ctx, conn, conn); err != nil {
 					logf("Error listening: %v", err)
 				}
 			}()

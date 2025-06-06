@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker/cli/cli/command"
@@ -124,6 +125,12 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	toolCallbacks := callbacks(g.LogCalls, g.BlockSecrets)
 
+	// TODO: cleanup stopped servers.
+	var (
+		lock            sync.Mutex
+		changeListeners []func(*Capabilities)
+	)
+
 	newMCPServer := func() *server.MCPServer {
 		mcpServer := server.NewMCPServer(
 			"Docker AI MCP Gateway",
@@ -131,14 +138,24 @@ func (g *Gateway) Run(ctx context.Context) error {
 			server.WithToolHandlerMiddleware(toolCallbacks),
 		)
 
-		mcpServer.AddTools(capabilities.Tools...)
-		mcpServer.AddPrompts(capabilities.Prompts...)
-		mcpServer.AddResources(capabilities.Resources...)
-		for _, v := range capabilities.ResourceTemplates {
+		current := capabilities
+		mcpServer.AddTools(current.Tools...)
+		mcpServer.AddPrompts(current.Prompts...)
+		mcpServer.AddResources(current.Resources...)
+		for _, v := range current.ResourceTemplates {
 			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 		}
 
-		// TODO: listen for the configuration updates and reconfigure ourselves.
+		lock.Lock()
+		changeListeners = append(changeListeners, func(newConfig *Capabilities) {
+			mcpServer.DeleteTools(toolNames(current.Tools)...)
+			mcpServer.AddTools(newConfig.Tools...)
+
+			// TODO: sync other things than tools
+
+			current = newConfig
+		})
+		lock.Unlock()
 
 		return mcpServer
 	}
@@ -150,9 +167,22 @@ func (g *Gateway) Run(ctx context.Context) error {
 			for {
 				select {
 				case <-ctx.Done():
+					log("> Stop watching for updates")
 					return
-				case <-configurationUpdates:
+				case configuration := <-configurationUpdates:
 					log("> Configuration updated, reloading...")
+
+					capabilities, err := g.listCapabilities(ctx, configuration, configuration.ServerNames())
+					if err != nil {
+						logf("> Unable to list capabilities: %s", err)
+						continue
+					}
+
+					lock.Lock()
+					for _, listener := range changeListeners {
+						listener(capabilities)
+					}
+					lock.Unlock()
 				}
 			}
 		}()
@@ -228,4 +258,12 @@ func imageBaseName(name string) string {
 	}
 
 	return name
+}
+
+func toolNames(tools []server.ServerTool) []string {
+	var names []string
+	for _, tool := range tools {
+		names = append(names, tool.Tool.Name)
+	}
+	return names
 }
