@@ -1,0 +1,1 @@
+{"foo":true,"servers":{"something":{},"my-server":{"command":"docker","args":["mcp","gateway","run"],"type":"stdio"}}}

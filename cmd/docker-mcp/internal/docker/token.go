@@ -1,0 +1,33 @@
+package docker
+
+import (
+	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/desktop"
+)
+
+type info struct {
+	ID    string `json:"id"`
+	Token string `json:"token"`
+}
+
+func getRegistryAuth(ctx context.Context) (string, error) {
+	var info info
+	if err := desktop.ClientBackend.Get(ctx, "/registry/info", &info); err != nil {
+		return "", fmt.Errorf("getting auth token: %w", err)
+	}
+
+	authConfig := map[string]string{
+		"username": info.ID,
+		"password": info.Token,
+	}
+	buf, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", fmt.Errorf("marshalling auth config: %w", err)
+	}
+
+	return base64.StdEncoding.EncodeToString(buf), nil
+}

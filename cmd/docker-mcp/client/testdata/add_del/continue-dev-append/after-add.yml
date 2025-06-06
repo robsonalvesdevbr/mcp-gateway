@@ -1,0 +1,15 @@
+foo:
+  bar: baz
+mcpServers:
+  - name: My MCP Server
+    command: uvx
+    args:
+      - mcp-server-sqlite
+      - --db-path
+      - /Users/NAME/test.db
+  - name: my-server
+    command: docker
+    args:
+      - mcp
+      - gateway
+      - run

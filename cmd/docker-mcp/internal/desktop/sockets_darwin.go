@@ -1,0 +1,34 @@
+package desktop
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+)
+
+func getDockerDesktopPaths() (DockerDesktopPaths, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return DockerDesktopPaths{}, err
+	}
+
+	data := filepath.Join(home, "Library/Containers/com.docker.docker/Data")
+	applicationSupport := "/Library/Application Support/com.docker.docker"
+
+	return DockerDesktopPaths{
+		AdminSettingPath:     filepath.Join(applicationSupport, "admin-settings.json"),
+		BackendSocket:        filepath.Join(data, "backend.sock"),
+		JFSSocket:            filepath.Join(data, "jfs.sock"),
+		ToolsSocket:          filepath.Join(data, "tools.sock"),
+		CredentialHelperPath: getCredentialHelperPath,
+	}, nil
+}
+
+func getCredentialHelperPath() string {
+	name := "docker-credential-osxkeychain"
+	if path, err := exec.LookPath(name); err == nil {
+		return path
+	}
+
+	return name
+}

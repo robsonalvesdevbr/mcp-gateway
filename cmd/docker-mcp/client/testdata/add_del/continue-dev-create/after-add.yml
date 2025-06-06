@@ -1,0 +1,7 @@
+mcpServers:
+  - name: my-server
+    command: docker
+    args:
+      - mcp
+      - gateway
+      - run

@@ -1,0 +1,62 @@
+package eval
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestEvaluateConstant(t *testing.T) {
+	assert.Equal(t, "constant", Evaluate("constant", nil))
+	assert.Equal(t, "", Evaluate("", nil))
+}
+
+func TestEvaluate(t *testing.T) {
+	assert.Equal(t, "value0", Evaluate("{{key0}}", map[string]any{"key0": "value0"}))
+	assert.Equal(t, "value1", Evaluate("{{ key1 }}", map[string]any{"key1": "value1"}))
+	assert.Equal(t, "value2", Evaluate("{{key2}}", map[string]any{"key2": "value2"}))
+	assert.Equal(t, "v1:v2", Evaluate("{{k1}}:{{k2}}", map[string]any{"k1": "v1", "k2": "v2"}))
+}
+
+func TestDotted(t *testing.T) {
+	assert.Equal(t, "child_value0", Evaluate("{{top.key}}", map[string]any{"top": map[string]any{"key": "child_value0"}}))
+	assert.Equal(t, "child_value1", Evaluate("{{top . key}}", map[string]any{"top": map[string]any{"key": "child_value1"}}))
+	assert.Equal(t, "child_value2", Evaluate("{{top.key|ignored}}", map[string]any{"top": map[string]any{"key": "child_value2"}}))
+}
+
+func TestEvaluateUnknown(t *testing.T) {
+	assert.Equal(t, "", Evaluate("{{unknown}}", nil))
+	assert.Equal(t, "", Evaluate("{{top.unknown}}", map[string]any{"top": nil}))
+}
+
+func TestAtlassian(t *testing.T) {
+	assert.Equal(t, "URL", Evaluate("{{atlassian.jira.url}}", map[string]any{"atlassian": map[string]any{"jira": map[string]any{"url": "URL", "username": "USERNAME"}}}))
+}
+
+func TestVolumes(t *testing.T) {
+	assert.Equal(t, "/var/run/docker.sock:/var/run/docker.sock", Evaluate("/var/run/docker.sock:/var/run/docker.sock", nil))
+	assert.Equal(t, []string{"/var/run/docker.sock:/var/run/docker.sock"}, EvaluateList([]string{"/var/run/docker.sock:/var/run/docker.sock"}, nil))
+	assert.Equal(t, []string{"path1:path1", "path2:path2"}, EvaluateList([]string{"{{paths|volume|into}}"}, map[string]any{"paths": []string{"path1", "path2"}}))
+	assert.Equal(t, []string{"path1", "path2"}, EvaluateList([]string{"{{paths|volume-targe|into}}"}, map[string]any{"paths": []string{"path1", "path2"}}))
+
+	assert.Equal(t, "v:v", volume("v"))
+	assert.Equal(t, `C:\test\folder:/C/test/folder`, volume(`C:\test\folder`))
+	assert.Equal(t, []string{"v:v", "w:w"}, evaluate([]string{"v", "w"}, volume))
+}
+
+func TestVolumeTarget(t *testing.T) {
+	assert.Equal(t, "path", Evaluate("{{paths|volume-target}}", map[string]any{"paths": "path"}))
+	assert.Equal(t, "/var/run/docker.sock", Evaluate("{{paths|volume-target}}", map[string]any{"paths": "/var/run/docker.sock"}))
+	assert.Equal(t, "/file", Evaluate("{{paths|volume-target}}", map[string]any{"paths": "/file"}))
+
+	assert.Equal(t, `/C/file`, Evaluate("{{paths|volume-target}}", map[string]any{"paths": `C:\file`}))
+	assert.Equal(t, `/D/parent/file`, Evaluate("{{paths|volume-target}}", map[string]any{"paths": `D:\parent\file`}))
+}
+
+func TestEvaluateInto(t *testing.T) {
+	assert.Equal(t, "v", Evaluate("{{k}}", map[string]any{"k": "v"}))
+	assert.Equal(t, []string{"v1", "v2"}, Evaluate("{{k}}", map[string]any{"k": []string{"v1", "v2"}}))
+
+	assert.Equal(t, []string{"v"}, Evaluate("{{k|into}}", map[string]any{"k": "v"}))
+	assert.Equal(t, []string{"v1", "v2"}, Evaluate("{{k|into}}", map[string]any{"k": []string{"v1", "v2"}}))
+}

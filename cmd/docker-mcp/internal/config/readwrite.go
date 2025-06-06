@@ -1,0 +1,79 @@
+package config
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+)
+
+func ReadConfig(ctx context.Context, dockerClient VolumeInspecter) ([]byte, error) {
+	return ReadConfigFile(ctx, dockerClient, "config.yaml")
+}
+
+func ReadRegistry(ctx context.Context, dockerClient VolumeInspecter) ([]byte, error) {
+	return ReadConfigFile(ctx, dockerClient, "registry.yaml")
+}
+
+func WriteConfig(content []byte) error {
+	return writeConfigFile("config.yaml", content)
+}
+
+func WriteRegistry(content []byte) error {
+	return writeConfigFile("registry.yaml", content)
+}
+
+func ReadConfigFile(ctx context.Context, dockerClient VolumeInspecter, name string) ([]byte, error) {
+	var path string
+	if filepath.IsAbs(name) {
+		path = name
+	} else {
+		var err error
+		path, err = pathConfigFile(name)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	buf, err := os.ReadFile(path)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+
+		// File does not exist, import from legacy docker volume
+		content, err := readFromDockerVolume(ctx, dockerClient, name)
+		if err != nil {
+			return nil, err
+		}
+
+		// Write to a file and forget about the legacy volume
+		if err := writeConfigFile(name, content); err != nil {
+			return nil, err
+		}
+
+		return content, nil
+	}
+
+	return buf, nil
+}
+
+func writeConfigFile(name string, content []byte) error {
+	path, err := pathConfigFile(name)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, content, 0644)
+}
+
+func pathConfigFile(name string) (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(homeDir, ".docker", "mcp", name), nil
+}
