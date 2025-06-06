@@ -41,7 +41,7 @@ jobs:
           install: true
 
       - name: Lint
-        run: make BUILDER=${{ steps.buildx.outputs.name }} GIT_GHA_TOKEN=${{ steps.setup.outputs.token }} lint
+        run: make lint
 
   unit-tests:
     name: Unit Tests
@@ -89,4 +89,4 @@ jobs:
           install: true
 
       - name: Build module
-        run: make BUILDER=${{ steps.buildx.outputs.name }} GIT_GHA_TOKEN=${{ steps.setup.outputs.token }} build-test-image
+        run: make build-test-image

@@ -51,7 +51,7 @@ jobs:
 
       - name: Build cross platform binaries
         run: |
-          make TAG=${{ github.event.inputs.tag }} BUILDER=${{ steps.buildx.outputs.name }} GIT_GHA_TOKEN=${{ steps.setup.outputs.token }} docker-mcp-cross
+          make TAG=${{ github.event.inputs.tag }} docker-mcp-cross
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
@@ -109,7 +109,7 @@ jobs:
 
       - name: package Docker image and push to hub
         run: |
-          make BUILDER=${{ steps.buildx.outputs.name }} TAG=${{ github.event.inputs.tag }} push-module-image
+          make TAG=${{ github.event.inputs.tag }} push-module-image
 
       - name: Create release with artifacts
         if: ${{ github.event.inputs.tag != '' }} # don't release if no tag is specified

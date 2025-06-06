@@ -26,8 +26,6 @@ GO_LDFLAGS = -X $(MODULE)/pkg/config.Version=$(GIT_TAG)
 GOLANGCI_LINT_VERSION := v1.64.5
 export GO_VERSION GO_LDFLAGS GOPRIVATE GOLANGCI_LINT_VERSION GIT_COMMIT GIT_TAG
 
-BUILDER=buildx-multiarch
-
 DOCKER_BUILD_ARGS := --build-arg GO_VERSION \
 					--build-arg GO_LDFLAGS \
           			--build-arg GOLANGCI_LINT_VERSION \
@@ -43,21 +41,18 @@ INFO_COLOR = \033[0;36m
 NO_COLOR   = \033[m
 LINT_PLATFORMS = linux,darwin,windows
 
-multiarch-builder: ## Create buildx builder for multi-arch build, if not exists
-	docker buildx inspect $(BUILDER) >/dev/null || docker buildx create --name=$(BUILDER) --driver=docker-container --driver-opt=network=host
-
 format: ## Format code
 	@docker buildx build $(DOCKER_BUILD_ARGS) -o . --target=format .
 
-lint: multiarch-builder ## Lint code
-	@docker buildx build $(DOCKER_BUILD_ARGS) --pull --builder=$(BUILDER) --target=lint --platform=$(LINT_PLATFORMS) .
+lint: ## Lint code
+	@docker buildx build $(DOCKER_BUILD_ARGS) --pull --target=lint --platform=$(LINT_PLATFORMS) .
 
 clean: ## remove built binaries and packages
 	@sh -c "rm -rf bin dist"
 	@sh -c "rm $(DOCKER_MCP_CLI_PLUGIN_DST)"
 
-docker-mcp-cross: multiarch-builder
-	docker buildx build $(DOCKER_BUILD_ARGS) --pull --builder=$(BUILDER) --target=package-docker-mcp --platform=linux/amd64,linux/arm64,darwin/amd64,darwin/arm64,windows/amd64,windows/arm64 -o ./dist .
+docker-mcp-cross:
+	docker buildx build $(DOCKER_BUILD_ARGS) --pull --target=package-docker-mcp --platform=linux/amd64,linux/arm64,darwin/amd64,darwin/arm64,windows/amd64,windows/arm64 -o ./dist .
 
 push-test-image: TAG=v100.0.8
 push-test-image: MODULE_IMAGE=docker/docker-mcp-cli-desktop-module-test
