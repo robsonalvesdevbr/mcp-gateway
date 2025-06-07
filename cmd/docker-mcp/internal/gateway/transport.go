@@ -27,9 +27,12 @@ func startSseServer(ctx context.Context, newMCPServer func() *server.MCPServer, 
 }
 
 func startStreamingServer(ctx context.Context, newMCPServer func() *server.MCPServer, ln net.Listener) error {
+	mux := http.NewServeMux()
+	mux.Handle("/mcp", server.NewStreamableHTTPServer(newMCPServer()))
 	httpServer := &http.Server{
-		Handler: server.NewStreamableHTTPServer(newMCPServer()),
+		Handler: mux,
 	}
+
 	go func() {
 		<-ctx.Done()
 		ln.Close()
