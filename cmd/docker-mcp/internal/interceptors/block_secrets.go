@@ -15,7 +15,7 @@ func BlockSecrets(next server.ToolHandlerFunc) server.ToolHandlerFunc {
 		logf("  - Scanning tool call arguments for secrets...\n")
 
 		tool := request.Params.Name
-		arguments := argumentsToString(request.GetArguments())
+		arguments := argumentsToString(request.Params.Arguments)
 
 		if secretsscan.ContainsSecrets(arguments) {
 			return nil, fmt.Errorf("a secret is being passed to tool %s", tool)

@@ -13,7 +13,7 @@ func LogCalls(next server.ToolHandlerFunc) server.ToolHandlerFunc {
 		start := time.Now()
 
 		tool := request.Params.Name
-		arguments := argumentsToString(request.GetArguments())
+		arguments := argumentsToString(request.Params.Arguments)
 
 		logf("- Calling tool %s with arguments: %s\n", tool, arguments)
 

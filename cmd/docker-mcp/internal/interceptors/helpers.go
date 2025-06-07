@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func argumentsToString(args map[string]any) string {
+func argumentsToString(args any) string {
 	buf, err := json.Marshal(args)
 	if err != nil {
 		return fmt.Sprintf("%v", args)
