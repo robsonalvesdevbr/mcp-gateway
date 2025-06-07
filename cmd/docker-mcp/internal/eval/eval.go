@@ -43,6 +43,15 @@ func evaluateTerm(term string, config map[string]any) any {
 			value = evaluate(value, volumeTarget)
 		case "into":
 			value = into(value)
+		case "first":
+			value = first(value)
+		case "last":
+			value = last(value)
+		default:
+			if strings.HasPrefix(f, "or:") {
+				_, rest, _ := strings.Cut(f, ":")
+				value = or(value, rest)
+			}
 		}
 	}
 
