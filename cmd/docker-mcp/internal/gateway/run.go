@@ -177,6 +177,10 @@ func (g *Gateway) Run(ctx context.Context) error {
 		log("> Starting STDIO over TCP server on port", g.Port)
 
 		return startStdioOverTCPServer(ctx, newMCPServer, ln)
+
+	case strings.EqualFold(g.Transport, "sse") && g.Port == 0:
+		return fmt.Errorf("missing 'port' for sse")
+
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio' or 'sse'", g.Transport)
 	}
