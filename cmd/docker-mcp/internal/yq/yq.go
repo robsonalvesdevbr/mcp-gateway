@@ -36,13 +36,6 @@ func (n logBackend) IsEnabledFor(logging.Level, string) bool {
 	return false
 }
 
-func silenceYqLogger() {
-	// Don't use the default (chatty) logger
-	logger := yqlib.GetLogger()
-	backend := logBackend{}
-	logger.SetBackend(backend)
-}
-
 func NewYamlDecoder() yqlib.Decoder {
 	return yqlib.NewYamlDecoder(yamlPref)
 }
@@ -61,7 +54,9 @@ func NewJSONEncoder() yqlib.Encoder {
 }
 
 func Evaluate(yqExpr string, content []byte, decoder yqlib.Decoder, encoder yqlib.Encoder) ([]byte, error) {
-	silenceYqLogger()
+	// Don't use the default (chatty) logger
+	yqlib.GetLogger().SetBackend(logBackend{})
+
 	evaluator := yqlib.NewStringEvaluator()
 	result, err := evaluator.EvaluateAll(yqExpr, string(content), encoder, decoder)
 	if err != nil {
