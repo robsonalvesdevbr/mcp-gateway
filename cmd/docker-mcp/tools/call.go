@@ -77,7 +77,7 @@ func parseArgs(args []string) map[string]any {
 		}
 	}
 
-	// MCP servers return an error if the args are empty so we make sure
+	// MCP servers return an error if the args are empty, so we make sure
 	// there is at least one argument
 	if len(parsed) == 0 {
 		parsed["args"] = "..."
