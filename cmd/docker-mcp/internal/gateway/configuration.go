@@ -227,8 +227,8 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 	}, nil
 }
 
-func (c *FileBasedConfiguration) readCatalog(context.Context) (catalog.Catalog, error) {
-	return catalog.ReadFrom(c.CatalogPath)
+func (c *FileBasedConfiguration) readCatalog(ctx context.Context) (catalog.Catalog, error) {
+	return catalog.ReadFrom(ctx, c.CatalogPath)
 }
 
 func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Registry, error) {

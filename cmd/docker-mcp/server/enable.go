@@ -32,7 +32,7 @@ func update(ctx context.Context, dockerClient config.VolumeInspecter, add []stri
 		return fmt.Errorf("parsing registry config: %w", err)
 	}
 
-	catalog, err := catalog.Get()
+	catalog, err := catalog.Get(ctx)
 	if err != nil {
 		return err
 	}
