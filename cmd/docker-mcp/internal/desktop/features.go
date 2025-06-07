@@ -13,7 +13,7 @@ type Feature struct {
 	Enabled bool `json:"enabled"`
 }
 
-// Verify if a feature is enabled in either admin-settings.json or Docker Desktop settings.
+// CheckFeatureIsEnabled verifies if a feature is enabled in either admin-settings.json or Docker Desktop settings.
 // settingName is the setting name (e.g. "enableDockerMCPToolkit", "enableDockerAI", etc.)
 // label is the human-readable name of the feature for error messages
 func CheckFeatureIsEnabled(ctx context.Context, settingName string, label string) error {
