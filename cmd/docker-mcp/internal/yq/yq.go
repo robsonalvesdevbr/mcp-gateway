@@ -8,16 +8,14 @@ import (
 	"gopkg.in/op/go-logging.v1"
 )
 
-var (
-	yamlPref = yqlib.YamlPreferences{
-		Indent:                      2,
-		ColorsEnabled:               false,
-		LeadingContentPreProcessing: true,
-		PrintDocSeparators:          true,
-		UnwrapScalar:                true,
-		EvaluateTogether:            false,
-	}
-)
+var yamlPref = yqlib.YamlPreferences{
+	Indent:                      2,
+	ColorsEnabled:               false,
+	LeadingContentPreProcessing: true,
+	PrintDocSeparators:          true,
+	UnwrapScalar:                true,
+	EvaluateTogether:            false,
+}
 
 type logBackend struct{}
 

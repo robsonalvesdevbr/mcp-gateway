@@ -24,7 +24,6 @@ type ServerResourceTemplate struct {
 	Handler          server.ResourceTemplateHandlerFunc
 }
 
-//nolint:gocyclo
 func (g *Gateway) listCapabilities(ctx context.Context, configuration Configuration, serverNames []string) (*Capabilities, error) {
 	var (
 		lock            sync.Mutex

@@ -17,7 +17,7 @@ import (
 )
 
 type Configurator interface {
-	Read(context.Context) (Configuration, chan Configuration, func() error, error)
+	Read(ctx context.Context) (Configuration, chan Configuration, func() error, error)
 }
 
 type Configuration struct {
@@ -102,7 +102,6 @@ type FileBasedConfiguration struct {
 	DockerClient config.VolumeInspecter
 }
 
-//nolint:gocyclo
 func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan Configuration, func() error, error) {
 	configuration, err := c.readOnce(ctx)
 	if err != nil {

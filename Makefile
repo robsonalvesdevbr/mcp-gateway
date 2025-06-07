@@ -23,7 +23,7 @@ GO_LDFLAGS = -X $(MODULE)/cmd/docker-mcp/version.Version=$(GIT_TAG)
 
 
 # golangci-lint must be pinned - linters can become more strict on upgrade
-GOLANGCI_LINT_VERSION := v1.64.5
+GOLANGCI_LINT_VERSION := v2.1.6
 export GO_VERSION GO_LDFLAGS GOPRIVATE GOLANGCI_LINT_VERSION GIT_COMMIT GIT_TAG
 
 DOCKER_BUILD_ARGS := --build-arg GO_VERSION \

@@ -10,8 +10,9 @@ import (
 	"github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli-plugins/plugin"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/mcp-cli/cmd/docker-mcp/version"
 	"github.com/spf13/cobra"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/version"
 )
 
 func main() {

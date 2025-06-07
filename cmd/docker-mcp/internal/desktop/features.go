@@ -33,6 +33,7 @@ func CheckFeatureIsEnabled(ctx context.Context, settingName string, label string
 	// Otherwise, check that the feature is enabled in the Docker Desktop settings.
 	settings, err := getSettings(ctx)
 	if err != nil {
+		//nolint:staticcheck
 		return errors.New("Docker Desktop is not running")
 	}
 	value, _ := jsonpath.Get("$.desktop."+settingName+".value", settings)

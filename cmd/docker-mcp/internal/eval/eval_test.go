@@ -8,7 +8,7 @@ import (
 
 func TestEvaluateConstant(t *testing.T) {
 	assert.Equal(t, "constant", Evaluate("constant", nil))
-	assert.Equal(t, "", Evaluate("", nil))
+	assert.Empty(t, Evaluate("", nil))
 }
 
 func TestEvaluate(t *testing.T) {
@@ -25,8 +25,8 @@ func TestDotted(t *testing.T) {
 }
 
 func TestEvaluateUnknown(t *testing.T) {
-	assert.Equal(t, "", Evaluate("{{unknown}}", nil))
-	assert.Equal(t, "", Evaluate("{{top.unknown}}", map[string]any{"top": nil}))
+	assert.Empty(t, Evaluate("{{unknown}}", nil))
+	assert.Empty(t, Evaluate("{{top.unknown}}", map[string]any{"top": nil}))
 }
 
 func TestAtlassian(t *testing.T) {

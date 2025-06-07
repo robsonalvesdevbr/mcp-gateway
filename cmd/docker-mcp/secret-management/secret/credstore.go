@@ -79,7 +79,7 @@ type Helper struct {
 }
 
 func (h Helper) List() (map[string]string, error) {
-	return nil, nil
+	return map[string]string{}, nil
 }
 
 // Add stores new credentials.

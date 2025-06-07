@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -38,7 +39,6 @@ func NewGateway(config Config, dockerCli command.Cli) *Gateway {
 	}
 }
 
-//nolint:gocyclo
 func (g *Gateway) Run(ctx context.Context) error {
 	start := time.Now()
 
@@ -176,7 +176,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	case "sse":
 		if g.Port == 0 {
-			return fmt.Errorf("missing 'port' for SSE server")
+			return errors.New("missing 'port' for SSE server")
 		}
 
 		log("> Start SSE server on port", g.Port)

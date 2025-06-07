@@ -34,7 +34,7 @@ func readMCPServers(ctx context.Context, fileOrURL string) (map[string]Server, e
 	buf, err := readFileOrURL(ctx, fileOrURL)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return map[string]Server{}, nil
 		}
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func readFileOrURL(ctx context.Context, fileOrURL string) ([]byte, error) {
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != 200 {
+		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("failed to fetch URL: %s, status: %s", fileOrURL, resp.Status)
 		}
 

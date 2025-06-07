@@ -28,10 +28,11 @@ EOD
 FROM base AS do-format
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go install golang.org/x/tools/cmd/goimports@latest
+    go install golang.org/x/tools/cmd/goimports@latest \
+    && go install mvdan.cc/gofumpt@latest
 COPY . .
 RUN goimports -local github.com/docker/mcp-cli -w .
-RUN gofmt -s -w .
+RUN gofumpt -w .
 
 FROM scratch AS format
 COPY --from=do-format /app .
