@@ -14,11 +14,9 @@ func BlockSecrets(next server.ToolHandlerFunc) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		logf("  - Scanning tool call arguments for secrets...\n")
 
-		tool := request.Params.Name
 		arguments := argumentsToString(request.Params.Arguments)
-
 		if secretsscan.ContainsSecrets(arguments) {
-			return nil, fmt.Errorf("a secret is being passed to tool %s", tool)
+			return nil, fmt.Errorf("a secret is being passed to tool %s", request.Params.Name)
 		}
 
 		logf("  > No secret found in arguments.\n")
@@ -41,7 +39,7 @@ func BlockSecrets(next server.ToolHandlerFunc) server.ToolHandlerFunc {
 		}
 
 		if secretsscan.ContainsSecrets(contents) {
-			return nil, fmt.Errorf("a secret is being returned by the %s tool", tool)
+			return nil, fmt.Errorf("a secret is being returned by the %s tool", request.Params.Name)
 		}
 
 		logf("  > No secret found in response.\n")
