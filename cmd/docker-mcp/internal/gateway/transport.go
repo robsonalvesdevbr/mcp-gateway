@@ -26,6 +26,17 @@ func startSseServer(ctx context.Context, newMCPServer func() *server.MCPServer, 
 	return httpServer.Serve(ln)
 }
 
+func startStreamingServer(ctx context.Context, newMCPServer func() *server.MCPServer, ln net.Listener) error {
+	httpServer := &http.Server{
+		Handler: server.NewStreamableHTTPServer(newMCPServer()),
+	}
+	go func() {
+		<-ctx.Done()
+		ln.Close()
+	}()
+	return httpServer.Serve(ln)
+}
+
 func startStdioOverTCPServer(ctx context.Context, newMCPServer func() *server.MCPServer, ln net.Listener) error {
 	for {
 		select {

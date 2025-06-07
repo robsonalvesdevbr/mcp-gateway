@@ -128,7 +128,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 	runCmd.Flags().StringVar(&options.SecretsPath, "secrets", "", "path to a .env file containing secrets (default to using Docker Deskop's secrets API)")
 	runCmd.Flags().StringArrayVar(&options.ToolNames, "tools", options.ToolNames, "List of tools to enable")
 	runCmd.Flags().IntVar(&options.Port, "port", options.Port, "TCP port to listen on (default is to listen on stdio)")
-	runCmd.Flags().StringVar(&options.Transport, "transport", options.Transport, "stdio or sse (default is stdio)")
+	runCmd.Flags().StringVar(&options.Transport, "transport", options.Transport, "stdio, sse or streaming (default is stdio)")
 	runCmd.Flags().BoolVar(&options.LogCalls, "log-calls", options.LogCalls, "Log calls to the tools")
 	runCmd.Flags().BoolVar(&options.BlockSecrets, "block-secrets", options.BlockSecrets, "Block secrets from being/received sent to/from tools")
 	runCmd.Flags().BoolVar(&options.VerifySignatures, "verify-signatures", options.VerifySignatures, "Verify signatures of the server images")

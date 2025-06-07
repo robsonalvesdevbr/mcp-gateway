@@ -167,22 +167,30 @@ func (g *Gateway) Run(ctx context.Context) error {
 	switch strings.ToLower(g.Transport) {
 	case "stdio":
 		if g.Port == 0 {
-			log("> Start STDIO server")
+			log("> Start stdio server")
 			return startStdioServer(ctx, newMCPServer, os.Stdin, os.Stdout)
 		}
 
-		log("> Start STDIO over TCP server on port", g.Port)
+		log("> Start stdio over TCP server on port", g.Port)
 		return startStdioOverTCPServer(ctx, newMCPServer, ln)
 
 	case "sse":
 		if g.Port == 0 {
-			return errors.New("missing 'port' for SSE server")
+			return errors.New("missing 'port' for 'sse' server")
 		}
 
-		log("> Start SSE server on port", g.Port)
+		log("> Start sse server on port", g.Port)
 		return startSseServer(ctx, newMCPServer, ln)
 
+	case "streaming":
+		if g.Port == 0 {
+			return errors.New("missing 'port' for streaming server")
+		}
+
+		log("> Start streaming server on port", g.Port)
+		return startStreamingServer(ctx, newMCPServer, ln)
+
 	default:
-		return fmt.Errorf("unknown transport %q, expected 'stdio' or 'sse'", g.Transport)
+		return fmt.Errorf("unknown transport %q, expected 'stdio', 'sse' or 'streaming", g.Transport)
 	}
 }
