@@ -21,7 +21,7 @@ import (
 	"github.com/docker/mcp-cli/cmd/docker-mcp/secret-management/secret"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/server"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/tools"
-	version "github.com/docker/mcp-cli/pkg/config"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/version"
 )
 
 // Note: We use a custom help template to make it more brief.
@@ -61,9 +61,9 @@ func rootCommand(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.
 
 			return nil
 		},
-		Version: fmt.Sprintf("%s, commit %s", version.Version, version.Commit()),
+		Version: version.Version,
 	}
-	cmd.SetVersionTemplate("Docker MCP Plugin\n{{.Version}}\n")
+	cmd.SetVersionTemplate("{{.Version}}\n")
 	cmd.Flags().BoolP("version", "v", false, "Print version information and quit")
 	cmd.SetHelpTemplate(helpTemplate)
 

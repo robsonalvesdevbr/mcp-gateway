@@ -1,5 +1,5 @@
 MODULE := $(shell sh -c "awk '/^module/ { print \$$2 }' go.mod")
-GIT_TAG?=dev
+GIT_TAG := $(shell git rev-parse HEAD)
 GO_VERSION := $(shell sh -c "awk '/^go / { print \$$2 }' go.mod")
 
 MODULE_IMAGE?=docker/docker-mcp-cli-desktop-module
@@ -19,7 +19,7 @@ else
 endif
 
 
-GO_LDFLAGS = -X $(MODULE)/pkg/config.Version=$(GIT_TAG)
+GO_LDFLAGS = -X $(MODULE)/cmd/docker-mcp/version.Version=$(GIT_TAG)
 
 
 # golangci-lint must be pinned - linters can become more strict on upgrade
