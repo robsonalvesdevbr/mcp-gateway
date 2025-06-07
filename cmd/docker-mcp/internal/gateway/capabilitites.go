@@ -178,6 +178,22 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 	}, nil
 }
 
+func (c *Capabilities) ToolNames() []string {
+	var names []string
+	for _, tool := range c.Tools {
+		names = append(names, tool.Tool.Name)
+	}
+	return names
+}
+
+func (c *Capabilities) PromptNames() []string {
+	var names []string
+	for _, prompt := range c.Prompts {
+		names = append(names, prompt.Prompt.Name)
+	}
+	return names
+}
+
 func isToolEnabled(serverName, serverImage, toolName string, enabledTools []string) bool {
 	if len(enabledTools) == 0 {
 		return true

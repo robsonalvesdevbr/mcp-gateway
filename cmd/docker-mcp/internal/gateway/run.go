@@ -110,8 +110,8 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 		lock.Lock()
 		changeListeners = append(changeListeners, func(newConfig *Capabilities) {
-			mcpServer.DeleteTools(toolNames(current.Tools)...)
-			mcpServer.DeletePrompts(promptNames(current.Prompts)...)
+			mcpServer.DeleteTools(current.ToolNames()...)
+			mcpServer.DeletePrompts(current.PromptNames()...)
 			mcpServer.AddTools(newConfig.Tools...)
 			mcpServer.AddPrompts(newConfig.Prompts...)
 
@@ -180,20 +180,4 @@ func (g *Gateway) Run(ctx context.Context) error {
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio' or 'sse'", g.Transport)
 	}
-}
-
-func toolNames(tools []server.ServerTool) []string {
-	var names []string
-	for _, tool := range tools {
-		names = append(names, tool.Tool.Name)
-	}
-	return names
-}
-
-func promptNames(tools []server.ServerPrompt) []string {
-	var names []string
-	for _, tool := range tools {
-		names = append(names, tool.Prompt.Name)
-	}
-	return names
 }
