@@ -47,7 +47,7 @@ func (c *Configuration) DockerImages() []string {
 		switch {
 		case !found:
 			log("MCP server not found:", serverName)
-		case serverConfig != nil:
+		case serverConfig != nil && serverConfig.Spec.Image != "":
 			uniqueDockerImages[serverConfig.Spec.Image] = true
 		case tools != nil:
 			for _, tool := range *tools {
@@ -72,7 +72,7 @@ func (c *Configuration) Find(serverName string) (*ServerConfig, *map[string]cata
 	}
 
 	// Is it an MCP Server?
-	if server.Image != "" {
+	if server.Image != "" || server.SSEEndpoint != "" {
 		return &ServerConfig{
 			Name: serverName,
 			Spec: server,
