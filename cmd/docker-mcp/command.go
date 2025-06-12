@@ -102,16 +102,33 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Manage the MCP Server gateway",
 	}
 
-	options := gateway.Config{
-		CatalogPath:  "docker-mcp.yaml",
-		RegistryPath: "registry.yaml",
-		ConfigPath:   "config.yaml",
-		Options: gateway.Options{
-			Transport:    "stdio",
-			LogCalls:     true,
-			BlockSecrets: true,
-		},
+	// Have different defaults for the on-host gateway and the in-container gateway.
+	var options gateway.Config
+	if os.Getenv("DOCKER_MCP_IN_CONTAINER") != "1" {
+		options = gateway.Config{
+			CatalogPath: catalog.DockerCatalogURL,
+			Options: gateway.Options{
+				Transport:        "stdio",
+				Port:             8811,
+				LogCalls:         true,
+				BlockSecrets:     true,
+				VerifySignatures: true,
+				Verbose:          true,
+			},
+		}
+	} else {
+		options = gateway.Config{
+			CatalogPath:  "docker-mcp.yaml",
+			RegistryPath: "registry.yaml",
+			ConfigPath:   "config.yaml",
+			Options: gateway.Options{
+				Transport:    "stdio",
+				LogCalls:     true,
+				BlockSecrets: true,
+			},
+		}
 	}
+
 	runCmd := &cobra.Command{
 		Use:   "run",
 		Short: "Run the gateway",

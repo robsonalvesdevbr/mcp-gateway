@@ -204,7 +204,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 	}
 
 	var secrets map[string]string
-	if c.SecretsPath != "" {
+	if c.SecretsPath != "" || os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
 		var err error
 		secrets, err = c.readSecretsFromFile(ctx, c.SecretsPath)
 		if err != nil {
@@ -245,6 +245,10 @@ func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Regis
 }
 
 func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map[string]any, error) {
+	if c.ConfigPath == "" {
+		return map[string]map[string]any{}, nil
+	}
+
 	yaml, err := config.ReadConfigFile(ctx, c.DockerClient, c.ConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading config.yaml: %w", err)
@@ -280,6 +284,10 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 }
 
 func (c *FileBasedConfiguration) readSecretsFromFile(ctx context.Context, path string) (map[string]string, error) {
+	if path == "" {
+		return map[string]string{}, nil // No secrets file provided
+	}
+
 	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading secrets from %s: %w", path, err)
