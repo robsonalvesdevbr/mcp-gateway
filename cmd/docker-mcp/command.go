@@ -104,7 +104,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 
 	// Have different defaults for the on-host gateway and the in-container gateway.
 	var options gateway.Config
-	if os.Getenv("DOCKER_MCP_IN_CONTAINER") != "1" {
+	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
 		options = gateway.Config{
 			CatalogPath: catalog.DockerCatalogURL,
 			Options: gateway.Options{

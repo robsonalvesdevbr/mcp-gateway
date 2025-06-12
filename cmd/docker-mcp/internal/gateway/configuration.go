@@ -227,6 +227,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 }
 
 func (c *FileBasedConfiguration) readCatalog(ctx context.Context) (catalog.Catalog, error) {
+	fmt.Println("Found servers:", c.CatalogPath)
 	return catalog.ReadFrom(ctx, c.CatalogPath)
 }
 

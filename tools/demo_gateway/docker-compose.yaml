@@ -5,9 +5,7 @@ services:
       - "8811:8811"
     command:
       - --servers=github-official
-    # - --secrets=/.env
-    # - --config=/.config.yaml
+      - --secrets=/.env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      # - .env:/.env
-      # - ~/.docker/mcp/config.yaml:/.config.yaml
+      - .env:/.env
