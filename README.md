@@ -2,7 +2,7 @@
 
 ![build](https://github.com/docker/mcp-cli/actions/workflows/ci.yml/badge.svg)
 
-A Docker CLI plugin that provides a gateway for the Model Context Protocol (MCP), enabling seamless integration between AI language models and Docker-based tool servers.
+A Docker CLI plugin that provides a gateway for the Model Context Protocol (MCP), enabling seamless integration between AI language models and Docker-based MCP servers.
 
 ## What is MCP?
 
@@ -13,19 +13,19 @@ The [Model Context Protocol (MCP)](https://spec.modelcontextprotocol.io/) is an 
 The Docker MCP CLI serves as a gateway that:
 
 - **Manages MCP servers** running in Docker containers
-- **Provides a unified interface** for AI models to access multiple tools and services
+- **Provides a unified interface** for AI models to access MCP servers
 - **Handles authentication and security** through Docker Desktop's secrets management
 - **Supports dynamic tool discovery** and configuration
 - **Enables OAuth flows** for secure service connections
 
 ## Features
 
-- 🔧 **Tool Management**: List, inspect, and call MCP tools from multiple servers
+- 🔧 **Server Management**: List, inspect, and call MCP tools from multiple servers
 - 🐳 **Container-based Servers**: Run MCP servers as Docker containers with proper isolation
 - 🔐 **Secrets Management**: Secure handling of API keys and credentials via Docker Desktop
 - 🌐 **OAuth Integration**: Built-in OAuth flows for service authentication
-- 📋 **Server Catalog**: Manage and configure multiple MCP server instances
-- 🔍 **Dynamic Discovery**: Automatic tool discovery and updates from running servers
+- 📋 **Server Catalog**: Manage and configure multiple MCP catalogs
+- 🔍 **Dynamic Discovery**: Automatic tool, prompt, and resource discovery from running servers
 - 📊 **Monitoring**: Built-in logging and call tracing capabilities
 
 ## Installation
@@ -198,7 +198,7 @@ docker buildx build --target=lint --platform=linux,darwin,windows .
 The Docker MCP CLI implements a gateway pattern:
 
 ```
-AI Client → MCP Gateway → Tool Servers (Docker Containers)
+AI Client → MCP Gateway → MCP Servers (Docker Containers)
 ```
 
 - **AI Client**: Language model or AI application
