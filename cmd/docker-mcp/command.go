@@ -76,6 +76,7 @@ func rootCommand(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.
 	cmd.AddCommand(oauth.NewOAuthCmd())
 	cmd.AddCommand(client.NewClientCmd(cwd))
 	cmd.AddCommand(catalog.NewCatalogCmd())
+	cmd.AddCommand(versionCommand())
 	cmd.AddCommand(gatewayCommand(dockerCli))
 	cmd.AddCommand(configCommand(dockerCli))
 	cmd.AddCommand(serverCommand(dockerCli))
@@ -93,6 +94,17 @@ func unhideHiddenCommands(cmd *cobra.Command) {
 	for _, c := range cmd.Commands() {
 		c.Hidden = false
 		unhideHiddenCommands(c)
+	}
+}
+
+func versionCommand() *cobra.Command {
+	return &cobra.Command{
+		Short: "Show the version information",
+		Use:   "version",
+		Args:  cobra.ExactArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(Version)
+		},
 	}
 }
 
