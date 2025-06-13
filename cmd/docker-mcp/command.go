@@ -102,7 +102,7 @@ func versionCommand() *cobra.Command {
 		Short: "Show the version information",
 		Use:   "version",
 		Args:  cobra.ExactArgs(0),
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(*cobra.Command, []string) {
 			fmt.Println(Version)
 		},
 	}
