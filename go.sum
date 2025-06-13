@@ -200,8 +200,8 @@ github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/denisenkom/go-mssqldb v0.0.0-20191128021309-1d7a30a10f73/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27NDyej4t/EjAShU=
-github.com/dgageot/mcp-go v0.0.0-20250605154749-f749989773d9 h1:Omdl0XeiM9AsEK30ZPYzxThNgsZjTY1MKKCaT0rjmqA=
-github.com/dgageot/mcp-go v0.0.0-20250605154749-f749989773d9/go.mod h1:rXqOudj/djTORU/ThxYx8fqEVj/5pvTuuebQ2RC7uk4=
+github.com/dgageot/mcp-go v0.0.0-20250613123128-ce786faf24f8 h1:l2k18gFlHEuRBLdVoV7A1ZkLqjDbdHeFsvXnRkxlctg=
+github.com/dgageot/mcp-go v0.0.0-20250613123128-ce786faf24f8/go.mod h1:rXqOudj/djTORU/ThxYx8fqEVj/5pvTuuebQ2RC7uk4=
 github.com/digitorus/pkcs7 v0.0.0-20230713084857-e76b763bdc49/go.mod h1:SKVExuS+vpu2l9IoOc0RwqE7NYnb0JlcFHFnEJkVDzc=
 github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 h1:ge14PCmCvPjpMQMIAH7uKg0lrtNSOdpYsRXlwk3QbaE=
 github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352/go.mod h1:SKVExuS+vpu2l9IoOc0RwqE7NYnb0JlcFHFnEJkVDzc=

@@ -2,7 +2,7 @@ module github.com/docker/mcp-cli
 
 go 1.24.4
 
-replace github.com/mark3labs/mcp-go => github.com/dgageot/mcp-go v0.0.0-20250605154749-f749989773d9
+replace github.com/mark3labs/mcp-go => github.com/dgageot/mcp-go v0.0.0-20250613123128-ce786faf24f8
 
 require (
 	github.com/Microsoft/go-winio v0.6.2
