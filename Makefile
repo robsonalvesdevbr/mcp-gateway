@@ -1,5 +1,5 @@
 MODULE := $(shell sh -c "awk '/^module/ { print \$$2 }' go.mod")
-GIT_TAG := $(shell git rev-parse HEAD)
+GIT_TAG := $(shell git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse HEAD)
 GO_VERSION := $(shell sh -c "awk '/^go / { print \$$2 }' go.mod")
 
 MODULE_IMAGE?=docker/docker-mcp-cli-desktop-module
