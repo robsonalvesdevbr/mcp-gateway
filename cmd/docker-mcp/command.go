@@ -117,6 +117,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 	// Have different defaults for the on-host gateway and the in-container gateway.
 	var options gateway.Config
 	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
+		// In-container.
 		options = gateway.Config{
 			CatalogPath: catalog.DockerCatalogURL,
 			Options: gateway.Options{
@@ -129,6 +130,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 			},
 		}
 	} else {
+		// On-host.
 		options = gateway.Config{
 			CatalogPath:  "docker-mcp.yaml",
 			RegistryPath: "registry.yaml",
@@ -137,6 +139,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 				Transport:    "stdio",
 				LogCalls:     true,
 				BlockSecrets: true,
+				Watch:        true,
 			},
 		}
 	}
