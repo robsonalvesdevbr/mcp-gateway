@@ -1,8 +1,9 @@
-MODULE := $(shell sh -c "awk '/^module/ { print \$$2 }' go.mod")
-GIT_TAG := $(shell git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse HEAD)
-GO_VERSION := $(shell sh -c "awk '/^go / { print \$$2 }' go.mod")
-
 MODULE_IMAGE?=docker/docker-mcp-cli-desktop-module
+MODULE := $(shell sh -c "awk '/^module/ { print \$$2 }' go.mod")
+GO_VERSION := $(shell sh -c "awk '/^go / { print \$$2 }' go.mod")
+GOLANGCI_LINT_VERSION := v2.1.6
+GIT_TAG ?= $(shell git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse HEAD)
+GO_LDFLAGS = -X $(MODULE)/cmd/docker-mcp/version.Version=$(GIT_TAG)
 
 export DOCKER_MCP_PLUGIN_BINARY := docker-mcp
 
@@ -18,18 +19,10 @@ else
 	DOCKER_MCP_CLI_PLUGIN_DST = $(DOCKER_SHELL_CLI_PLUGIN_DIR)/$(DOCKER_MCP_PLUGIN_BINARY)$(EXTENSION)
 endif
 
-
-GO_LDFLAGS = -X $(MODULE)/cmd/docker-mcp/version.Version=$(GIT_TAG)
-
-
-# golangci-lint must be pinned - linters can become more strict on upgrade
-GOLANGCI_LINT_VERSION := v2.1.6
 export GO_VERSION GO_LDFLAGS GOPRIVATE GOLANGCI_LINT_VERSION GIT_COMMIT GIT_TAG
-
 DOCKER_BUILD_ARGS := --build-arg GO_VERSION \
 					--build-arg GO_LDFLAGS \
           			--build-arg GOLANGCI_LINT_VERSION \
-          			--build-arg GIT_TAG \
           			--build-arg DOCKER_MCP_PLUGIN_BINARY \
 
 GO_TEST := go test

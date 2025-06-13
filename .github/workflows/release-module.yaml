@@ -51,7 +51,7 @@ jobs:
 
       - name: Build cross platform binaries
         run: |
-          make TAG=${{ github.event.inputs.tag }} docker-mcp-cross
+          make GIT_TAG=${{ github.event.inputs.tag }} docker-mcp-cross
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
