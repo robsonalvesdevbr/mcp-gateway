@@ -36,6 +36,12 @@ target jcat {
   output = ["type=image,name=docker/jcat"]
 }
 
+target http_proxy {
+  inherits = ["_base"]
+  context = "tools/http_proxy"
+  output = ["type=image,name=davidgageot135/http-proxy"]
+}
+
 target agents_gateway {
   inherits = ["_base"]
   context = "."
