@@ -22,8 +22,8 @@ func (c *Client) RemoveNetwork(ctx context.Context, name string) error {
 	return c.client.NetworkRemove(ctx, name)
 }
 
-func (c *Client) ConnectNetwork(ctx context.Context, networkName, containerID, hostname string) error {
-	return c.client.NetworkConnect(ctx, networkName, containerID, &network.EndpointSettings{
+func (c *Client) ConnectNetwork(ctx context.Context, networkName, container, hostname string) error {
+	return c.client.NetworkConnect(ctx, networkName, container, &network.EndpointSettings{
 		Aliases: []string{hostname},
 	})
 }

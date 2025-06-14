@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"syscall"
 
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/logs"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -57,7 +58,7 @@ func (c *stdioMCPClient) Initialize(ctx context.Context, request mcp.InitializeR
 
 	var stderr bytes.Buffer
 	if debug {
-		cmd.Stderr = io.MultiWriter(&stderr, newPrefixer(os.Stderr, "  > "+c.name+": "))
+		cmd.Stderr = io.MultiWriter(&stderr, logs.NewPrefixer(os.Stderr, "  > "+c.name+": "))
 	} else {
 		cmd.Stderr = &stderr
 	}

@@ -1,26 +1,26 @@
-package mcp
+package logs
 
 import (
 	"bytes"
 	"io"
 )
 
-type Prefixer struct {
+type prefixer struct {
 	prefix          string
 	writer          io.Writer
 	trailingNewline bool
 	buf             bytes.Buffer
 }
 
-func newPrefixer(writer io.Writer, prefix string) *Prefixer {
-	return &Prefixer{
+func NewPrefixer(writer io.Writer, prefix string) io.Writer {
+	return &prefixer{
 		prefix:          prefix,
 		writer:          writer,
 		trailingNewline: true,
 	}
 }
 
-func (pf *Prefixer) Write(payload []byte) (int, error) {
+func (pf *prefixer) Write(payload []byte) (int, error) {
 	pf.buf.Reset()
 
 	for _, b := range payload {

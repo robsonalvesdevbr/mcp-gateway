@@ -8,8 +8,8 @@ import (
 	"github.com/docker/docker/client"
 )
 
-func (c *Client) ContainerExists(ctx context.Context, containerID string) (bool, container.InspectResponse, error) {
-	response, err := c.client.ContainerInspect(ctx, containerID)
+func (c *Client) ContainerExists(ctx context.Context, container string) (bool, container.InspectResponse, error) {
+	response, err := c.client.ContainerInspect(ctx, container)
 	if client.IsErrNotFound(err) {
 		return false, response, nil
 	}

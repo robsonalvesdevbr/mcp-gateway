@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/valyala/fasthttp"
@@ -44,11 +45,15 @@ func (p *ProxyServer) Run(ctx context.Context, ln net.Listener) error {
 }
 
 func (p *ProxyServer) handleRequest(ctx *fasthttp.RequestCtx) {
-	if !p.allowedHosts[string(ctx.Host())] {
+	host := string(ctx.Host())
+
+	if !p.allowedHosts[host] {
+		fmt.Fprintln(os.Stderr, "Access DENIED to", host)
 		ctx.Response.SetStatusCode(http.StatusForbidden)
 		return
 	}
 
+	fmt.Fprintln(os.Stderr, "Access GRANTED to", host)
 	if string(ctx.Method()) == http.MethodConnect {
 		p.handleTunneling(ctx)
 	} else {

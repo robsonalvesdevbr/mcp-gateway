@@ -5,13 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/logs"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/mcp"
 )
 
-const image = "davidgageot135/http-proxy@sha256:372365af904f6dc148f51286784a193d2a48db8ae6d2b8abb98be6f77f9b3efb"
+const image = "davidgageot135/http-proxy@sha256:e021c46e5201ab824b846c956252f13e4bb5612ca30bc51e3fbbdff5d5273db6"
 
 func (g *Gateway) runProxySideCar(ctx context.Context, allowedHosts []string) (func(context.Context) error, string, error) {
 	log("  - Running proxy sidecar for hosts", allowedHosts)
@@ -22,39 +25,71 @@ func (g *Gateway) runProxySideCar(ctx context.Context, allowedHosts []string) (f
 
 	// Start the proxy.
 	// TODO: use the docker api
-	cmd := exec.CommandContext(ctx, "docker", "run", "-d", "--rm", "--label", "docker-mcp=true", "-e", "ALLOWED_HOSTS", image)
+	ctxRun, cancel := context.WithCancel(ctx)
+	name := "docker-mcp-proxy-" + randString(11)
+	args := []string{"run", "--name", name, "--label", "docker-mcp=true", "-e", "ALLOWED_HOSTS"}
+	if !g.KeepContainers {
+		args = append(args, "--rm")
+	}
+	args = append(args, image)
+
+	cmd := exec.CommandContext(ctxRun, "docker", args...)
 	cmd.Env = []string{"ALLOWED_HOSTS=" + strings.Join(allowedHosts, ",")}
-	out, err := cmd.CombinedOutput()
-	if err != nil {
+	cmd.Stderr = logs.NewPrefixer(os.Stderr, "  > http_proxy: ")
+	if err := cmd.Start(); err != nil {
+		cancel()
 		return nil, "", fmt.Errorf("starting http proxy: %w", err)
 	}
-	id := strings.TrimSpace(string(out))
+
+	// Wait for the container to be started.
+	if err := g.waitForContainer(ctx, name); err != nil {
+		cancel()
+		return nil, "", fmt.Errorf("waiting for proxy container %s to start: %w", name, err)
+	}
 
 	// Create internal network, for the MCP Servers.
-	network := "docker-mcp-internal" + randString(6)
+	network := "docker-mcp-internal" + randString(11)
 	if err := g.dockerClient.CreateNetwork(ctx, network, true, map[string]string{"docker-mcp": "true"}); err != nil {
-		_ = g.dockerClient.RemoveContainer(ctx, id, true)
+		cancel()
 		return nil, "", fmt.Errorf("creating internal network %s: %w", network, err)
 	}
 
 	cleanup := func(ctx context.Context) error {
+		cancel()
 		return errors.Join(
-			g.dockerClient.RemoveContainer(ctx, id, true),
 			g.dockerClient.RemoveNetwork(ctx, network),
 		)
 	}
 
 	// Connect the proxy to the internal network, in addition to the default bridge network.
-	if err := g.dockerClient.ConnectNetwork(ctx, network, id, "proxy"); err != nil {
+	if err := g.dockerClient.ConnectNetwork(ctx, network, name, "proxy"); err != nil {
 		_ = cleanup(ctx)
-		return nil, "", fmt.Errorf("attaching proxy to internal network %s: %w", id, err)
+		return nil, "", fmt.Errorf("attaching proxy to internal network %s: %w", name, err)
 	}
 
 	return cleanup, network, nil
 }
 
+func (g *Gateway) waitForContainer(ctx context.Context, name string) error {
+	var lastErr error
+	for range 100 {
+		ok, _, err := g.dockerClient.ContainerExists(ctx, name)
+		if ok {
+			return nil
+		}
+		lastErr = err
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	return lastErr
+}
+
 func randString(n int) string {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	b := make([]byte, n)
 	for i := range b {

@@ -77,10 +77,9 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 
 		var network string
 		if len(serverConfig.Spec.AllowHosts) > 0 {
-			// TODO: Don't start with -d
 			removeSidecar, internalNetwork, err := g.runProxySideCar(ctx, serverConfig.Spec.AllowHosts)
 			if err != nil {
-				return nil, fmt.Errorf("failed to start http proxy: %w", err)
+				return nil, err
 			}
 			cleanup = removeSidecar
 			network = internalNetwork
