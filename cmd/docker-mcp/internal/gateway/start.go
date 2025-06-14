@@ -67,14 +67,26 @@ func (g *Gateway) runToolContainer(ctx context.Context, tool catalog.Tool, reque
 }
 
 func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig, readOnly *bool) (mcpclient.Client, error) {
-	var client mcpclient.Client
+	cleanup := func(context.Context) error { return nil }
 
+	var client mcpclient.Client
 	if serverConfig.Spec.SSEEndpoint != "" {
 		client = mcpclient.NewSSEClient(serverConfig.Name, serverConfig.Spec.SSEEndpoint)
 	} else {
 		image := serverConfig.Spec.Image
 
-		args, env := g.argsAndEnv(serverConfig, readOnly)
+		var network string
+		if len(serverConfig.Spec.AllowHosts) > 0 {
+			// TODO: Don't start with -d
+			removeSidecar, internalNetwork, err := g.runProxySideCar(ctx, serverConfig.Spec.AllowHosts)
+			if err != nil {
+				return nil, fmt.Errorf("failed to start http proxy: %w", err)
+			}
+			cleanup = removeSidecar
+			network = internalNetwork
+		}
+
+		args, env := g.argsAndEnv(serverConfig, readOnly, network)
 
 		command := expandEnvList(eval.EvaluateList(serverConfig.Spec.Command, serverConfig.Config), env)
 		if len(command) == 0 {
@@ -87,6 +99,7 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 		runArgs = append(runArgs, args...)
 		runArgs = append(runArgs, image)
 		runArgs = append(runArgs, command...)
+
 		client = mcpclient.NewStdioCmdClient(serverConfig.Name, "docker", env, runArgs...)
 	}
 
@@ -108,16 +121,22 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 		return nil, fmt.Errorf("initializing %s: %w", initializedObject, err)
 	}
 
-	return client, nil
+	return newClientWithCleanup(client, cleanup), nil
 }
 
-func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool) ([]string, []string) {
+func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, network string) ([]string, []string) {
 	args := g.baseArgs(serverConfig.Name)
 	var env []string
 
 	// Security options
 	if serverConfig.Spec.DisableNetwork {
 		args = append(args, "--network", "none")
+	} else if len(serverConfig.Spec.AllowHosts) > 0 {
+		args = append(args, "-e", "http_proxy=proxy:8080")
+		args = append(args, "-e", "https_proxy=proxy:8080")
+	}
+	if network != "" {
+		args = append(args, "--network", network)
 	}
 
 	// Secrets
