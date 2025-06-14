@@ -15,8 +15,9 @@ import (
 	"sync/atomic"
 	"syscall"
 
-	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/logs"
 	"github.com/mark3labs/mcp-go/mcp"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/logs"
 )
 
 type stdioMCPClient struct {

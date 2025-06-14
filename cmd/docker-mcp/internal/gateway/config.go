@@ -17,6 +17,7 @@ type Options struct {
 	KeepContainers   bool
 	LogCalls         bool
 	BlockSecrets     bool
+	BlockNetwork     bool
 	VerifySignatures bool
 	DryRun           bool
 	Watch            bool

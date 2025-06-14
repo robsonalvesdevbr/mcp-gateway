@@ -76,7 +76,7 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 		image := serverConfig.Spec.Image
 
 		var network string
-		if len(serverConfig.Spec.AllowHosts) > 0 {
+		if g.BlockNetwork && len(serverConfig.Spec.AllowHosts) > 0 {
 			removeSidecar, internalNetwork, err := g.runProxySideCar(ctx, serverConfig.Spec.AllowHosts)
 			if err != nil {
 				return nil, err
@@ -123,19 +123,18 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 	return newClientWithCleanup(client, cleanup), nil
 }
 
-func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, network string) ([]string, []string) {
+func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, proxyNetwork string) ([]string, []string) {
 	args := g.baseArgs(serverConfig.Name)
 	var env []string
 
 	// Security options
 	if serverConfig.Spec.DisableNetwork {
 		args = append(args, "--network", "none")
-	} else if len(serverConfig.Spec.AllowHosts) > 0 {
+	}
+	if proxyNetwork != "" {
+		args = append(args, "--network", proxyNetwork)
 		args = append(args, "-e", "http_proxy=proxy:8080")
 		args = append(args, "-e", "https_proxy=proxy:8080")
-	}
-	if network != "" {
-		args = append(args, "--network", network)
 	}
 
 	// Secrets
