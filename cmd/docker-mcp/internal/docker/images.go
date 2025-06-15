@@ -6,15 +6,15 @@ import (
 	"io"
 	"runtime"
 
+	cerrdefs "github.com/containerd/errdefs"
 	"github.com/distribution/reference"
 	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/client"
 	"golang.org/x/sync/errgroup"
 )
 
 func (c *Client) ImageExists(ctx context.Context, name string) (bool, error) {
 	_, err := c.client.ContainerInspect(ctx, name)
-	if client.IsErrNotFound(err) {
+	if cerrdefs.IsNotFound(err) {
 		return false, nil
 	}
 
@@ -50,7 +50,7 @@ func (c *Client) PullImage(ctx context.Context, name string) error {
 
 func (c *Client) pullImage(ctx context.Context, imageName, registryAuth string) error {
 	inspect, err := c.client.ImageInspect(ctx, imageName)
-	if err != nil && !client.IsErrNotFound(err) {
+	if err != nil && !cerrdefs.IsNotFound(err) {
 		return fmt.Errorf("inspecting docker image %s: %w", imageName, err)
 	}
 

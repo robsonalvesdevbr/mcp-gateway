@@ -5,8 +5,8 @@ import (
 	"errors"
 	"os/exec"
 
+	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/volume"
-	"github.com/docker/docker/client"
 )
 
 const busybox = "busybox@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f"
@@ -54,7 +54,7 @@ func readFromDockerVolume(ctx context.Context, dockerClient VolumeInspecter, fil
 func findVolume(ctx context.Context, dockerClient VolumeInspecter, name string) (bool, error) {
 	_, err := dockerClient.VolumeInspect(ctx, name)
 	if err != nil {
-		if client.IsErrNotFound(err) {
+		if cerrdefs.IsNotFound(err) {
 			return false, nil
 		}
 		return false, err

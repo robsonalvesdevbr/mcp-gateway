@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 )
 
 func (c *Client) ContainerExists(ctx context.Context, container string) (bool, container.InspectResponse, error) {
 	response, err := c.client.ContainerInspect(ctx, container)
-	if client.IsErrNotFound(err) {
+	if cerrdefs.IsNotFound(err) {
 		return false, response, nil
 	}
 
