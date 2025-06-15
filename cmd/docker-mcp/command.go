@@ -102,6 +102,9 @@ func versionCommand() *cobra.Command {
 		Short: "Show the version information",
 		Use:   "version",
 		Args:  cobra.ExactArgs(0),
+		// Deactivate PersistentPreRun for this command only
+		// We don't want to check if Docker Desktop is running.
+		PersistentPreRun: func(*cobra.Command, []string) {},
 		Run: func(*cobra.Command, []string) {
 			fmt.Println(version.Version)
 		},
