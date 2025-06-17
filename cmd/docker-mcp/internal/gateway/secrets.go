@@ -16,7 +16,7 @@ type Secret struct {
 }
 
 func secretValues(ctx context.Context, names []string) (map[string]string, error) {
-	flags := []string{"--network=none"}
+	flags := []string{"--network=none", "--pull=missing"}
 	var command []string
 
 	for i, name := range names {

@@ -180,6 +180,9 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 }
 
 func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, error) {
+	start := time.Now()
+	log("- Reading configuration...")
+
 	var serverNames []string
 
 	if len(c.ServerNames) > 0 {
@@ -219,6 +222,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 		}
 	}
 
+	log("- Configuration read in", time.Since(start))
 	return Configuration{
 		serverNames: serverNames,
 		servers:     servers,
@@ -228,7 +232,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 }
 
 func (c *FileBasedConfiguration) readCatalog(ctx context.Context) (catalog.Catalog, error) {
-	log("- Reading catalog from", c.CatalogPath)
+	log("  - Reading catalog from", c.CatalogPath)
 	return catalog.ReadFrom(ctx, c.CatalogPath)
 }
 
@@ -237,7 +241,7 @@ func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Regis
 		return config.Registry{}, nil
 	}
 
-	log("- Reading registry from", c.RegistryPath)
+	log("  - Reading registry from", c.RegistryPath)
 	yaml, err := config.ReadConfigFile(ctx, c.docker, c.RegistryPath)
 	if err != nil {
 		return config.Registry{}, fmt.Errorf("reading registry.yaml: %w", err)
@@ -256,7 +260,7 @@ func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map
 		return map[string]map[string]any{}, nil
 	}
 
-	log("- Reading config from", c.ConfigPath)
+	log("  - Reading config from", c.ConfigPath)
 	yaml, err := config.ReadConfigFile(ctx, c.docker, c.ConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading config.yaml: %w", err)
@@ -283,7 +287,11 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 		}
 	}
 
-	log("- Reading secrets", secretNames)
+	log("  - Reading secrets", secretNames)
+	if len(secretNames) == 0 {
+		return map[string]string{}, nil
+	}
+
 	secretsByName, err := secretValues(ctx, secretNames)
 	if err != nil {
 		return nil, fmt.Errorf("finding secrets %s: %w", secretNames, err)
