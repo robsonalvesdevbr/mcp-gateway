@@ -2,7 +2,6 @@ package catalog
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/user"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/yq"
 )
 
@@ -63,7 +63,7 @@ func setCatalogMetaData(yamlData []byte, meta MetaData) ([]byte, error) {
 }
 
 func toCatalogFilePath(name string) (string, error) {
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return "", err
 	}

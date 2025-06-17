@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/user"
 )
 
 func ReadConfig(ctx context.Context, dockerClient VolumeInspecter) ([]byte, error) {
@@ -68,7 +70,7 @@ func FilePath(name string) (string, error) {
 		return name, nil
 	}
 
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return "", err
 	}
