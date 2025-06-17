@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/desktop"
 )
 
 const jcatImage = "docker/jcat@sha256:76719466e8b99a65dd1d37d9ab94108851f009f0f687dce7ff8a6fc90575c4d4"
@@ -30,7 +30,7 @@ func secretValues(ctx context.Context, names []string) (map[string]string, error
 	args = append(args, jcatImage)
 	args = append(args, command...)
 
-	buf, err := docker.RunOnDockerDesktop(ctx, args...)
+	buf, err := desktop.RunWithRawDockerSocket(ctx, args...)
 	if err != nil {
 		return nil, err
 	}
