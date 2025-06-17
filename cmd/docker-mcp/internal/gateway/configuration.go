@@ -209,13 +209,13 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 		var err error
 		secrets, err = c.readSecretsFromFile(ctx, c.SecretsPath)
 		if err != nil {
-			return Configuration{}, fmt.Errorf("reading secrets: %w", err)
+			return Configuration{}, err
 		}
 	} else {
 		var err error
 		secrets, err = c.readDockerDesktopSecrets(ctx, servers, serverNames)
 		if err != nil {
-			return Configuration{}, fmt.Errorf("reading secrets: %w", err)
+			return Configuration{}, err
 		}
 	}
 
