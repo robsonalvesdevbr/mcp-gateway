@@ -6,14 +6,11 @@ import (
 	"os/exec"
 
 	cerrdefs "github.com/containerd/errdefs"
-	"github.com/docker/docker/api/types/volume"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 )
 
 const busybox = "busybox@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f"
-
-type VolumeInspecter interface {
-	VolumeInspect(ctx context.Context, volumeID string) (volume.Volume, error)
-}
 
 type ExitCodeErr interface {
 	ExitCode() int
@@ -24,11 +21,11 @@ var CmdOutput = func(cmd *exec.Cmd) ([]byte, error) {
 	return cmd.Output()
 }
 
-func readFromDockerVolume(ctx context.Context, dockerClient VolumeInspecter, filename string) ([]byte, error) {
+func readFromDockerVolume(ctx context.Context, docker docker.Client, filename string) ([]byte, error) {
 	volumeName := "docker-prompts"
 
 	// Check that the volume exists. If it doesn't, it's ok, assume empty configuration.
-	found, err := findVolume(ctx, dockerClient, volumeName)
+	found, err := findVolume(ctx, docker, volumeName)
 	if err != nil {
 		return nil, err
 	}
@@ -51,9 +48,8 @@ func readFromDockerVolume(ctx context.Context, dockerClient VolumeInspecter, fil
 	return out, nil
 }
 
-func findVolume(ctx context.Context, dockerClient VolumeInspecter, name string) (bool, error) {
-	_, err := dockerClient.VolumeInspect(ctx, name)
-	if err != nil {
+func findVolume(ctx context.Context, docker docker.Client, name string) (bool, error) {
+	if _, err := docker.InspectVolume(ctx, name); err != nil {
 		if cerrdefs.IsNotFound(err) {
 			return false, nil
 		}

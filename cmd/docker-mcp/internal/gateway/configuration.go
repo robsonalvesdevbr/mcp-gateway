@@ -14,6 +14,7 @@ import (
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/catalog"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/config"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 )
 
 type Configurator interface {
@@ -99,7 +100,7 @@ type FileBasedConfiguration struct {
 	SecretsPath  string // Optional, if not set, use Docker Desktop's secrets API
 	Watch        bool
 
-	DockerClient config.VolumeInspecter
+	docker docker.Client
 }
 
 func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan Configuration, func() error, error) {
@@ -231,7 +232,7 @@ func (c *FileBasedConfiguration) readCatalog(ctx context.Context) (catalog.Catal
 }
 
 func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Registry, error) {
-	yaml, err := config.ReadConfigFile(ctx, c.DockerClient, c.RegistryPath)
+	yaml, err := config.ReadConfigFile(ctx, c.docker, c.RegistryPath)
 	if err != nil {
 		return config.Registry{}, fmt.Errorf("reading registry.yaml: %w", err)
 	}
@@ -249,7 +250,7 @@ func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map
 		return map[string]map[string]any{}, nil
 	}
 
-	yaml, err := config.ReadConfigFile(ctx, c.DockerClient, c.ConfigPath)
+	yaml, err := config.ReadConfigFile(ctx, c.docker, c.ConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading config.yaml: %w", err)
 	}

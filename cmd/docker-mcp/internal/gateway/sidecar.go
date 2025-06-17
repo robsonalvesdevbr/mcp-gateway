@@ -19,7 +19,7 @@ const image = "davidgageot135/http-proxy@sha256:e021c46e5201ab824b846c956252f13e
 func (g *Gateway) runProxySideCar(ctx context.Context, allowedHosts []string) (func(context.Context) error, string, error) {
 	log("  - Running proxy sidecar for hosts", allowedHosts)
 
-	if err := g.dockerClient.PullImage(ctx, image); err != nil {
+	if err := g.docker.PullImage(ctx, image); err != nil {
 		return nil, "", fmt.Errorf("pulling image %s: %w", image, err)
 	}
 
@@ -49,7 +49,7 @@ func (g *Gateway) runProxySideCar(ctx context.Context, allowedHosts []string) (f
 
 	// Create internal network, for the MCP Servers.
 	network := "docker-mcp-internal" + randString(11)
-	if err := g.dockerClient.CreateNetwork(ctx, network, true, map[string]string{"docker-mcp": "true"}); err != nil {
+	if err := g.docker.CreateNetwork(ctx, network, true, map[string]string{"docker-mcp": "true"}); err != nil {
 		cancel()
 		return nil, "", fmt.Errorf("creating internal network %s: %w", network, err)
 	}
@@ -57,12 +57,12 @@ func (g *Gateway) runProxySideCar(ctx context.Context, allowedHosts []string) (f
 	cleanup := func(ctx context.Context) error {
 		cancel()
 		return errors.Join(
-			g.dockerClient.RemoveNetwork(ctx, network),
+			g.docker.RemoveNetwork(ctx, network),
 		)
 	}
 
 	// Connect the proxy to the internal network, in addition to the default bridge network.
-	if err := g.dockerClient.ConnectNetwork(ctx, network, name, "proxy"); err != nil {
+	if err := g.docker.ConnectNetwork(ctx, network, name, "proxy"); err != nil {
 		_ = cleanup(ctx)
 		return nil, "", fmt.Errorf("attaching proxy to internal network %s: %w", name, err)
 	}
@@ -73,7 +73,7 @@ func (g *Gateway) runProxySideCar(ctx context.Context, allowedHosts []string) (f
 func (g *Gateway) waitForContainer(ctx context.Context, name string) error {
 	var lastErr error
 	for range 100 {
-		ok, _, err := g.dockerClient.ContainerExists(ctx, name)
+		ok, _, err := g.docker.ContainerExists(ctx, name)
 		if ok {
 			return nil
 		}

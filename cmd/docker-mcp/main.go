@@ -12,6 +12,7 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/version"
 )
 
@@ -30,7 +31,8 @@ func main() {
 	}
 
 	plugin.Run(func(dockerCli command.Cli) *cobra.Command {
-		return rootCommand(ctx, cwd, dockerCli)
+		dockerClient := docker.NewClient(dockerCli)
+		return rootCommand(ctx, cwd, dockerClient)
 	},
 		manager.Metadata{
 			SchemaVersion:    "0.1.0",

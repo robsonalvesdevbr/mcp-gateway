@@ -1,16 +1,36 @@
 package docker
 
 import (
+	"context"
+	"sync"
+
 	"github.com/docker/cli/cli/command"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
 )
 
-type Client struct {
-	client client.APIClient
+type Client interface {
+	ContainerExists(ctx context.Context, container string) (bool, container.InspectResponse, error)
+	RemoveContainer(ctx context.Context, containerID string, force bool) error
+	StartContainer(ctx context.Context, containerID string, containerConfig container.Config, hostConfig container.HostConfig) error
+	ImageExists(ctx context.Context, name string) (bool, error)
+	PullImage(ctx context.Context, name string) error
+	PullImages(ctx context.Context, names ...string) error
+	CreateNetwork(ctx context.Context, name string, internal bool, labels map[string]string) error
+	RemoveNetwork(ctx context.Context, name string) error
+	ConnectNetwork(ctx context.Context, networkName, container, hostname string) error
+	InspectVolume(ctx context.Context, name string) (volume.Volume, error)
 }
 
-func NewClient(cli command.Cli) *Client {
-	return &Client{
-		client: cli.Client(),
+type dockerClient struct {
+	apiClient func() client.APIClient
+}
+
+func NewClient(cli command.Cli) Client {
+	return &dockerClient{
+		apiClient: sync.OnceValue(func() client.APIClient {
+			return cli.Client()
+		}),
 	}
 }

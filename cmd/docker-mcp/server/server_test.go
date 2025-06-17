@@ -16,12 +16,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/config"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 )
 
 func TestListVolumeNotFound(t *testing.T) {
-	ctx, home, dockerAPI := setup(t, withoutPromptsVolume())
+	ctx, home, docker := setup(t, withoutPromptsVolume())
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Empty(t, enabled)
 
@@ -29,9 +30,9 @@ func TestListVolumeNotFound(t *testing.T) {
 }
 
 func TestListEmptyVolume(t *testing.T) {
-	ctx, home, dockerAPI := setup(t, withEmptyPromptsVolume())
+	ctx, home, docker := setup(t, withEmptyPromptsVolume())
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Empty(t, enabled)
 
@@ -39,9 +40,9 @@ func TestListEmptyVolume(t *testing.T) {
 }
 
 func TestListImportVolume(t *testing.T) {
-	ctx, home, dockerAPI := setup(t, withRegistryYamlInPromptsVolume("registry:\n  github-official:\n    ref: \"\""))
+	ctx, home, docker := setup(t, withRegistryYamlInPromptsVolume("registry:\n  github-official:\n    ref: \"\""))
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"github-official"}, enabled)
 
@@ -49,90 +50,90 @@ func TestListImportVolume(t *testing.T) {
 }
 
 func TestListEmpty(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withEmptyRegistryYaml())
+	ctx, _, docker := setup(t, withEmptyRegistryYaml())
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Empty(t, enabled)
 }
 
 func TestList(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withRegistryYaml("registry:\n  git:\n    ref: \"\""))
+	ctx, _, docker := setup(t, withRegistryYaml("registry:\n  git:\n    ref: \"\""))
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"git"}, enabled)
 }
 
 func TestEnableNotFound(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withEmptyRegistryYaml(), withEmptyCatalog())
+	ctx, _, docker := setup(t, withEmptyRegistryYaml(), withEmptyCatalog())
 
-	err := Enable(ctx, dockerAPI, []string{"duckduckgo"})
+	err := Enable(ctx, docker, []string{"duckduckgo"})
 	require.ErrorContains(t, err, "server duckduckgo not found in catalog")
 }
 
 func TestEnable(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withEmptyRegistryYaml(), withCatalog("registry:\n  duckduckgo:\n"))
+	ctx, _, docker := setup(t, withEmptyRegistryYaml(), withCatalog("registry:\n  duckduckgo:\n"))
 
-	err := Enable(ctx, dockerAPI, []string{"duckduckgo"})
+	err := Enable(ctx, docker, []string{"duckduckgo"})
 	require.NoError(t, err)
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"duckduckgo"}, enabled)
 }
 
 func TestDisable(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withRegistryYaml("registry:\n  duckduckgo:\n    ref: \"\"\n  git:\n    ref: \"\""), withCatalog("registry:\n  git:\n  duckduckgo:\n"))
+	ctx, _, docker := setup(t, withRegistryYaml("registry:\n  duckduckgo:\n    ref: \"\"\n  git:\n    ref: \"\""), withCatalog("registry:\n  git:\n  duckduckgo:\n"))
 
-	err := Disable(ctx, dockerAPI, []string{"duckduckgo"})
+	err := Disable(ctx, docker, []string{"duckduckgo"})
 	require.NoError(t, err)
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"git"}, enabled)
 }
 
 func TestDisableUnknown(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withRegistryYaml("registry:\n  duckduckgo:\n    ref: \"\""), withCatalog("registry:\n  duckduckgo:\n"))
+	ctx, _, docker := setup(t, withRegistryYaml("registry:\n  duckduckgo:\n    ref: \"\""), withCatalog("registry:\n  duckduckgo:\n"))
 
-	err := Disable(ctx, dockerAPI, []string{"unknown"})
+	err := Disable(ctx, docker, []string{"unknown"})
 	require.NoError(t, err)
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"duckduckgo"}, enabled)
 }
 
 func TestRemoveOutdatedServerOnEnable(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withRegistryYaml("registry:\n  outdated:\n    ref: \"\""), withCatalog("registry:\n  git:\n"))
+	ctx, _, docker := setup(t, withRegistryYaml("registry:\n  outdated:\n    ref: \"\""), withCatalog("registry:\n  git:\n"))
 
-	err := Enable(ctx, dockerAPI, []string{"git"})
+	err := Enable(ctx, docker, []string{"git"})
 	require.NoError(t, err)
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"git"}, enabled)
 }
 
 func TestRemoveOutdatedServerOnDisable(t *testing.T) {
-	ctx, _, dockerAPI := setup(t, withRegistryYaml("registry:\n  outdated:\n    ref: \"\""), withEmptyCatalog())
+	ctx, _, docker := setup(t, withRegistryYaml("registry:\n  outdated:\n    ref: \"\""), withEmptyCatalog())
 
-	err := Disable(ctx, dockerAPI, []string{"git"})
+	err := Disable(ctx, docker, []string{"git"})
 	require.NoError(t, err)
 
-	enabled, err := List(ctx, dockerAPI)
+	enabled, err := List(ctx, docker)
 	require.NoError(t, err)
 	assert.Empty(t, enabled)
 }
 
 // Fixtures
 
-func setup(t *testing.T, options ...option) (context.Context, string, config.VolumeInspecter) {
+func setup(t *testing.T, options ...option) (context.Context, string, docker.Client) {
 	t.Helper()
 
 	// Mock for Docker API
-	dockerAPI := &fakeDockerAPI{}
+	docker := &fakeDocker{}
 
 	// Create a temporary directory for the home directory
 	home := t.TempDir()
@@ -143,10 +144,10 @@ func setup(t *testing.T, options ...option) (context.Context, string, config.Vol
 	}
 
 	for _, o := range options {
-		o(t, home, dockerAPI)
+		o(t, home, docker)
 	}
 
-	return t.Context(), home, dockerAPI
+	return t.Context(), home, docker
 }
 
 func writeFile(t *testing.T, path string, content []byte) {
@@ -157,12 +158,13 @@ func writeFile(t *testing.T, path string, content []byte) {
 	require.NoError(t, err)
 }
 
-type fakeDockerAPI struct {
+type fakeDocker struct {
+	docker.Client
 	volume     volume.Volume
 	inspectErr error
 }
 
-func (f *fakeDockerAPI) VolumeInspect(context.Context, string) (volume.Volume, error) {
+func (f *fakeDocker) InspectVolume(context.Context, string) (volume.Volume, error) {
 	return f.volume, f.inspectErr
 }
 
@@ -178,18 +180,18 @@ func (e *exitCodeErr) Error() string {
 	return strconv.Itoa(e.exitCode)
 }
 
-type option func(*testing.T, string, *fakeDockerAPI)
+type option func(*testing.T, string, *fakeDocker)
 
 func withoutPromptsVolume() option {
-	return func(_ *testing.T, _ string, dockerAPI *fakeDockerAPI) {
-		dockerAPI.inspectErr = errdefs.NotFound(errors.New("volume not found"))
+	return func(_ *testing.T, _ string, dockerCLI *fakeDocker) {
+		dockerCLI.inspectErr = errdefs.NotFound(errors.New("volume not found"))
 	}
 }
 
 func withEmptyPromptsVolume() option {
-	return func(t *testing.T, _ string, dockerAPI *fakeDockerAPI) {
+	return func(t *testing.T, _ string, dockerCLI *fakeDocker) {
 		t.Helper()
-		dockerAPI.inspectErr = nil
+		dockerCLI.inspectErr = nil
 
 		cmdOutput := config.CmdOutput
 		t.Cleanup(func() { config.CmdOutput = cmdOutput })
@@ -200,9 +202,9 @@ func withEmptyPromptsVolume() option {
 }
 
 func withRegistryYamlInPromptsVolume(yaml string) option {
-	return func(t *testing.T, _ string, dockerAPI *fakeDockerAPI) {
+	return func(t *testing.T, _ string, dockerCLI *fakeDocker) {
 		t.Helper()
-		dockerAPI.inspectErr = nil
+		dockerCLI.inspectErr = nil
 
 		cmdOutput := config.CmdOutput
 		t.Cleanup(func() { config.CmdOutput = cmdOutput })
@@ -213,7 +215,7 @@ func withRegistryYamlInPromptsVolume(yaml string) option {
 }
 
 func withRegistryYaml(yaml string) option {
-	return func(t *testing.T, home string, _ *fakeDockerAPI) {
+	return func(t *testing.T, home string, _ *fakeDocker) {
 		t.Helper()
 		writeFile(t, filepath.Join(home, ".docker/mcp/registry.yaml"), []byte(yaml))
 	}
@@ -224,7 +226,7 @@ func withEmptyRegistryYaml() option {
 }
 
 func withCatalog(yaml string) option {
-	return func(t *testing.T, home string, _ *fakeDockerAPI) {
+	return func(t *testing.T, home string, _ *fakeDocker) {
 		t.Helper()
 		writeFile(t, filepath.Join(home, ".docker/mcp/catalogs/docker-mcp.yaml"), []byte(yaml))
 	}

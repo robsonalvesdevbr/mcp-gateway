@@ -8,13 +8,13 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli-plugins/plugin"
-	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/catalog"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/client"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/config"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/desktop"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/gateway"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/oauth"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/secret-management/policy"
@@ -41,7 +41,7 @@ Examples:
 `
 
 // rootCommand returns the root command for the init plugin
-func rootCommand(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.Command {
+func rootCommand(ctx context.Context, cwd string, docker docker.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "mcp [OPTIONS]",
 		TraverseChildren: true,
@@ -77,9 +77,9 @@ func rootCommand(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.
 	cmd.AddCommand(client.NewClientCmd(cwd))
 	cmd.AddCommand(catalog.NewCatalogCmd())
 	cmd.AddCommand(versionCommand())
-	cmd.AddCommand(gatewayCommand(dockerCli))
-	cmd.AddCommand(configCommand(dockerCli))
-	cmd.AddCommand(serverCommand(dockerCli))
+	cmd.AddCommand(gatewayCommand(docker))
+	cmd.AddCommand(configCommand(docker))
+	cmd.AddCommand(serverCommand(docker))
 	cmd.AddCommand(toolsCommand())
 
 	if os.Getenv("DOCKER_MCP_SHOW_HIDDEN") == "1" {
@@ -111,7 +111,7 @@ func versionCommand() *cobra.Command {
 	}
 }
 
-func gatewayCommand(dockerCli command.Cli) *cobra.Command {
+func gatewayCommand(docker docker.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gateway",
 		Short: "Manage the MCP Server gateway",
@@ -152,7 +152,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Run the gateway",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return gateway.NewGateway(options, dockerCli).Run(cmd.Context())
+			return gateway.NewGateway(options, docker).Run(cmd.Context())
 		},
 	}
 
@@ -180,7 +180,7 @@ func gatewayCommand(dockerCli command.Cli) *cobra.Command {
 
 // TODO(dga): Those commands are a first step to delegating the work to the CLI.
 // names and hierarchy are not final.
-func configCommand(dockerCli command.Cli) *cobra.Command {
+func configCommand(docker docker.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
 		Short: "Manage the configuration",
@@ -191,7 +191,7 @@ func configCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Read the configuration",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			content, err := config.ReadConfig(cmd.Context(), dockerCli.Client())
+			content, err := config.ReadConfig(cmd.Context(), docker)
 			if err != nil {
 				return err
 			}
@@ -221,7 +221,7 @@ func configCommand(dockerCli command.Cli) *cobra.Command {
 
 // TODO(dga): Those commands are a first step to delegating the work to the CLI.
 // names and hierarchy are not final.
-func serverCommand(dockerCli command.Cli) *cobra.Command {
+func serverCommand(docker docker.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "server",
 		Short: "Manage servers",
@@ -234,7 +234,7 @@ func serverCommand(dockerCli command.Cli) *cobra.Command {
 		Short:   "list enabled servers",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			list, err := server.List(cmd.Context(), dockerCli.Client())
+			list, err := server.List(cmd.Context(), docker)
 			if err != nil {
 				return err
 			}
@@ -264,7 +264,7 @@ func serverCommand(dockerCli command.Cli) *cobra.Command {
 		Short:   "Enable a server or multiple servers",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.Enable(cmd.Context(), dockerCli.Client(), args)
+			return server.Enable(cmd.Context(), docker, args)
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
@@ -273,7 +273,7 @@ func serverCommand(dockerCli command.Cli) *cobra.Command {
 		Short:   "Disable a server or multiple servers",
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.Disable(cmd.Context(), dockerCli.Client(), args)
+			return server.Disable(cmd.Context(), docker, args)
 		},
 	})
 	cmd.AddCommand(&cobra.Command{

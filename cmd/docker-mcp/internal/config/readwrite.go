@@ -5,15 +5,16 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/user"
 )
 
-func ReadConfig(ctx context.Context, dockerClient VolumeInspecter) ([]byte, error) {
-	return ReadConfigFile(ctx, dockerClient, "config.yaml")
+func ReadConfig(ctx context.Context, docker docker.Client) ([]byte, error) {
+	return ReadConfigFile(ctx, docker, "config.yaml")
 }
 
-func ReadRegistry(ctx context.Context, dockerClient VolumeInspecter) ([]byte, error) {
-	return ReadConfigFile(ctx, dockerClient, "registry.yaml")
+func ReadRegistry(ctx context.Context, docker docker.Client) ([]byte, error) {
+	return ReadConfigFile(ctx, docker, "registry.yaml")
 }
 
 func WriteConfig(content []byte) error {
@@ -24,7 +25,7 @@ func WriteRegistry(content []byte) error {
 	return writeConfigFile("registry.yaml", content)
 }
 
-func ReadConfigFile(ctx context.Context, dockerClient VolumeInspecter, name string) ([]byte, error) {
+func ReadConfigFile(ctx context.Context, docker docker.Client, name string) ([]byte, error) {
 	path, err := FilePath(name)
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func ReadConfigFile(ctx context.Context, dockerClient VolumeInspecter, name stri
 		}
 
 		// File does not exist, import from legacy docker volume
-		content, err := readFromDockerVolume(ctx, dockerClient, name)
+		content, err := readFromDockerVolume(ctx, docker, name)
 		if err != nil {
 			return nil, err
 		}

@@ -12,8 +12,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (c *Client) ImageExists(ctx context.Context, name string) (bool, error) {
-	_, err := c.client.ContainerInspect(ctx, name)
+func (c *dockerClient) ImageExists(ctx context.Context, name string) (bool, error) {
+	_, err := c.apiClient().ContainerInspect(ctx, name)
 	if cerrdefs.IsNotFound(err) {
 		return false, nil
 	}
@@ -21,7 +21,7 @@ func (c *Client) ImageExists(ctx context.Context, name string) (bool, error) {
 	return err == nil, err
 }
 
-func (c *Client) PullImages(ctx context.Context, names ...string) error {
+func (c *dockerClient) PullImages(ctx context.Context, names ...string) error {
 	registryAuth, err := getRegistryAuth(ctx)
 	if err != nil {
 		return fmt.Errorf("getting registryAuth: %w", err)
@@ -39,7 +39,7 @@ func (c *Client) PullImages(ctx context.Context, names ...string) error {
 	return errs.Wait()
 }
 
-func (c *Client) PullImage(ctx context.Context, name string) error {
+func (c *dockerClient) PullImage(ctx context.Context, name string) error {
 	registryAuth, err := getRegistryAuth(ctx)
 	if err != nil {
 		return fmt.Errorf("getting registryAuth: %w", err)
@@ -48,8 +48,8 @@ func (c *Client) PullImage(ctx context.Context, name string) error {
 	return c.pullImage(ctx, name, registryAuth)
 }
 
-func (c *Client) pullImage(ctx context.Context, imageName, registryAuth string) error {
-	inspect, err := c.client.ImageInspect(ctx, imageName)
+func (c *dockerClient) pullImage(ctx context.Context, imageName, registryAuth string) error {
+	inspect, err := c.apiClient().ImageInspect(ctx, imageName)
 	if err != nil && !cerrdefs.IsNotFound(err) {
 		return fmt.Errorf("inspecting docker image %s: %w", imageName, err)
 	}
@@ -74,7 +74,7 @@ func (c *Client) pullImage(ctx context.Context, imageName, registryAuth string) 
 		RegistryAuth: registryAuth,
 	}
 
-	response, err := c.client.ImagePull(ctx, imageName, pullOptions)
+	response, err := c.apiClient().ImagePull(ctx, imageName, pullOptions)
 	if err != nil {
 		return fmt.Errorf("pulling docker image %s: %w", imageName, err)
 	}

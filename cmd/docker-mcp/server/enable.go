@@ -9,19 +9,20 @@ import (
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/catalog"
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/config"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 )
 
-func Disable(ctx context.Context, dockerClient config.VolumeInspecter, serverNames []string) error {
-	return update(ctx, dockerClient, nil, serverNames)
+func Disable(ctx context.Context, docker docker.Client, serverNames []string) error {
+	return update(ctx, docker, nil, serverNames)
 }
 
-func Enable(ctx context.Context, dockerClient config.VolumeInspecter, serverNames []string) error {
-	return update(ctx, dockerClient, serverNames, nil)
+func Enable(ctx context.Context, docker docker.Client, serverNames []string) error {
+	return update(ctx, docker, serverNames, nil)
 }
 
-func update(ctx context.Context, dockerClient config.VolumeInspecter, add []string, remove []string) error {
+func update(ctx context.Context, docker docker.Client, add []string, remove []string) error {
 	// Read registry.yaml that contains which servers are enabled.
-	registryYAML, err := config.ReadRegistry(ctx, dockerClient)
+	registryYAML, err := config.ReadRegistry(ctx, docker)
 	if err != nil {
 		return fmt.Errorf("reading registry config: %w", err)
 	}

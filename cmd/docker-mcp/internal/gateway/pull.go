@@ -40,7 +40,7 @@ func (g *Gateway) pullImages(ctx context.Context, images []string) error {
 	start := time.Now()
 	log("- Pulling images", imageBaseNames(images))
 
-	if err := g.dockerClient.PullImages(ctx, images...); err != nil {
+	if err := g.docker.PullImages(ctx, images...); err != nil {
 		return fmt.Errorf("pulling docker images: %w", err)
 	}
 

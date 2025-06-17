@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/cli/cli/command"
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
@@ -19,14 +18,14 @@ import (
 
 type Gateway struct {
 	Options
-	dockerClient *docker.Client
+	docker       docker.Client
 	configurator Configurator
 }
 
-func NewGateway(config Config, dockerCli command.Cli) *Gateway {
+func NewGateway(config Config, docker docker.Client) *Gateway {
 	return &Gateway{
-		Options:      config.Options,
-		dockerClient: docker.NewClient(dockerCli),
+		Options: config.Options,
+		docker:  docker,
 		configurator: &FileBasedConfiguration{
 			ServerNames:  config.ServerNames,
 			CatalogPath:  config.CatalogPath,
@@ -34,7 +33,7 @@ func NewGateway(config Config, dockerCli command.Cli) *Gateway {
 			ConfigPath:   config.ConfigPath,
 			SecretsPath:  config.SecretsPath,
 			Watch:        config.Watch,
-			DockerClient: dockerCli.Client(),
+			docker:       docker,
 		},
 	}
 }

@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/config"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/docker"
 )
 
-func List(ctx context.Context, dockerClient config.VolumeInspecter) ([]string, error) {
-	registryYAML, err := config.ReadRegistry(ctx, dockerClient)
+func List(ctx context.Context, docker docker.Client) ([]string, error) {
+	registryYAML, err := config.ReadRegistry(ctx, docker)
 	if err != nil {
 		return nil, err
 	}
