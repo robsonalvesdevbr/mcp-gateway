@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/user"
 )
 
 func getDockerDesktopPaths() (DockerDesktopPaths, error) {
@@ -14,7 +16,7 @@ func getDockerDesktopPaths() (DockerDesktopPaths, error) {
 			return DockerDesktopPaths{}, err
 		}
 
-		home, err := os.UserHomeDir()
+		home, err := user.HomeDir()
 		if err != nil {
 			return DockerDesktopPaths{}, err
 		}

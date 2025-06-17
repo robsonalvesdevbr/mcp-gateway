@@ -2,12 +2,12 @@ package docker
 
 import (
 	"context"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 
 	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/desktop"
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/user"
 )
 
 func RunOnDockerDesktop(ctx context.Context, args ...string) ([]byte, error) {
@@ -18,7 +18,7 @@ func RunOnDockerDesktop(ctx context.Context, args ...string) ([]byte, error) {
 	if runtime.GOOS == "windows" {
 		host = "npipe:////./pipe/docker_engine_linux"
 	} else {
-		home, err := os.UserHomeDir()
+		home, err := user.HomeDir()
 		if err != nil {
 			return nil, err
 		}

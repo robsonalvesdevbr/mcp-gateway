@@ -24,8 +24,13 @@ linters:
     - testifylint
     - intrange
     - thelper
+    - forbidigo
 
   settings:
+    forbidigo:
+      forbid:
+        - pattern: ^os\.UserHomeDir
+          message: "Do not use os.UserHomeDir(). Use user.HomeDir() instead."
     gocritic:
       disabled-checks:
         - ifElseChain

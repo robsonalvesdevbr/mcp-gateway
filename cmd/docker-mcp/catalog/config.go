@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/user"
 )
 
 const (
@@ -24,10 +26,11 @@ type Catalog struct {
 }
 
 func ReadConfig() (*Config, error) {
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return nil, err
 	}
+
 	configFilePath := filepath.Join(homeDir, ".docker", configDir, configFile)
 	data, err := os.ReadFile(configFilePath)
 	if os.IsNotExist(err) {
@@ -86,10 +89,11 @@ func WriteCatalogFile(name string, content []byte) error {
 }
 
 func assertConfigDirsExist() error {
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return err
 	}
+
 	dir := filepath.Join(homeDir, ".docker", configDir, catalogsDir)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		return os.MkdirAll(dir, 0o755)
@@ -105,10 +109,11 @@ func writeConfig(cfg *Config) error {
 	if err := assertConfigDirsExist(); err != nil {
 		return err
 	}
-	homeDir, err := os.UserHomeDir()
+	homeDir, err := user.HomeDir()
 	if err != nil {
 		return err
 	}
+
 	configFilePath := filepath.Join(homeDir, ".docker", configDir, configFile)
 	data, err := json.MarshalIndent(cfg, "", "  ")
 	if err != nil {

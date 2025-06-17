@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/docker/mcp-cli/cmd/docker-mcp/internal/user"
 )
 
 func Get(ctx context.Context) (Catalog, error) {
@@ -78,10 +80,11 @@ func readFileOrURL(ctx context.Context, fileOrURL string) ([]byte, error) {
 		return buf, nil
 
 	default:
-		homeDir, err := os.UserHomeDir()
+		homeDir, err := user.HomeDir()
 		if err != nil {
 			return nil, err
 		}
+
 		path := filepath.Join(homeDir, ".docker", "mcp", "catalogs", fileOrURL)
 
 		buf, err := os.ReadFile(path)
