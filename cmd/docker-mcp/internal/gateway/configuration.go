@@ -162,14 +162,14 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 	}()
 
 	if registryPath != "" {
-		log("Watching registry at", registryPath)
+		log("- Watching registry at", registryPath)
 		if err := watcher.Add(registryPath); err != nil {
 			_ = watcher.Close()
 			return Configuration{}, nil, nil, err
 		}
 	}
 	if configPath != "" {
-		log("Watching config at", configPath)
+		log("- Watching config at", configPath)
 		if err := watcher.Add(configPath); err != nil {
 			_ = watcher.Close()
 			return Configuration{}, nil, nil, err
