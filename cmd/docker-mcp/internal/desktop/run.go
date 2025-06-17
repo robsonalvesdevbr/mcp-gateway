@@ -14,7 +14,6 @@ func RunWithRawDockerSocket(ctx context.Context, args ...string) ([]byte, error)
 		prefix = "npipe://"
 	}
 	path := prefix + Paths().RawDockerSocket
-
 	args = append([]string{"-H", path, "run", "--rm"}, args...)
 	return exec.CommandContext(ctx, "docker", args...).Output()
 }

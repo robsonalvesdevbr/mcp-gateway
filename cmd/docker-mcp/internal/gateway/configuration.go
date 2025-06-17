@@ -228,10 +228,16 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 }
 
 func (c *FileBasedConfiguration) readCatalog(ctx context.Context) (catalog.Catalog, error) {
+	log("- Reading catalog from", c.CatalogPath)
 	return catalog.ReadFrom(ctx, c.CatalogPath)
 }
 
 func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Registry, error) {
+	if c.RegistryPath == "" {
+		return config.Registry{}, nil
+	}
+
+	log("- Reading registry from", c.RegistryPath)
 	yaml, err := config.ReadConfigFile(ctx, c.docker, c.RegistryPath)
 	if err != nil {
 		return config.Registry{}, fmt.Errorf("reading registry.yaml: %w", err)
@@ -250,6 +256,7 @@ func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map
 		return map[string]map[string]any{}, nil
 	}
 
+	log("- Reading config from", c.ConfigPath)
 	yaml, err := config.ReadConfigFile(ctx, c.docker, c.ConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("reading config.yaml: %w", err)
@@ -276,6 +283,7 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 		}
 	}
 
+	log("- Reading secrets", secretNames)
 	secretsByName, err := secretValues(ctx, secretNames)
 	if err != nil {
 		return nil, fmt.Errorf("finding secrets %s: %w", secretNames, err)
