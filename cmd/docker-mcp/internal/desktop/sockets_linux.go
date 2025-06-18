@@ -36,6 +36,7 @@ func getDockerDesktopPaths() (DockerDesktopPaths, error) {
 	return DockerDesktopPaths{
 		AdminSettingPath:     "/usr/share/docker-desktop/admin-settings.json",
 		BackendSocket:        "/run/host-services/backend.sock",
+		RawDockerSocket:      "/var/run/docker.sock.raw",
 		JFSSocket:            "/run/host-services/jfs.sock",
 		ToolsSocket:          "/run/host-services/tools.sock",
 		CredentialHelperPath: getCredentialHelperPath,

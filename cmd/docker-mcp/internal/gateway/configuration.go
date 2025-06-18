@@ -209,7 +209,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 	}
 
 	var secrets map[string]string
-	if c.SecretsPath != "" || os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
+	if c.SecretsPath != "" {
 		var err error
 		secrets, err = c.readSecretsFromFile(ctx, c.SecretsPath)
 		if err != nil {
@@ -302,16 +302,19 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 }
 
 func (c *FileBasedConfiguration) readSecretsFromFile(ctx context.Context, path string) (map[string]string, error) {
+	secrets := map[string]string{}
+
 	if path == "" {
-		return map[string]string{}, nil // No secrets file provided
+		return secrets, nil // No secrets file provided
 	}
 
 	buf, err := os.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return secrets, nil // No secrets file found, return empty map
+		}
 		return nil, fmt.Errorf("reading secrets from %s: %w", path, err)
 	}
-
-	secrets := map[string]string{}
 
 	scanner := bufio.NewScanner(bytes.NewReader(buf))
 	for scanner.Scan() {

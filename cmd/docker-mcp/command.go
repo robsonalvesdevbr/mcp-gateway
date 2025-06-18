@@ -125,6 +125,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 		// In-container.
 		options = gateway.Config{
 			CatalogPath: catalog.DockerCatalogURL,
+			SecretsPath: "/.env",
 			Options: gateway.Options{
 				Transport:        "stdio",
 				Port:             8811,
