@@ -40,7 +40,8 @@ func Dump(ctx context.Context, docker docker.Client) ([]byte, error) {
 		catalogFiles[name] = string(catalogFileContent)
 	}
 
-	secrets, err := desktop.NewSecretsClient().ListJfsSecrets(ctx)
+	secretsClient := desktop.NewSecretsClient()
+	secrets, err := secretsClient.ListJfsSecrets(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +55,18 @@ func Dump(ctx context.Context, docker docker.Client) ([]byte, error) {
 		return nil, err
 	}
 
+	policy, err := secretsClient.GetJfsPolicy(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	backup := Backup{
 		Config:       string(configContent),
 		Registry:     string(registryContent),
 		Catalog:      string(catalogContent),
 		CatalogFiles: catalogFiles,
 		Secrets:      secretValues,
+		Policy:       policy,
 	}
 
 	return json.Marshal(backup)
