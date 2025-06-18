@@ -53,7 +53,7 @@ func WriteCatalogFile(name string, content []byte) error {
 	return writeConfigFile(catalogFilename(name), content)
 }
 
-func RemoveWriteCatalogFile(name string) error {
+func RemoveCatalogFile(name string) error {
 	path, err := FilePath(catalogFilename(name))
 	if err != nil {
 		return err

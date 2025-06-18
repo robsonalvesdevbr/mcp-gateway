@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/docker/docker-mcp/cmd/docker-mcp/catalog"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/config"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/desktop"
 )
@@ -20,13 +21,29 @@ func Restore(ctx context.Context, backupData []byte) error {
 	if err := config.WriteRegistry([]byte(backup.Registry)); err != nil {
 		return err
 	}
+
+	catalogBefore, err := catalog.ReadConfig()
+	if err != nil {
+		return err
+	}
+
 	if err := config.WriteCatalog([]byte(backup.Catalog)); err != nil {
 		return err
 	}
 
+	catalogsKeep := map[string]bool{}
 	for name, content := range backup.CatalogFiles {
 		if err := config.WriteCatalogFile(name, []byte(content)); err != nil {
 			return err
+		}
+		catalogsKeep[name] = true
+	}
+
+	for name := range catalogBefore.Catalogs {
+		if !catalogsKeep[name] {
+			if err := config.RemoveCatalogFile(name); err != nil {
+				return err
+			}
 		}
 	}
 

@@ -33,7 +33,7 @@ func runRm(name string) error {
 	if err := WriteConfig(cfg); err != nil {
 		return err
 	}
-	if err := config.RemoveWriteCatalogFile(name); err != nil {
+	if err := config.RemoveCatalogFile(name); err != nil {
 		return err
 	}
 
