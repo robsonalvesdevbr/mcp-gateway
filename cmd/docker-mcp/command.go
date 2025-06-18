@@ -10,6 +10,7 @@ import (
 	"github.com/docker/cli/cli-plugins/plugin"
 	"github.com/spf13/cobra"
 
+	"github.com/docker/docker-mcp/cmd/docker-mcp/backup"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/catalog"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/client"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/config"
@@ -81,6 +82,7 @@ func rootCommand(ctx context.Context, cwd string, docker docker.Client) *cobra.C
 	cmd.AddCommand(configCommand(docker))
 	cmd.AddCommand(serverCommand(docker))
 	cmd.AddCommand(toolsCommand())
+	cmd.AddCommand(backupCommand(docker))
 
 	if os.Getenv("DOCKER_MCP_SHOW_HIDDEN") == "1" {
 		unhideHiddenCommands(cmd)
@@ -350,6 +352,44 @@ func toolsCommand() *cobra.Command {
 		Short: "call a tool",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return tools.Call(cmd.Context(), version, verbose, args)
+		},
+	})
+
+	return cmd
+}
+
+func backupCommand(docker docker.Client) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:    "backup",
+		Short:  "Dump and restore the MCP configuration",
+		Hidden: true,
+	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:    "dump",
+		Short:  "Dump the MCP configuration",
+		Args:   cobra.NoArgs,
+		Hidden: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			out, err := backup.Dump(cmd.Context(), docker)
+			if err != nil {
+				return err
+			}
+			_, _ = cmd.OutOrStdout().Write(out)
+			return nil
+		},
+	})
+	cmd.AddCommand(&cobra.Command{
+		Use:    "restore",
+		Short:  "Restore the MCP configuration",
+		Args:   cobra.ExactArgs(1),
+		Hidden: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			backupData, err := os.ReadFile(args[0])
+			if err != nil {
+				return err
+			}
+			return backup.Restore(cmd.Context(), docker, backupData)
 		},
 	})
 

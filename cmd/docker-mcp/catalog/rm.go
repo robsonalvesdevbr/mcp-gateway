@@ -2,9 +2,10 @@ package catalog
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/config"
 )
 
 func newRmCommand() *cobra.Command {
@@ -29,16 +30,13 @@ func runRm(name string) error {
 		return fmt.Errorf("catalog %q not found", name)
 	}
 	delete(cfg.Catalogs, name)
-	if err := writeConfig(cfg); err != nil {
+	if err := WriteConfig(cfg); err != nil {
 		return err
 	}
-	file, err := toCatalogFilePath(name)
-	if err != nil {
+	if err := config.RemoveWriteCatalogFile(name); err != nil {
 		return err
 	}
-	if err := os.Remove(file); err != nil {
-		return err
-	}
+
 	fmt.Printf("removed catalog %q\n", name)
 	return nil
 }

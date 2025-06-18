@@ -11,7 +11,7 @@ func newResetCommand() *cobra.Command {
 		Short:   "Empty the catalog",
 		Args:    cobra.NoArgs,
 		RunE: func(*cobra.Command, []string) error {
-			return writeConfig(&Config{})
+			return WriteConfig(&Config{})
 		},
 	}
 }

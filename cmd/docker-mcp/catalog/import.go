@@ -104,7 +104,7 @@ func runImport(ctx context.Context, nameOrURL string) error {
 		DisplayName: metaData.DisplayName,
 		URL:         url,
 	}
-	if err := writeConfig(cfg); err != nil {
+	if err := WriteConfig(cfg); err != nil {
 		return err
 	}
 	return WriteCatalogFile(metaData.Name, catalogContent)

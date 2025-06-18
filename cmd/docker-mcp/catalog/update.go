@@ -89,7 +89,7 @@ func updateCatalog(ctx context.Context, name string, catalog Catalog) error {
 		URL:         catalog.URL,
 		LastUpdate:  time.Now().Format(time.RFC3339),
 	}
-	if err := writeConfig(cfg); err != nil {
+	if err := WriteConfig(cfg); err != nil {
 		return err
 	}
 

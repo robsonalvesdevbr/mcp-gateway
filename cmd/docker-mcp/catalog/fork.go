@@ -32,7 +32,7 @@ func runFork(src, dst string) error {
 	}
 	dstDisplayName := fmt.Sprintf("%s (forked from %s)", dst, src)
 	cfg.Catalogs[dst] = Catalog{DisplayName: dstDisplayName}
-	if err := writeConfig(cfg); err != nil {
+	if err := WriteConfig(cfg); err != nil {
 		return err
 	}
 	content, err := ReadCatalogFile(src)

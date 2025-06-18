@@ -2,14 +2,10 @@ package catalog
 
 import (
 	"fmt"
-	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/user"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/yq"
 )
 
@@ -60,23 +56,4 @@ func setCatalogMetaData(yamlData []byte, meta MetaData) ([]byte, error) {
 	}
 	query := fmt.Sprintf(`.name = "%s" | .displayName = "%s"`, meta.Name, meta.DisplayName)
 	return yq.Evaluate(query, yamlData, yq.NewYamlDecoder(), yq.NewYamlEncoder())
-}
-
-func toCatalogFilePath(name string) (string, error) {
-	homeDir, err := user.HomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(homeDir, ".docker", configDir, catalogsDir, SanitizeFilename(name)+".yaml"), nil
-}
-
-func SanitizeFilename(input string) string {
-	s := strings.TrimSpace(input)
-	s = strings.ToLower(s)
-	illegalChars := regexp.MustCompile(`[<>:"/\\|?*\x00]`)
-	s = illegalChars.ReplaceAllString(s, "_")
-	if len(s) > 250 {
-		s = s[:250]
-	}
-	return s
 }

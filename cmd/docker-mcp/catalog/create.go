@@ -28,7 +28,7 @@ func runCreate(name string) error {
 		return fmt.Errorf("catalog %q already exists", name)
 	}
 	cfg.Catalogs[name] = Catalog{DisplayName: name}
-	if err := writeConfig(cfg); err != nil {
+	if err := WriteConfig(cfg); err != nil {
 		return err
 	}
 	content, err := setCatalogMetaData([]byte{}, MetaData{Name: name, DisplayName: name})

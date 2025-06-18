@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/docker"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/user"
@@ -17,12 +19,47 @@ func ReadRegistry(ctx context.Context, docker docker.Client) ([]byte, error) {
 	return ReadConfigFile(ctx, docker, "registry.yaml")
 }
 
+func ReadCatalog() ([]byte, error) {
+	path, err := FilePath("catalog.json")
+	if err != nil {
+		return nil, err
+	}
+
+	return readFileOrEmpty(path)
+}
+
+func ReadCatalogFile(name string) ([]byte, error) {
+	path, err := FilePath(catalogFilename(name))
+	if err != nil {
+		return nil, err
+	}
+
+	return readFileOrEmpty(path)
+}
+
 func WriteConfig(content []byte) error {
 	return writeConfigFile("config.yaml", content)
 }
 
 func WriteRegistry(content []byte) error {
 	return writeConfigFile("registry.yaml", content)
+}
+
+func WriteCatalog(content []byte) error {
+	return writeConfigFile("catalog.json", content)
+}
+
+func WriteCatalogFile(name string, content []byte) error {
+	return writeConfigFile(catalogFilename(name), content)
+}
+
+func RemoveWriteCatalogFile(name string) error {
+	path, err := FilePath(catalogFilename(name))
+	if err != nil {
+		return err
+	}
+
+	return os.Remove(path)
 }
 
 func ReadConfigFile(ctx context.Context, docker docker.Client, name string) ([]byte, error) {
@@ -77,4 +114,31 @@ func FilePath(name string) (string, error) {
 	}
 
 	return filepath.Join(homeDir, ".docker", "mcp", name), nil
+}
+
+func catalogFilename(name string) string {
+	return filepath.Join("catalogs", sanitizeFilename(name)+".yaml")
+}
+
+func readFileOrEmpty(path string) ([]byte, error) {
+	buf, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return buf, nil
+}
+
+func sanitizeFilename(input string) string {
+	s := strings.TrimSpace(input)
+	s = strings.ToLower(s)
+	illegalChars := regexp.MustCompile(`[<>:"/\\|?*\x00]`)
+	s = illegalChars.ReplaceAllString(s, "_")
+	if len(s) > 250 {
+		s = s[:250]
+	}
+	return s
 }
