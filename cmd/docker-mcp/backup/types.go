@@ -1,10 +1,12 @@
 package backup
 
+import "github.com/docker/docker-mcp/cmd/docker-mcp/internal/desktop"
+
 type Backup struct {
 	Config       string            `json:"config"`
 	Registry     string            `json:"registry"`
 	Catalog      string            `json:"catalog"`
 	CatalogFiles map[string]string `json:"catalogFiles"`
-	Secrets      map[string]string `json:"secrets"`
+	Secrets      []desktop.Secret  `json:"secrets"`
 	Policy       string            `json:"policy"`
 }

@@ -41,18 +41,27 @@ func Dump(ctx context.Context, docker docker.Client) ([]byte, error) {
 	}
 
 	secretsClient := desktop.NewSecretsClient()
-	secrets, err := secretsClient.ListJfsSecrets(ctx)
+	storedSecrets, err := secretsClient.ListJfsSecrets(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	var secretNames []string
-	for _, secret := range secrets {
+	for _, secret := range storedSecrets {
 		secretNames = append(secretNames, secret.Name)
 	}
-
 	secretValues, err := desktop.ReadSecretValues(ctx, secretNames)
 	if err != nil {
 		return nil, err
+	}
+
+	var secrets []desktop.Secret
+	for _, secret := range storedSecrets {
+		secrets = append(secrets, desktop.Secret{
+			Name:     secret.Name,
+			Provider: secret.Provider,
+			Value:    secretValues[secret.Name],
+		})
 	}
 
 	policy, err := secretsClient.GetJfsPolicy(ctx)
@@ -65,7 +74,7 @@ func Dump(ctx context.Context, docker docker.Client) ([]byte, error) {
 		Registry:     string(registryContent),
 		Catalog:      string(catalogContent),
 		CatalogFiles: catalogFiles,
-		Secrets:      secretValues,
+		Secrets:      secrets,
 		Policy:       policy,
 	}
 

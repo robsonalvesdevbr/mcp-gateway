@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -236,11 +237,24 @@ func configCommand(docker docker.Client) *cobra.Command {
 		Args:   cobra.ExactArgs(1),
 		Hidden: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			backupData, err := os.ReadFile(args[0])
-			if err != nil {
-				return err
+			path := args[0]
+
+			var backupData []byte
+			if path == "-" {
+				var err error
+				backupData, err = io.ReadAll(os.Stdin)
+				if err != nil {
+					return fmt.Errorf("reading from stdin: %w", err)
+				}
+			} else {
+				var err error
+				backupData, err = os.ReadFile(path)
+				if err != nil {
+					return err
+				}
 			}
-			return backup.Restore(cmd.Context(), docker, backupData)
+
+			return backup.Restore(cmd.Context(), backupData)
 		},
 	})
 
