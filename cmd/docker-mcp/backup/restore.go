@@ -31,6 +31,13 @@ func Restore(ctx context.Context, backupData []byte) error {
 	}
 
 	secretsClient := desktop.NewSecretsClient()
+
+	secretsBefore, err := secretsClient.ListJfsSecrets(ctx)
+	if err != nil {
+		return err
+	}
+
+	secretsKeep := map[string]bool{}
 	for _, secret := range backup.Secrets {
 		if err := secretsClient.SetJfsSecret(ctx, desktop.Secret{
 			Name:     secret.Name,
@@ -38,6 +45,15 @@ func Restore(ctx context.Context, backupData []byte) error {
 			Provider: secret.Provider,
 		}); err != nil {
 			return err
+		}
+		secretsKeep[secret.Name] = true
+	}
+
+	for _, secret := range secretsBefore {
+		if !secretsKeep[secret.Name] {
+			if err := secretsClient.DeleteJfsSecret(ctx, secret.Name); err != nil {
+				return err
+			}
 		}
 	}
 
