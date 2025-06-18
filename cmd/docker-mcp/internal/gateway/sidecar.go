@@ -14,7 +14,7 @@ import (
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/mcp"
 )
 
-const image = "davidgageot135/http-proxy@sha256:e021c46e5201ab824b846c956252f13e4bb5612ca30bc51e3fbbdff5d5273db6"
+const image = "docker/mcp-http-proxy:v1@sha256:d57daf14d7097ff7e59740311d27c482e560cff2f35f8aff1d5a7cc3b5289b18"
 
 func (g *Gateway) runProxySideCar(ctx context.Context, allowedHosts []string) (func(context.Context) error, string, error) {
 	log("  - Running proxy sidecar for hosts", allowedHosts)

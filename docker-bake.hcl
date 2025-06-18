@@ -39,7 +39,7 @@ target jcat {
 target http_proxy {
   inherits = ["_base"]
   context = "tools/http_proxy"
-  output = ["type=image,name=davidgageot135/http-proxy"]
+  output = ["type=image,name=docker/mcp-http-proxy:v1"]
 }
 
 target agents_gateway {
