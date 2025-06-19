@@ -14,4 +14,4 @@ docker compose up
 ```
 
 Add client services, like Agents, that connect with the `stdio` protocol on port `8811`.
-If needed, the protocol can be changed to `sse` or `streaming`.
+If needed, the protocol can be changed to `sse` or `streaming` with `--transport=sse` or `--transport=streaming`.
