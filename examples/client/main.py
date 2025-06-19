@@ -1,17 +1,20 @@
-import requests
-import sseclient
-import json
+import os
+from mcp.client.streamable_http import streamablehttp_client
+from mcp import ClientSession
 
-payload = {
-    "tool": "search",
-    "input": {"query": "Docker"}
-}
 
-response = requests.post("http://gateway:8811/mcp", json=payload, stream=True)
+async def main():
+    async with streamablehttp_client(os.getenv("MCP_HOST")) as (
+        read_stream,
+        write_stream,
+        _,
+    ):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
+            result = await session.call_tool("search", {"query": "Docker"})
+            print(result.content[0].text)
 
-client = sseclient.SSEClient(response)
+if __name__ == "__main__":
+    import asyncio
 
-for event in client.events():
-    print(f"Event: {event.event}, Data: {event.data}")
-    if event.event == "done":
-        break
+    asyncio.run(main())
