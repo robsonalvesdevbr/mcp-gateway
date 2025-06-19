@@ -288,11 +288,11 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 		}
 	}
 
-	log("  - Reading secrets", secretNames)
 	if len(secretNames) == 0 {
 		return map[string]string{}, nil
 	}
 
+	log("  - Reading secrets", secretNames)
 	secretsByName, err := desktop.ReadSecretValues(ctx, secretNames)
 	if err != nil {
 		return nil, fmt.Errorf("finding secrets %s: %w", secretNames, err)
