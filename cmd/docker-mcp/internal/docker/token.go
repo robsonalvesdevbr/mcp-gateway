@@ -17,7 +17,6 @@ type info struct {
 func getRegistryAuth(ctx context.Context) (string, error) {
 	var info info
 	if err := desktop.ClientBackend.Get(ctx, "/registry/info", &info); err != nil {
-		log("warning: couldn't read the auth token:", err)
 		return "", nil
 	}
 
