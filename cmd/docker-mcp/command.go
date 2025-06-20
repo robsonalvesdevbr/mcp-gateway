@@ -165,6 +165,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	runCmd.Flags().StringVar(&options.ConfigPath, "config", options.ConfigPath, "path to the config.yaml (absolute or relative to ~/.docker/mcp/)")
 	runCmd.Flags().StringVar(&options.SecretsPath, "secrets", "", "path to a .env file containing secrets (default to using Docker Deskop's secrets API)")
 	runCmd.Flags().StringArrayVar(&options.ToolNames, "tools", options.ToolNames, "List of tools to enable")
+	runCmd.Flags().StringArrayVar(&options.Interceptors, "interceptor", options.Interceptors, "List of interceptors to use (format: when:type:path, e.g. 'before:exec:/bin/path')")
 	runCmd.Flags().IntVar(&options.Port, "port", options.Port, "TCP port to listen on (default is to listen on stdio)")
 	runCmd.Flags().StringVar(&options.Transport, "transport", options.Transport, "stdio, sse or streaming (default is stdio)")
 	runCmd.Flags().BoolVar(&options.LogCalls, "log-calls", options.LogCalls, "Log calls to the tools")

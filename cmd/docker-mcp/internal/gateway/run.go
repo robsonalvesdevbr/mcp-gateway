@@ -84,7 +84,12 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
 
-	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets)
+	// Build a list of interceptors.
+	customInterceptors, err := interceptors.Parse(g.Interceptors)
+	if err != nil {
+		return fmt.Errorf("parsing interceptors: %w", err)
+	}
+	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
 
 	// TODO: cleanup stopped servers. That happens in stdio over TCP mode.
 	var (

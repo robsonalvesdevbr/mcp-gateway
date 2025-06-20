@@ -13,6 +13,7 @@ type Options struct {
 	Port             int
 	Transport        string
 	ToolNames        []string
+	Interceptors     []string
 	Verbose          bool
 	KeepContainers   bool
 	LogCalls         bool

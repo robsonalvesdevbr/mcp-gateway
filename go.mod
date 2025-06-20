@@ -14,6 +14,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.9.3
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/google/go-containerregistry v0.20.6
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/mark3labs/mcp-go v0.27.1
 	github.com/mikefarah/yq/v4 v4.45.4
 	github.com/r3labs/sse/v2 v2.10.0
