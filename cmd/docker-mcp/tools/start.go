@@ -10,13 +10,14 @@ import (
 	client "github.com/docker/docker-mcp/cmd/docker-mcp/internal/mcp"
 )
 
-func start(ctx context.Context, version string, debug bool) (client.Client, error) {
+func start(ctx context.Context, version string, gatewayArgs []string, debug bool) (client.Client, error) {
 	var args []string
 	if version == "2" {
 		args = []string{"mcp", "gateway", "run"}
 	} else {
 		args = []string{"run", "-i", "--rm", "alpine/socat", "STDIO", "TCP:host.docker.internal:8811"}
 	}
+	args = append(args, gatewayArgs...)
 
 	c := client.NewStdioCmdClient("gateway", "docker", nil, args...)
 	initRequest := mcp.InitializeRequest{}

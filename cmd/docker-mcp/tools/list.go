@@ -9,8 +9,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func List(ctx context.Context, version string, debug bool, show, tool, format string) error {
-	c, err := start(ctx, version, debug)
+func List(ctx context.Context, version string, gatewayArgs []string, debug bool, show, tool, format string) error {
+	c, err := start(ctx, version, gatewayArgs, debug)
 	if err != nil {
 		return fmt.Errorf("starting client: %w", err)
 	}

@@ -360,9 +360,11 @@ func toolsCommand() *cobra.Command {
 	var version string
 	var verbose bool
 	var format string
+	var gatewayArgs []string
 	cmd.PersistentFlags().StringVar(&version, "version", "2", "Version of the gateway")
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	cmd.PersistentFlags().StringVar(&format, "format", "list", "Output format (json|list)")
+	cmd.PersistentFlags().StringArrayVar(&gatewayArgs, "gatewayArg", nil, "Additional arguments passed to the gateway")
 
 	cmd.AddCommand(&cobra.Command{
 		Use:     "list",
@@ -370,7 +372,7 @@ func toolsCommand() *cobra.Command {
 		Short:   "list tools",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return tools.List(cmd.Context(), version, verbose, "list", "", format)
+			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "list", "", format)
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
@@ -378,7 +380,7 @@ func toolsCommand() *cobra.Command {
 		Short: "count tools",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return tools.List(cmd.Context(), version, verbose, "count", "", format)
+			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "count", "", format)
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
@@ -386,14 +388,14 @@ func toolsCommand() *cobra.Command {
 		Short: "inspect a tool",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tools.List(cmd.Context(), version, verbose, "inspect", args[0], format)
+			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "inspect", args[0], format)
 		},
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "call",
 		Short: "call a tool",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return tools.Call(cmd.Context(), version, verbose, args)
+			return tools.Call(cmd.Context(), version, gatewayArgs, verbose, args)
 		},
 	})
 

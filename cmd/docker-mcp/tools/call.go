@@ -10,13 +10,13 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func Call(ctx context.Context, version string, debug bool, args []string) error {
+func Call(ctx context.Context, version string, gatewayArgs []string, debug bool, args []string) error {
 	if len(args) == 0 {
 		return errors.New("no tool name provided")
 	}
 	toolName := args[0]
 
-	c, err := start(ctx, version, debug)
+	c, err := start(ctx, version, gatewayArgs, debug)
 	if err != nil {
 		return fmt.Errorf("starting client: %w", err)
 	}
