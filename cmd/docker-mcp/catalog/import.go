@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -68,6 +69,10 @@ func runImport(ctx context.Context, nameOrURL string) error {
 	if isValidURL(url) {
 		catalogContent, err = DownloadFile(ctx, url)
 	} else {
+		url, err = filepath.Abs(url)
+		if err != nil {
+			return fmt.Errorf("failed to get absolute path: %w", err)
+		}
 		catalogContent, err = os.ReadFile(url)
 	}
 	if err != nil {
