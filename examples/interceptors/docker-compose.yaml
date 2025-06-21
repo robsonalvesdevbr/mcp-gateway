@@ -19,6 +19,13 @@ services:
       - --interceptor
       - 'before:exec:echo ============BEFORE==============: Query=$(jq -r ".params.arguments.query") >&2'
       - --interceptor
-      - 'before:exec:echo ============AFTER============-==: Done >&2'
+      - 'before:http:http://interceptor:8080/before'
+      - --interceptor
+      - 'after:http:http://interceptor:8080/after'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - interceptor
+
+  interceptor:
+    build: http
