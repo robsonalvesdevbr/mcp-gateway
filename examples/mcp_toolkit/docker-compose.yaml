@@ -6,7 +6,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "/run/host-services/backend.sock:/run/host-services/backend.sock"
-      - "/var/run/docker.sock.raw:/var/run/docker.sock.raw"
       - "~/.docker/mcp:/mcp"
     command:
       - --catalog=/mcp/catalogs/docker-mcp.yaml

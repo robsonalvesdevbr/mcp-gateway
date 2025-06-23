@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"runtime"
-	"strings"
 )
 
 const jcatImage = "docker/jcat@sha256:76719466e8b99a65dd1d37d9ab94108851f009f0f687dce7ff8a6fc90575c4d4"
@@ -76,12 +74,11 @@ func ReadSecretValues(ctx context.Context, names []string) (map[string]string, e
 		command = append(command, file)
 	}
 
-	var args []string
+	args := []string{"run", "--rm"}
 	args = append(args, flags...)
 	args = append(args, jcatImage)
 	args = append(args, command...)
-
-	buf, err := runWithRawDockerSocket(ctx, args...)
+	buf, err := exec.CommandContext(ctx, "docker", args...).CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("fetching secrets %w: %s", err, string(buf))
 	}
@@ -97,18 +94,4 @@ func ReadSecretValues(ctx context.Context, names []string) (map[string]string, e
 	}
 
 	return values, nil
-}
-
-func runWithRawDockerSocket(ctx context.Context, args ...string) ([]byte, error) {
-	AvoidResourceSaverMode(ctx)
-
-	var path string
-	if runtime.GOOS == "windows" {
-		path = "npipe://" + strings.ReplaceAll(Paths().RawDockerSocket, `\`, `/`)
-	} else {
-		path = "unix://" + Paths().RawDockerSocket
-	}
-
-	args = append([]string{"-H", path, "run", "--rm"}, args...)
-	return exec.CommandContext(ctx, "docker", args...).CombinedOutput()
 }

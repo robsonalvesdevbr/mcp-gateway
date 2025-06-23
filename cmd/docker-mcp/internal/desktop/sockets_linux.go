@@ -25,7 +25,6 @@ func getDockerDesktopPaths() (DockerDesktopPaths, error) {
 		return DockerDesktopPaths{
 			AdminSettingPath:     "/usr/share/docker-desktop/admin-settings.json",
 			BackendSocket:        filepath.Join(home, ".docker/desktop/backend.sock"),
-			RawDockerSocket:      filepath.Join(home, ".docker/desktop/docker.raw.sock"),
 			JFSSocket:            filepath.Join(home, ".docker/desktop/jfs.sock"),
 			ToolsSocket:          filepath.Join(home, ".docker/desktop/tools.sock"),
 			CredentialHelperPath: getCredentialHelperPath,
@@ -36,7 +35,6 @@ func getDockerDesktopPaths() (DockerDesktopPaths, error) {
 	return DockerDesktopPaths{
 		AdminSettingPath:     "/usr/share/docker-desktop/admin-settings.json",
 		BackendSocket:        "/run/host-services/backend.sock",
-		RawDockerSocket:      "/var/run/docker.sock.raw",
 		JFSSocket:            "/run/host-services/jfs.sock",
 		ToolsSocket:          "/run/host-services/tools.sock",
 		CredentialHelperPath: getCredentialHelperPath,
