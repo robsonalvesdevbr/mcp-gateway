@@ -83,7 +83,7 @@ func ReadSecretValues(ctx context.Context, names []string) (map[string]string, e
 
 	buf, err := runWithRawDockerSocket(ctx, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("fetching secrets %w: %s", err, string(buf))
 	}
 
 	var list []string
@@ -110,5 +110,5 @@ func runWithRawDockerSocket(ctx context.Context, args ...string) ([]byte, error)
 	}
 
 	args = append([]string{"-H", path, "run", "--rm"}, args...)
-	return exec.CommandContext(ctx, "docker", args...).Output()
+	return exec.CommandContext(ctx, "docker", args...).CombinedOutput()
 }
