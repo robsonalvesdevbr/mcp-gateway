@@ -164,8 +164,8 @@ func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, proxyNet
 func expandEnv(value string, env []string) string {
 	return os.Expand(value, func(name string) string {
 		for _, e := range env {
-			if strings.HasPrefix(e, name+"=") {
-				return strings.TrimPrefix(e, name+"=")
+			if after, ok := strings.CutPrefix(e, name+"="); ok {
+				return after
 			}
 		}
 		return ""
