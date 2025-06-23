@@ -146,7 +146,11 @@ func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, proxyNet
 	// Env
 	for _, e := range serverConfig.Spec.Env {
 		args = append(args, "-e", e.Name)
-		env = append(env, fmt.Sprintf("%s=%s", e.Name, expandEnv(e.Value, env)))
+		value := fmt.Sprintf("%v", eval.Evaluate(e.Value, serverConfig.Config))
+		if value == e.Value {
+			value = expandEnv(e.Value, env)
+		}
+		env = append(env, fmt.Sprintf("%s=%s", e.Name, value))
 	}
 
 	// Volumes
