@@ -1,0 +1,87 @@
+package gateway
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
+
+	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/catalog"
+)
+
+func TestApplyConfigGrafana(t *testing.T) {
+	catalogYAML := `
+command:
+  - --transport=stdio
+secrets:
+  - name: grafana.api_key
+    env: GRAFANA_API_KEY
+env:
+  - name: GRAFANA_URL
+    value: '{{grafana.url}}'
+`
+
+	configYAML := `
+grafana:
+  url: TEST
+`
+
+	gateway := &Gateway{}
+	args, env := gateway.argsAndEnv(ServerConfig{
+		Name:   "grafana",
+		Spec:   parseSpec(t, catalogYAML),
+		Config: parseConfig(t, configYAML),
+		Secrets: map[string]string{
+			"grafana.api_key": "API_KEY",
+		},
+	}, nil, "")
+
+	assert.Equal(t, []string{
+		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
+		"--label", "docker-mcp=true", "--label", "docker-mcp-tool-type=mcp", "--label", "docker-mcp-name=grafana", "--label", "docker-mcp-transport=stdio",
+		"-e", "GRAFANA_API_KEY", "-e", "GRAFANA_URL",
+	}, args)
+	assert.Equal(t, []string{"GRAFANA_API_KEY=API_KEY", "GRAFANA_URL=TEST"}, env)
+}
+
+func TestApplyConfigMongoDB(t *testing.T) {
+	catalogYAML := `
+secrets:
+  - name: mongodb.connection_string
+    env: MDB_MCP_CONNECTION_STRING
+  `
+
+	gateway := &Gateway{}
+	args, env := gateway.argsAndEnv(ServerConfig{
+		Name:   "mongodb",
+		Spec:   parseSpec(t, catalogYAML),
+		Config: map[string]any{},
+		Secrets: map[string]string{
+			"mongodb.connection_string": "HOST:PORT",
+		},
+	}, nil, "")
+
+	assert.Equal(t, []string{
+		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
+		"--label", "docker-mcp=true", "--label", "docker-mcp-tool-type=mcp", "--label", "docker-mcp-name=mongodb", "--label", "docker-mcp-transport=stdio",
+		"-e", "MDB_MCP_CONNECTION_STRING",
+	}, args)
+	assert.Equal(t, []string{"MDB_MCP_CONNECTION_STRING=HOST:PORT"}, env)
+}
+
+func parseSpec(t *testing.T, contentYAML string) catalog.Server {
+	t.Helper()
+	var spec catalog.Server
+	err := yaml.Unmarshal([]byte(contentYAML), &spec)
+	require.NoError(t, err)
+	return spec
+}
+
+func parseConfig(t *testing.T, contentYAML string) map[string]any {
+	t.Helper()
+	var config map[string]any
+	err := yaml.Unmarshal([]byte(contentYAML), &config)
+	require.NoError(t, err)
+	return config
+}
