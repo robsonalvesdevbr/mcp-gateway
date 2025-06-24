@@ -146,10 +146,14 @@ func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, proxyNet
 	// Env
 	for _, e := range serverConfig.Spec.Env {
 		args = append(args, "-e", e.Name)
-		value := fmt.Sprintf("%v", eval.Evaluate(e.Value, serverConfig.Config))
-		if value == e.Value {
-			value = expandEnv(e.Value, env)
+
+		value := e.Value
+		if strings.Contains(e.Value, "{{") && strings.Contains(e.Value, "}}") {
+			value = fmt.Sprintf("%v", eval.Evaluate(value, serverConfig.Config))
+		} else {
+			value = expandEnv(value, env)
 		}
+
 		env = append(env, fmt.Sprintf("%s=%s", e.Name, value))
 	}
 

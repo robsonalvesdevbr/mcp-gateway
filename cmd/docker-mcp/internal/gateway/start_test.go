@@ -96,7 +96,7 @@ env:
 		"--label", "docker-mcp=true", "--label", "docker-mcp-tool-type=mcp", "--label", "docker-mcp-name=notion", "--label", "docker-mcp-transport=stdio",
 		"-e", "INTERNAL_INTEGRATION_TOKEN", "-e", "OPENAPI_MCP_HEADERS",
 	}, args)
-	assert.Equal(t, []string{"INTERNAL_INTEGRATION_TOKEN=ntn_DUMMY", "OPENAPI_MCP_HEADERS=\"Authorization\": \"Bearer $INTERNAL_INTEGRATION_TOKEN\", \"Notion-Version\": \"2022-06-28\""}, env)
+	assert.Equal(t, []string{"INTERNAL_INTEGRATION_TOKEN=ntn_DUMMY", `OPENAPI_MCP_HEADERS={"Authorization": "Bearer ntn_DUMMY", "Notion-Version": "2022-06-28"}`}, env)
 }
 
 func parseSpec(t *testing.T, contentYAML string) catalog.Server {
