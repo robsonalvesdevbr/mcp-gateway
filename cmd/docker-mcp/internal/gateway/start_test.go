@@ -70,6 +70,35 @@ secrets:
 	assert.Equal(t, []string{"MDB_MCP_CONNECTION_STRING=HOST:PORT"}, env)
 }
 
+func TestApplyConfigNotion(t *testing.T) {
+	catalogYAML := `
+secrets:
+  - name: notion.internal_integration_token
+    env: INTERNAL_INTEGRATION_TOKEN
+    example: ntn_****
+env:
+  - name: OPENAPI_MCP_HEADERS
+    value: '{"Authorization": "Bearer $INTERNAL_INTEGRATION_TOKEN", "Notion-Version": "2022-06-28"}'
+  `
+
+	gateway := &Gateway{}
+	args, env := gateway.argsAndEnv(ServerConfig{
+		Name:   "notion",
+		Spec:   parseSpec(t, catalogYAML),
+		Config: map[string]any{},
+		Secrets: map[string]string{
+			"notion.internal_integration_token": "ntn_DUMMY",
+		},
+	}, nil, "")
+
+	assert.Equal(t, []string{
+		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
+		"--label", "docker-mcp=true", "--label", "docker-mcp-tool-type=mcp", "--label", "docker-mcp-name=notion", "--label", "docker-mcp-transport=stdio",
+		"-e", "INTERNAL_INTEGRATION_TOKEN", "-e", "OPENAPI_MCP_HEADERS",
+	}, args)
+	assert.Equal(t, []string{"INTERNAL_INTEGRATION_TOKEN=ntn_DUMMY", "OPENAPI_MCP_HEADERS=\"Authorization\": \"Bearer $INTERNAL_INTEGRATION_TOKEN\", \"Notion-Version\": \"2022-06-28\""}, env)
+}
+
 func parseSpec(t *testing.T, contentYAML string) catalog.Server {
 	t.Helper()
 	var spec catalog.Server
