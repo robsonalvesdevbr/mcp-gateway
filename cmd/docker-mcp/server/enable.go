@@ -43,18 +43,18 @@ func update(ctx context.Context, docker docker.Client, add []string, remove []st
 
 	// Keep only servers that are still in the catalog.
 	for serverName := range registry.Servers {
-		if serverSpec, found := catalog.Servers[serverName]; found {
+		if _, found := catalog.Servers[serverName]; found {
 			updatedRegistry.Servers[serverName] = config.Tile{
-				Ref: serverSpec.Ref,
+				Ref: "",
 			}
 		}
 	}
 
 	// Enable servers.
 	for _, serverName := range add {
-		if serverSpec, found := catalog.Servers[serverName]; found {
+		if _, found := catalog.Servers[serverName]; found {
 			updatedRegistry.Servers[serverName] = config.Tile{
-				Ref: serverSpec.Ref,
+				Ref: "",
 			}
 		} else {
 			return fmt.Errorf("server %s not found in catalog", serverName)

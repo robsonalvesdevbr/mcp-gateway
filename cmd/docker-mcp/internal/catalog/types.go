@@ -14,7 +14,6 @@ type topLevel struct {
 
 type Server struct {
 	Image          string   `yaml:"image" json:"image"`
-	Ref            string   `yaml:"ref" json:"ref"`
 	SSEEndpoint    string   `yaml:"sseEndpoint,omitempty" json:"sseEndpoint,omitempty"`
 	Secrets        []Secret `yaml:"secrets,omitempty" json:"secrets,omitempty"`
 	Env            []Env    `yaml:"env,omitempty" json:"env,omitempty"`
