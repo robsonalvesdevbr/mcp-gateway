@@ -4,9 +4,11 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
+	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/docker"
 )
 
-func NewSecretsCmd() *cobra.Command {
+func NewSecretsCmd(docker docker.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "secret",
 		Short:   "Manage secrets",
@@ -15,5 +17,6 @@ func NewSecretsCmd() *cobra.Command {
 	cmd.AddCommand(RmCommand())
 	cmd.AddCommand(ListCommand())
 	cmd.AddCommand(SetCommand())
+	cmd.AddCommand(ExportCommand(docker))
 	return cmd
 }

@@ -73,7 +73,7 @@ func rootCommand(ctx context.Context, cwd string, docker docker.Client) *cobra.C
 		return []string{"--help"}, cobra.ShellCompDirectiveNoFileComp
 	})
 
-	cmd.AddCommand(secret.NewSecretsCmd())
+	cmd.AddCommand(secret.NewSecretsCmd(docker))
 	cmd.AddCommand(policy.NewPolicyCmd())
 	cmd.AddCommand(oauth.NewOAuthCmd())
 	cmd.AddCommand(client.NewClientCmd(cwd))
