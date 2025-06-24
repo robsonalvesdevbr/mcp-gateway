@@ -208,17 +208,26 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 	}
 
 	var secrets map[string]string
-	if c.SecretsPath != "" {
-		var err error
-		secrets, err = c.readSecretsFromFile(ctx, c.SecretsPath)
-		if err != nil {
-			return Configuration{}, err
-		}
-	} else {
-		var err error
+	if c.SecretsPath == "docker-desktop" {
 		secrets, err = c.readDockerDesktopSecrets(ctx, servers, serverNames)
 		if err != nil {
-			return Configuration{}, err
+			return Configuration{}, fmt.Errorf("reading MCP Toolkit's secrets: %w", err)
+		}
+	} else {
+		// Unless SecretsPath is only `docker-desktop`, we don't fail if secrets can't be read.
+		// It's ok for the MCP tookit's to not be available (in Cloud Run, for example).
+		// It's ok for secrets .env file to not exist.
+		var err error
+		for secretPath := range strings.SplitSeq(c.SecretsPath, ":") {
+			if secretPath == "docker-desktop" {
+				secrets, err = c.readDockerDesktopSecrets(ctx, servers, serverNames)
+			} else {
+				secrets, err = c.readSecretsFromFile(ctx, secretPath)
+			}
+
+			if err == nil {
+				break
+			}
 		}
 	}
 
@@ -303,15 +312,8 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 func (c *FileBasedConfiguration) readSecretsFromFile(ctx context.Context, path string) (map[string]string, error) {
 	secrets := map[string]string{}
 
-	if path == "" {
-		return secrets, nil // No secrets file provided
-	}
-
 	buf, err := os.ReadFile(path)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return secrets, nil // No secrets file found, return empty map
-		}
 		return nil, fmt.Errorf("reading secrets from %s: %w", path, err)
 	}
 
