@@ -15,6 +15,12 @@ type info struct {
 }
 
 func getRegistryAuth(ctx context.Context) (string, error) {
+	// This call forces the refresh of the token. `/registry/info`` fails to do it sometimes.
+	var token string
+	if err := desktop.ClientBackend.Get(ctx, "/registry/token", &token); err != nil {
+		return "", nil
+	}
+
 	var info info
 	if err := desktop.ClientBackend.Get(ctx, "/registry/info", &info); err != nil {
 		return "", nil
@@ -22,7 +28,7 @@ func getRegistryAuth(ctx context.Context) (string, error) {
 
 	authConfig := map[string]string{
 		"username": info.ID,
-		"password": info.Token,
+		"password": token,
 	}
 	buf, err := json.Marshal(authConfig)
 	if err != nil {
