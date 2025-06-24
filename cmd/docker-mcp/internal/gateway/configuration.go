@@ -14,7 +14,6 @@ import (
 
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/catalog"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/config"
-	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/desktop"
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/docker"
 )
 
@@ -293,7 +292,7 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 	}
 
 	log("  - Reading secrets", secretNames)
-	secretsByName, err := desktop.ReadSecretValues(ctx, secretNames)
+	secretsByName, err := c.docker.ReadSecrets(ctx, secretNames)
 	if err != nil {
 		return nil, fmt.Errorf("finding secrets %s: %w", secretNames, err)
 	}

@@ -50,7 +50,7 @@ func Dump(ctx context.Context, docker docker.Client) ([]byte, error) {
 	for _, secret := range storedSecrets {
 		secretNames = append(secretNames, secret.Name)
 	}
-	secretValues, err := desktop.ReadSecretValues(ctx, secretNames)
+	secretValues, err := docker.ReadSecrets(ctx, secretNames)
 	if err != nil {
 		return nil, err
 	}
