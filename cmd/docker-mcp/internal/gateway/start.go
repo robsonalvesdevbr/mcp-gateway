@@ -25,7 +25,7 @@ func (g *Gateway) baseArgs(name string) []string {
 		args = append(args, "--rm")
 	}
 
-	args = append(args, "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never")
+	args = append(args, "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", fmt.Sprintf("%d", g.Cpus), "--memory", g.Memory, "--pull", "never")
 
 	// Add a few labels to the container for identification
 	args = append(args,
