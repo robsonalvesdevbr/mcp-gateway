@@ -365,7 +365,7 @@ func toolsCommand() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&version, "version", "2", "Version of the gateway")
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	cmd.PersistentFlags().StringVar(&format, "format", "list", "Output format (json|list)")
-	cmd.PersistentFlags().StringArrayVar(&gatewayArgs, "gatewayArg", nil, "Additional arguments passed to the gateway")
+	cmd.PersistentFlags().StringSliceVar(&gatewayArgs, "gatewayArg", nil, "Additional arguments passed to the gateway")
 
 	cmd.AddCommand(&cobra.Command{
 		Use:     "list",

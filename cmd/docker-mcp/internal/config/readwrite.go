@@ -107,6 +107,9 @@ func FilePath(name string) (string, error) {
 	if filepath.IsAbs(name) {
 		return name, nil
 	}
+	if strings.HasPrefix(name, "./") {
+		return filepath.Abs(name)
+	}
 
 	homeDir, err := user.HomeDir()
 	if err != nil {

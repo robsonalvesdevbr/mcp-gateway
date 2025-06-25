@@ -69,7 +69,7 @@ func readFileOrURL(ctx context.Context, fileOrURL string) ([]byte, error) {
 
 		return io.ReadAll(resp.Body)
 
-	case filepath.IsAbs(fileOrURL):
+	case filepath.IsAbs(fileOrURL) || strings.HasPrefix(fileOrURL, "./"):
 		buf, err := os.ReadFile(fileOrURL)
 		if err != nil {
 			if os.IsNotExist(err) {
