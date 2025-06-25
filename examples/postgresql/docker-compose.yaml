@@ -1,0 +1,37 @@
+services:
+  client:
+    build: .
+    environment:
+      - MCP_HOST=http://gateway:8811/mcp
+    depends_on:
+      - gateway
+      - pg
+
+  gateway:
+    image: docker/agents_gateway:v2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      - --transport=streaming
+      - --servers=postgres
+      - --tools=query
+      - --verbose=false
+      - --secrets=/run/secrets/database_url
+    secrets:
+      - database_url
+
+  pg:
+    image: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: database
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d database"]
+      interval: 1s
+      timeout: 3s
+      retries: 10
+
+secrets:
+  database_url:
+    file: ./postgres_url

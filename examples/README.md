@@ -5,3 +5,4 @@
 + `secrets` - Just one MCP Server, with a secret handled in an `.env` file.
 + `remote_mcp` - Uses the gateway as a proxy to a remote MCP server.
 + `mcp_toolkit` - Connect to the MCP Toolkit and let it handle all the configuration and secrets.
++ `postgresql` - Query a PostgreSQL DB through a PostgreSQL MCP Server, through the Gateway, from a python client.
