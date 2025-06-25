@@ -1,12 +1,10 @@
 services:
   gateway:
     image: docker/agents_gateway:v2
-    ports:
-      - "8811:8811"
     volumes:
-      - ./catalog.yaml:/app/catalog.yaml
+      - ./catalog.yaml:/mcp/catalog.yaml
     command:
       - --catalog
-      - /app/catalog.yaml
+      - /mcp/catalog.yaml
       - --servers=gitmcpmoby
       - --transport=sse
