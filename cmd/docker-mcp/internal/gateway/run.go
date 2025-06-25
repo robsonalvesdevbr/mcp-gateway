@@ -20,6 +20,7 @@ type Gateway struct {
 	Options
 	docker       docker.Client
 	configurator Configurator
+	networks     []string
 }
 
 func NewGateway(config Config, docker docker.Client) *Gateway {
@@ -73,6 +74,15 @@ func (g *Gateway) Run(ctx context.Context) error {
 	// Pull them and verify them if possible.
 	if err := g.pullAndVerify(ctx, configuration); err != nil {
 		return err
+	}
+
+	// When running in a container, find on which network we are running.
+	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
+		networks, err := g.guessNetworks(ctx)
+		if err != nil {
+			return fmt.Errorf("guessing network: %w", err)
+		}
+		g.networks = networks
 	}
 
 	// List all the available tools.

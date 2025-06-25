@@ -34,11 +34,17 @@ func (g *Gateway) baseArgs(name string) []string {
 		"--label", "docker-mcp-name="+name,
 		"--label", "docker-mcp-transport=stdio",
 	)
+
 	return args
 }
 
 func (g *Gateway) runToolContainer(ctx context.Context, tool catalog.Tool, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	args := g.baseArgs(tool.Name)
+
+	// Attach the MCP servers to the same network as the gateway.
+	for _, network := range g.networks {
+		args = append(args, "--network", network)
+	}
 
 	// Volumes
 	for _, mount := range eval.EvaluateList(tool.Container.Volumes, request.GetArguments()) {
@@ -134,6 +140,11 @@ func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, proxyNet
 	// Security options
 	if serverConfig.Spec.DisableNetwork {
 		args = append(args, "--network", "none")
+	} else {
+		// Attach the MCP servers to the same network as the gateway.
+		for _, network := range g.networks {
+			args = append(args, "--network", network)
+		}
 	}
 	if proxyNetwork != "" {
 		args = append(args, "--network", proxyNetwork)
