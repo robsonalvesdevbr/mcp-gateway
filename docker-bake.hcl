@@ -47,7 +47,7 @@ target l4proxy {
 
 target l7proxy {
   inherits = ["_base"]
-  context = "tools/http_proxy"
+  context = "tools/l7proxy"
   output = ["type=image,name=docker/mcp-l7proxy:v1"]
 }
 
