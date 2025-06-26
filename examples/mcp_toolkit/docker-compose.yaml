@@ -5,7 +5,6 @@ services:
       - "8811:8811"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "/run/host-services/backend.sock:/run/host-services/backend.sock"
       - "~/.docker/mcp:/mcp"
     command:
       - --catalog=/mcp/catalogs/docker-mcp.yaml
