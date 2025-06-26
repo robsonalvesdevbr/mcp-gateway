@@ -114,7 +114,7 @@ func RunNetworkProxies(ctx context.Context, cli docker.Client, proxies []Proxy, 
 		if keepCtrs {
 			return shutdownProxies(ctx, cli, proxyNames)
 		}
-		return removeProxies(ctx, cli, target.NetworkName, proxyNames)
+		return removeProxies(ctx, cli, []string{extNwName, target.NetworkName}, proxyNames)
 	}
 
 	return target, cleanup, nil
@@ -133,8 +133,8 @@ func shutdownProxies(ctx context.Context, cli docker.Client, proxyNames []string
 	return errors.Join(errs...)
 }
 
-func removeProxies(ctx context.Context, cli docker.Client, nwName string, proxyNames []string) error {
-	logf("removing proxies (%s) and network (%s)", proxyNames, nwName)
+func removeProxies(ctx context.Context, cli docker.Client, nwNames []string, proxyNames []string) error {
+	logf("removing proxies (%s) and networks (%s)", proxyNames, nwNames)
 
 	var errs []error
 	for _, name := range proxyNames {
@@ -142,8 +142,10 @@ func removeProxies(ctx context.Context, cli docker.Client, nwName string, proxyN
 			errs = append(errs, fmt.Errorf("failed to remove proxy container %s: %w", name, err))
 		}
 	}
-	if err := cli.RemoveNetwork(ctx, nwName); err != nil {
-		errs = append(errs, fmt.Errorf("failed to remove network %s: %w", nwName, err))
+	for _, nwName := range nwNames {
+		if err := cli.RemoveNetwork(ctx, nwName); err != nil {
+			errs = append(errs, fmt.Errorf("failed to remove network %s: %w", nwName, err))
+		}
 	}
 
 	return errors.Join(errs...)
