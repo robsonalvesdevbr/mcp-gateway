@@ -4,7 +4,6 @@ services:
     volumes:
       - ./catalog.yaml:/mcp/catalog.yaml
     command:
-      - --catalog
-      - /mcp/catalog.yaml
+      - --catalog=/mcp/catalog.yaml
       - --servers=gitmcpmoby
       - --transport=sse

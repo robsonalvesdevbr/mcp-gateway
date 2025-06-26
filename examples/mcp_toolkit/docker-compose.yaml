@@ -1,8 +1,6 @@
 services:
   gateway:
     image: docker/agents_gateway:v2
-    ports:
-      - "8811:8811"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "~/.docker/mcp:/mcp"
@@ -10,3 +8,5 @@ services:
       - --catalog=/mcp/catalogs/docker-mcp.yaml
       - --config=/mcp/config.yaml
       - --registry=/mcp/registry.yaml
+      - --secrets=docker-desktop
+      - --watch=true
