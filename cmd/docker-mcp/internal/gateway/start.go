@@ -27,6 +27,10 @@ func (g *Gateway) baseArgs(name string) []string {
 
 	args = append(args, "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", fmt.Sprintf("%d", g.Cpus), "--memory", g.Memory, "--pull", "never")
 
+	if os.Getenv("DOCKER_MCP_IN_DIND") == "1" {
+		args = append(args, "--privileged")
+	}
+
 	// Add a few labels to the container for identification
 	args = append(args,
 		"--label", "docker-mcp=true",

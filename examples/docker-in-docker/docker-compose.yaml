@@ -1,0 +1,11 @@
+services:
+  gateway:
+    build:
+      context: .
+    privileged: true
+    ports:
+      - "8080:8080"
+    command:
+      - --transport=sse
+      - --servers=fetch
+      - --memory=512Mb
