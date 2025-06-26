@@ -23,12 +23,12 @@ Those which run run `after` have access to the tool call response.
 
 ## `exec`
 
-Usage: `--interceptor=before:exec|script` or `--interceptor=after:exec|script`.
+Usage: `--interceptor=before:exec:script` or `--interceptor=after:exec:script`.
 
 The `script` is a shell script that will run with `/bin/sh -c`. e.g:
 
 ```
---interceptor=before:exec|echo Query=$(jq -r ".params.arguments.query") >&2
+--interceptor=before:exec:echo Query=$(jq -r ".params.arguments.query") >&2
 ```
 
 The tool call request (`before`) or tool call response (`after`) are passed as json objects into stdin.
@@ -37,12 +37,12 @@ Every output sent to `stderr` will be shown in the gateway's logs.
 
 ## `docker`
 
-Usage: `--interceptor=before:docker|image arg1 arg2` or `--interceptor=after:docker|image arg1 arg2`.
+Usage: `--interceptor=before:docker:image arg1 arg2` or `--interceptor=after:docker:image arg1 arg2`.
 
 e.g:
 
 ```
---interceptor=before:docker|alpine sh -c 'echo BEFORE >&2'
+--interceptor=before:docker:alpine sh -c 'echo BEFORE >&2'
 ```
 
 The tool call request (`before`) or tool call response (`after`) are passed as json objects into stdin.
@@ -51,7 +51,7 @@ Every output sent to `stderr` will be shown in the gateway's logs.
 
 ## `http`
 
-Usage: `--interceptor=before:http|http://host:port/path` or `--interceptor=after:http|http://host:port/path`.
+Usage: `--interceptor=before:http:http://host:port/path` or `--interceptor=after:http:http://host:port/path`.
 
 e.g:
 
