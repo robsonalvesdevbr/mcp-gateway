@@ -14,7 +14,7 @@ import (
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/sliceutil"
 )
 
-const l7Image = "docker/mcp-http-proxy:v1@sha256:d57daf14d7097ff7e59740311d27c482e560cff2f35f8aff1d5a7cc3b5289b18"
+const l7Image = "docker/mcp-l7proxy:v1"
 
 // runL7Proxy starts a single L7 proxy for all the allowed hosts. It returns
 // the proxy container name and a list of links to add to the MCP tool.

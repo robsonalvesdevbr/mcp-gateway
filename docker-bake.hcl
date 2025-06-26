@@ -9,6 +9,8 @@ group all {
   targets = [
     "agents_gateway",
     "jcat",
+    "l4proxy",
+    "l7proxy",
   ]
 }
 
@@ -36,10 +38,17 @@ target jcat {
   output = ["type=image,name=docker/jcat"]
 }
 
-target http_proxy {
+
+target l4proxy {
+  inherits = ["_base"]
+  context = "tools/l4proxy"
+  output = ["type=image,name=docker/mcp-l4proxy:v1"]
+}
+
+target l7proxy {
   inherits = ["_base"]
   context = "tools/http_proxy"
-  output = ["type=image,name=docker/mcp-http-proxy:v1"]
+  output = ["type=image,name=docker/mcp-l7proxy:v1"]
 }
 
 target agents_gateway {

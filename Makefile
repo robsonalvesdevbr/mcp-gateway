@@ -58,4 +58,10 @@ docker-mcp:
 push-gateway-image:
 	docker buildx bake agents_gateway --push
 
-.PHONY: format lint clean docker-mcp-cross push-module-image mcp-package test docker-mcp push-gateway-image
+push-l4proxy-image:
+	docker buildx bake l4proxy --push
+
+push-l7proxy-image:
+	docker buildx bake l7proxy --push
+
+.PHONY: format lint clean docker-mcp-cross push-module-image mcp-package test docker-mcp push-gateway-image push-l4proxy-image push-l7proxy-image

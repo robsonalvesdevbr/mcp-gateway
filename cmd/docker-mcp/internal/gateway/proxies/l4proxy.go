@@ -14,7 +14,7 @@ import (
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/sliceutil"
 )
 
-const l4Image = "docker/mcp-l4proxy"
+const l4Image = "docker/mcp-l4proxy:v1"
 
 // runL4Proxies takes a list of L4 proxies and starts an L4 proxy container for
 // each hostname. It updates the target config with the container links to add
