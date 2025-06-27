@@ -27,5 +27,5 @@ docker mcp gateway run --servers=gitmcpmoby --catalog=./catalog.yaml
 **Test a tool call**:
 
 ```console
-docker mcp tools --gatewayArg="--servers=gitmcpmoby,--catalog=./catalog.yaml" call fetch_moby_documentation
+docker mcp tools --gateway-arg="--servers=gitmcpmoby,--catalog=./catalog.yaml" call fetch_moby_documentation
 ```
