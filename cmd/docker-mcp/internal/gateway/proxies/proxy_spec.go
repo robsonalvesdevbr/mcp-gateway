@@ -10,6 +10,17 @@ import (
 
 type Protocol int
 
+func (p Protocol) String() string {
+	switch p {
+	case HTTP:
+		return "http"
+	case TCP:
+		return "tcp"
+	default:
+		return "unknown"
+	}
+}
+
 const (
 	HTTP Protocol = iota
 	TCP

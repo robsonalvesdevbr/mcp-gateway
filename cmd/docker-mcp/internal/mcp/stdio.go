@@ -59,7 +59,7 @@ func (c *stdioMCPClient) Initialize(ctx context.Context, request mcp.InitializeR
 
 	var stderr bytes.Buffer
 	if debug {
-		cmd.Stderr = io.MultiWriter(&stderr, logs.NewPrefixer(os.Stderr, "  > "+c.name+": "))
+		cmd.Stderr = io.MultiWriter(&stderr, logs.NewPrefixer(os.Stderr, "- "+c.name+": "))
 	} else {
 		cmd.Stderr = &stderr
 	}

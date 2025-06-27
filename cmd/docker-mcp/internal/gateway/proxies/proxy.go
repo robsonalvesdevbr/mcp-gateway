@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"golang.org/x/sync/errgroup"
@@ -29,7 +30,7 @@ func RunNetworkProxies(ctx context.Context, cli docker.Client, proxies []Proxy, 
 		return TargetConfig{}, nil, nil
 	}
 
-	log("  - Running proxy sidecars for hosts", proxies)
+	logf("  - Running proxy sidecars for hosts %+v\n", proxies)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -121,7 +122,7 @@ func RunNetworkProxies(ctx context.Context, cli docker.Client, proxies []Proxy, 
 }
 
 func shutdownProxies(ctx context.Context, cli docker.Client, proxyNames []string) error {
-	logf("shutting down proxies (%s)", proxyNames)
+	logf("    > Shutting down proxies (%s)", strings.Join(proxyNames, ", "))
 
 	var errs []error
 	for _, name := range proxyNames {
@@ -134,7 +135,7 @@ func shutdownProxies(ctx context.Context, cli docker.Client, proxyNames []string
 }
 
 func removeProxies(ctx context.Context, cli docker.Client, nwNames []string, proxyNames []string) error {
-	logf("removing proxies (%s) and networks (%s)", proxyNames, nwNames)
+	logf("    > Removing proxies (%s) and networks (%s)", strings.Join(proxyNames, ", "), strings.Join(nwNames, ", "))
 
 	var errs []error
 	for _, name := range proxyNames {

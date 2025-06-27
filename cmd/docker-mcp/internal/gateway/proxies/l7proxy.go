@@ -37,7 +37,7 @@ func runL7Proxy(ctx context.Context, cli docker.Client, target *TargetConfig, ex
 	})...)
 	target.Env = append(target.Env, "http_proxy="+proxyName+":8080", "https_proxy="+proxyName+":8080")
 
-	logf("starting l7 proxy %s for %s", proxyName, allowedHosts)
+	logf("    - Starting l7 proxy %s for %s", proxyName, allowedHosts)
 
 	return proxyName, cli.StartContainer(ctx, proxyName,
 		container.Config{
