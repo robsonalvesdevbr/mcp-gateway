@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
 
 	cerrdefs "github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/container"
@@ -40,5 +41,14 @@ func (c *dockerClient) StartContainer(ctx context.Context, containerID string, c
 func (c *dockerClient) StopContainer(ctx context.Context, containerID string, timeout int) error {
 	return c.apiClient().ContainerStop(ctx, containerID, container.StopOptions{
 		Timeout: &timeout,
+	})
+}
+
+func (c *dockerClient) ContainerLogs(ctx context.Context, containerID string, showStdout, showStderr bool) (io.ReadCloser, error) {
+	return c.apiClient().ContainerLogs(ctx, containerID, container.LogsOptions{
+		ShowStdout: showStdout,
+		ShowStderr: showStderr,
+		Follow:     true,
+		Since:      "0",
 	})
 }

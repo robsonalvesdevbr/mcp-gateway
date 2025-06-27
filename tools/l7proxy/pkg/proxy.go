@@ -19,10 +19,10 @@ type ProxyServer struct {
 func NewProxyServer(allowedHosts string) *ProxyServer {
 	allowed := map[string]bool{}
 	for host := range strings.SplitSeq(allowedHosts, ",") {
-		allowed[strings.TrimSpace(host)] = true
+		host = strings.TrimSpace(host)
+		allowed[host] = true
+		fmt.Fprintln(os.Stderr, "Allowed host:", host)
 	}
-
-	fmt.Println("Allowed hosts:", allowed)
 
 	return &ProxyServer{
 		allowedHosts: allowed,

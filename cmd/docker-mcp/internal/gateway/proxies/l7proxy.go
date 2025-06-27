@@ -14,7 +14,7 @@ import (
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/sliceutil"
 )
 
-const l7Image = "docker/mcp-l7proxy:v1@sha256:35cb2e5bf92124038dad4761c248e137f99793831e40ca84bca969640c2aac0f"
+const l7Image = "docker/mcp-l7proxy:v1@sha256:ef8fd775fdf8ad060af897018c0db3c52229c493cfde437e86c754f3fcd59233"
 
 // runL7Proxy starts a single L7 proxy for all the allowed hosts. It returns
 // the proxy container name and a list of links to add to the MCP tool.
@@ -39,14 +39,16 @@ func runL7Proxy(ctx context.Context, cli docker.Client, target *TargetConfig, ex
 
 	logf("    - Starting l7 proxy %s for %s", proxyName, allowedHosts)
 
-	return proxyName, cli.StartContainer(ctx, proxyName,
+	err := cli.StartContainer(ctx, proxyName,
 		container.Config{
 			Image: l7Image,
 			Env: []string{
 				"ALLOWED_HOSTS=" + allowedHosts,
 			},
 			Labels: map[string]string{
-				"docker-mcp": "true",
+				"docker-mcp":            "true",
+				"docker-mcp-proxy":      "true",
+				"docker-mcp-proxy-type": "l7",
 			},
 		},
 		container.HostConfig{
@@ -60,4 +62,9 @@ func runL7Proxy(ctx context.Context, cli docker.Client, target *TargetConfig, ex
 			},
 		},
 	)
+	if err != nil {
+		return "", err
+	}
+
+	return proxyName, nil
 }

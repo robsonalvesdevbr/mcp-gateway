@@ -34,18 +34,26 @@ func Call(ctx context.Context, version string, gatewayArgs []string, debug bool,
 	fmt.Println("Tool call took:", time.Since(start))
 
 	if response.IsError {
-		return fmt.Errorf("error calling tool: %s", toolName)
+		return fmt.Errorf("error calling tool %s: %s", toolName, toText(response))
 	}
+
+	fmt.Println(toText(response))
+
+	return nil
+}
+
+func toText(response *mcp.CallToolResult) string {
+	var contents []string
 
 	for _, content := range response.Content {
 		if textContent, ok := content.(mcp.TextContent); ok {
-			fmt.Println(textContent.Text)
+			contents = append(contents, textContent.Text)
 		} else {
-			fmt.Println(content)
+			contents = append(contents, fmt.Sprintf("%v", content))
 		}
 	}
 
-	return nil
+	return strings.Join(contents, "\n")
 }
 
 func parseArgs(args []string) map[string]any {

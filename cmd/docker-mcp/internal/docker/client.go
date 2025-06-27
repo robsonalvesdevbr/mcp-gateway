@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"io"
 	"sync"
 
 	"github.com/docker/cli/cli/command"
@@ -16,6 +17,7 @@ type Client interface {
 	RemoveContainer(ctx context.Context, containerID string, force bool) error
 	StartContainer(ctx context.Context, containerID string, containerConfig container.Config, hostConfig container.HostConfig, networkingConfig network.NetworkingConfig) error
 	StopContainer(ctx context.Context, containerID string, timeout int) error
+	ContainerLogs(ctx context.Context, containerID string, showStdout, showStderr bool) (io.ReadCloser, error)
 	ImageExists(ctx context.Context, name string) (bool, error)
 	PullImage(ctx context.Context, name string) error
 	PullImages(ctx context.Context, names ...string) error

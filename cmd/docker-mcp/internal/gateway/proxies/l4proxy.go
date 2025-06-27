@@ -78,7 +78,7 @@ func runL4Proxy(ctx context.Context, cli docker.Client, proxyName, hostname, int
 
 	logf("starting l4 proxy %s for %s, ports %s", proxyName, hostname, portsStr)
 
-	return cli.StartContainer(ctx, proxyName,
+	err := cli.StartContainer(ctx, proxyName,
 		container.Config{
 			Image: l4Image,
 			Env: []string{
@@ -86,7 +86,9 @@ func runL4Proxy(ctx context.Context, cli docker.Client, proxyName, hostname, int
 				"PROXY_PORTS=" + portsStr,
 			},
 			Labels: map[string]string{
-				"docker-mcp": "true",
+				"docker-mcp":            "true",
+				"docker-mcp-proxy":      "true",
+				"docker-mcp-proxy-type": "l4",
 			},
 		},
 		container.HostConfig{
@@ -100,6 +102,11 @@ func runL4Proxy(ctx context.Context, cli docker.Client, proxyName, hostname, int
 			},
 		},
 	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func cmpProxies(a, b Proxy) int {
