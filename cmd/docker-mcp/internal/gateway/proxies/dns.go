@@ -15,10 +15,10 @@ import (
 	"github.com/docker/docker-mcp/cmd/docker-mcp/internal/docker"
 )
 
-const dnsImage = "docker/mcp-dns-forwarder"
+const dnsImage = "docker/mcp-dns-forwarder:v1@sha256:a47b7362fdc78dd2cf8779c52ff782312a3758537e635b91529fddabaadbd4dd"
 
 func runDNSForwarder(ctx context.Context, cli docker.Client, target *TargetConfig, extNwName string, keepCtrs bool) (_ string, _ io.ReadCloser, retErr error) {
-	logf("running dns forwarder")
+	logf("Running dns forwarder...")
 
 	if err := cli.PullImage(ctx, dnsImage); err != nil {
 		return "", nil, fmt.Errorf("pulling image %s: %w", dnsImage, err)

@@ -11,6 +11,7 @@ group all {
     "jcat",
     "l4proxy",
     "l7proxy",
+    "dns-forwarder",
   ]
 }
 
@@ -51,9 +52,16 @@ target l7proxy {
   output = ["type=image,name=docker/mcp-l7proxy:v1"]
 }
 
+target dns-forwarder {
+  inherits = ["_base"]
+  context = "tools/dns-forwarder"
+  output = ["type=image,name=docker/mcp-dns-forwarder:v1"]
+}
+
 target agents_gateway {
   inherits = ["_base"]
   context = "."
   target = "agents_gateway"
   output = ["type=image,name=docker/agents_gateway:v2"]
 }
+
