@@ -1,8 +1,13 @@
-# Docker MCP Gateway
+# Docker MCP Plugin and Docker MCP Gateway
 
 ![build](https://github.com/docker/docker-mcp/actions/workflows/ci.yml/badge.svg)
 
-The Docker MCP gateway allows developers to consume MCP servers from the [Docker MCP Catalog](https://hub.docker.com/mcp). Using the [MCP Toolkit](https://docs.docker.com/ai/mcp-catalog-and-toolkit/toolkit/), developers can package and distribute their own Model Context Protocol servers.
+The [MCP Toolkit](https://docs.docker.com/ai/mcp-catalog-and-toolkit/toolkit/), in Docker Desktop, allows
+developers to configure and consume MCP servers from the [Docker MCP Catalog](https://hub.docker.com/mcp).
+
+Underneath, the Toolkit is powered by a docker CLI plugin: `docker-mcp`. This repository is the code of this CLI plugin. It can work in Docker Desktop or independently.
+
+The main feature of this CLI is the **Docker MCP Gateway** which allows easy and secure running and deployment of MCP servers. See [Features](#Features) for a list of all the features.
 
 ## What is MCP?
 
@@ -12,21 +17,21 @@ The [Model Context Protocol (MCP)](https://spec.modelcontextprotocol.io/) is an 
 
 Developers face criticial barriers when integrating Model Context Protocol (MCP) tools into production workflows:
 
-- **Managing MCP server lifecycle** Each local MCP sever in the catalog runs in an isolated Docker container. npx and uvx servers can be granted minimal host privileges.
-- **Providing a unified interface** AI models access MCP servers through a single gateway AI gateway.
-- **Handling authentication and security** Keep secrets out of environment variables using Docker Desktop's secrets management
-- **Supports dynamic tool discovery** and configuration. Each MCP client (eg VS Code, Cursor, Claude Desktop, etc.) connects to the same gateway configuration, ensuring consistency across different clients.
-- **Enables OAuth flows** for MCPs that require OAuth access token service connections
+- **Managing MCP server lifecycle** Each local MCP sever in the catalog runs in an isolated Docker container. npx and uvx servers are granted minimal host privileges.
+- **Providing a unified interface** AI models access MCP servers through a single Gateway.
+- **Handling authentication and security** Keep secrets out of environment variables using Docker Desktop's secrets management.
+- **Supports dynamic tool discovery** and configuration. Each MCP client (eg VS Code, Cursor, Claude Desktop, etc.) connects to the same Gateway configuration, ensuring consistency across different clients.
+- **Enables OAuth flows** for MCPs that require OAuth access token service connections.
 
 ## Features
 
-- 🔧 **Server Management**: List, inspect, and call MCP tools, resoures and prompts from multiple servers
-- 🐳 **Container-based Servers**: Run MCP servers as Docker containers with proper isolation
-- 🔐 **Secrets Management**: Secure handling of API keys and credentials via Docker Desktop
-- 🌐 **OAuth Integration**: Built-in OAuth flows for service authentication
-- 📋 **Server Catalog**: Manage and configure multiple MCP catalogs
-- 🔍 **Dynamic Discovery**: Automatic tool, prompt, and resource discovery from running servers
-- 📊 **Monitoring**: Built-in logging and call tracing capabilities
+- 🐳 **Container-based Servers**: Run MCP servers as Docker containers with proper isolation.
+- 🔧 **Server Management**: List, inspect, and call MCP tools, resources and prompts from multiple servers.
+- 🔐 **Secrets Management**: Secure handling of API keys and credentials via Docker Desktop.
+- 🌐 **OAuth Integration**: Built-in OAuth flows for service authentication.
+- 📋 **Server Catalog**: Manage and configure multiple MCP catalogs.
+- 🔍 **Dynamic Discovery**: Automatic tool, prompt, and resource discovery from running servers.
+- 📊 **Monitoring**: Built-in logging and call tracing capabilities.
 
 ## Installation
 
@@ -41,7 +46,7 @@ Developers face criticial barriers when integrating Model Context Protocol (MCP)
 
 ### Install as Docker CLI Plugin
 
-The MCP cli will already be installed on recent versions of Docker Desktop but you can update to the latest version by following these steps.
+The MCP cli will already be installed on recent versions of Docker Desktop but you can buildand install the latest version by following these steps:
 
 ```bash
 # Clone the repository
@@ -133,7 +138,7 @@ docker mcp secret export server1 server2
 
 ### Gateway Operations
 
-Start up an MCP gateway. This can be used for one client, or to service multiple clients if using either `sse` or `streaming` transports.
+Start up an MCP Gateway. This can be used for one client, or to service multiple clients if using either `sse` or `streaming` transports.
 
 ```bash
 # Run the MCP gateway (stdio)
@@ -143,7 +148,7 @@ docker mcp gateway run
 docker mcp gateway run --port 8080 --transport streaming
 
 # Run with specific servers only, and select all tools from server1 and just tool2 from server2
-docker mcp gateway run --servers server1 --servers server2 --tools server1:* --tools server2:tool2
+docker mcp gateway run --servers server1,server2 --tools server1:* --tools server2:tool2
 
 # Run a fallback secret lookup - lookup desktop secret first and the fallback to a local .env file
 docker mcp gateway run --secrets=docker-desktop:./.env
@@ -161,17 +166,20 @@ docker mcp gateway run --watch
 # Show available commands
 docker mcp --help
 
+# Count available tools
+docker mcp tools count
+
 # List all available MCP tools
 docker mcp tools list
+
+# List all available MCP tools in JSON format
+docker mcp tools list --format=json
 
 # Inspect a specific tool
 docker mcp tools inspect <tool-name>
 
 # Call a tool with arguments
 docker mcp tools call <tool-name> [arguments...]
-
-# Count available tools
-docker mcp tools count
 ```
 
 ## Configuration
@@ -182,7 +190,8 @@ The MCP CLI uses several configuration files:
 - **`registry.yaml`**: Registry of enabled servers
 - **`config.yaml`**: Gateway configuration and options
 
-Configuration files are typically stored in `~/.docker/mcp/`.
+Configuration files are typically stored in `~/.docker/mcp/`. This is in this directory that Docker Desktop's
+MCP Toolkit with store its configuration.
 
 ## Development
 
