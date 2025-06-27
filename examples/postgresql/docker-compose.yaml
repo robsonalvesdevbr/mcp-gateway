@@ -8,7 +8,7 @@ services:
       - pg
 
   gateway:
-    image: docker/agents_gateway:v2
+    image: docker/mcp-gateway
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command:
