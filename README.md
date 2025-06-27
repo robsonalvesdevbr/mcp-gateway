@@ -73,12 +73,29 @@ Manage the catalogs available to the MCP gateway. The [default catalog](https://
 # Manage server catalogs
 docker mcp catalog --help
 
-# list available catalogs
+# Initialize the default Docker MCP Catalog
+docker mcp catalog init
+
+# List available catalogs
 docker mcp catalog ls
 
-# show all servers in a catalog
+# Show all servers in a catalog
 docker mcp catalog show docker-mcp
 ```
+
+### MCP Gateway Operations
+
+Start up an MCP Gateway. This can be used for one client, or to service multiple clients if using either `sse` or `streaming` transports.
+
+```bash
+# Run the MCP gateway (stdio)
+docker mcp gateway run
+
+# Run the MCP gateway (streaming)
+docker mcp gateway run --port 8080 --transport streaming
+```
+
+More about [the MCP Gateway](docs/mcp-gateway.md).
 
 ### Server Management
 
@@ -135,20 +152,6 @@ docker mcp policy --help
 #    will no longer be required once Docker Cloud can access secret stores) 
 docker mcp secret export server1 server2
 ```
-
-### Gateway Operations
-
-Start up an MCP Gateway. This can be used for one client, or to service multiple clients if using either `sse` or `streaming` transports.
-
-```bash
-# Run the MCP gateway (stdio)
-docker mcp gateway run
-
-# Run the MCP gateway (streaming)
-docker mcp gateway run --port 8080 --transport streaming
-```
-
-More details [here](docs/mcp-gateway.md).
 
 ### Tool Management
 

@@ -25,6 +25,21 @@ docker mcp gateway run --verbose --log-calls
 docker mcp gateway run --watch
 ```
 
+## How to connect to an MCP Client?
+
+A typical usage looks like this Claude Desktop configuration:
+
+```
+{
+    "mcpServers": {
+        "MCP_DOCKER": {
+            "command": "docker",
+            "args": ["mcp", "gateway", "run"]
+        }
+    }
+}
+```
+
 ## How to run the MCP Gateway with Docker Compose?
 
 The simplest way to tun the MCP Gateway with Docker Compose is with this kind of compose file:
