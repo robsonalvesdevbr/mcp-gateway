@@ -146,19 +146,9 @@ docker mcp gateway run
 
 # Run the MCP gateway (streaming)
 docker mcp gateway run --port 8080 --transport streaming
-
-# Run with specific servers only, and select all tools from server1 and just tool2 from server2
-docker mcp gateway run --servers server1,server2 --tools server1:* --tools server2:tool2
-
-# Run a fallback secret lookup - lookup desktop secret first and the fallback to a local .env file
-docker mcp gateway run --secrets=docker-desktop:./.env
-
-# Run with verbose logging
-docker mcp gateway run --verbose --log-calls
-
-# Run in watch mode (auto-reload on config changes)
-docker mcp gateway run --watch
 ```
+
+More details [here](docs/mcp-gateway.md).
 
 ### Tool Management
 
