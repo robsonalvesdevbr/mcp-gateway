@@ -2,7 +2,7 @@
 
 Running MCP Servers in Docker Containers is robust and secure. 
 
-See [Why running MCP Servers in Container is more secure](/docs/security.md)
+See [Why running MCP Servers in Container is more secure](security.md)
 
 ## How to run the MCP Gateway?
 
