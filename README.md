@@ -193,31 +193,6 @@ The MCP CLI uses several configuration files:
 Configuration files are typically stored in `~/.docker/mcp/`. This is in this directory that Docker Desktop's
 MCP Toolkit with store its configuration.
 
-## Development
-
-### Building from Source
-
-```bash
-# Build the binary
-make docker-mcp
-
-# Cross-compile for all platforms
-make docker-mcp-cross
-
-# Run tests
-make test
-```
-
-### Code Quality
-
-```bash
-# Format code
-make format
-
-# Run linter
-make lint
-```
-
 ## Architecture
 
 The Docker MCP CLI implements a gateway pattern:
@@ -234,21 +209,11 @@ See [docs/message-flow.md](docs/message-flow.md) for detailed message flow diagr
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes
-4. Run tests and linting (`make unit-tests lint`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+The build instructions are available in the [contribution guide](CONTRIBUTING.md).
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Code of Conduct
-
-This project follows a Code of Conduct. Please review it in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Support
 
