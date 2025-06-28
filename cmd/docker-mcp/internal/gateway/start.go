@@ -85,12 +85,11 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 	cleanup := func(context.Context) error { return nil }
 
 	var client mcpclient.Client
-	var targetConfig proxies.TargetConfig
 
 	if serverConfig.Spec.SSEEndpoint != "" {
 		client = mcpclient.NewSSEClient(serverConfig.Name, serverConfig.Spec.SSEEndpoint)
 	} else {
-		image := serverConfig.Spec.Image
+		var targetConfig proxies.TargetConfig
 		if g.BlockNetwork && len(serverConfig.Spec.AllowHosts) > 0 {
 			var err error
 			if targetConfig, cleanup, err = g.runProxies(ctx, serverConfig.Spec.AllowHosts); err != nil {
@@ -98,6 +97,7 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 			}
 		}
 
+		image := serverConfig.Spec.Image
 		args, env := g.argsAndEnv(serverConfig, readOnly, targetConfig)
 
 		command := expandEnvList(eval.EvaluateList(serverConfig.Spec.Command, serverConfig.Config), env)
