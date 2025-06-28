@@ -88,6 +88,8 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 
 	if serverConfig.Spec.SSEEndpoint != "" {
 		client = mcpclient.NewSSEClient(serverConfig.Name, serverConfig.Spec.SSEEndpoint)
+	} else if g.Static {
+		client = mcpclient.NewStdioCmdClient(serverConfig.Name, "socat", nil, "STDIO", fmt.Sprintf("TCP:mcp-%s:4444", serverConfig.Name))
 	} else {
 		var targetConfig proxies.TargetConfig
 		if g.BlockNetwork && len(serverConfig.Spec.AllowHosts) > 0 {
