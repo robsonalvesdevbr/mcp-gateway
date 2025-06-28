@@ -29,7 +29,7 @@ func (c *dockerClient) ReadSecrets(ctx context.Context, names []string, lenient 
 	args = append(args, command...)
 	buf, err := exec.CommandContext(ctx, "docker", args...).CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("fetching secrets %w: %s", err, string(buf))
+		return nil, fmt.Errorf("reading secrets %w: %s", err, string(buf))
 	}
 
 	var list []string
