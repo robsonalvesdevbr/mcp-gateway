@@ -181,11 +181,11 @@ func (g *Gateway) Run(ctx context.Context) error {
 	switch strings.ToLower(g.Transport) {
 	case "stdio":
 		if g.Port == 0 {
-			log("> Starting stdio server")
+			log("> Start stdio server")
 			return startStdioServer(ctx, newMCPServer, os.Stdin, os.Stdout)
 		}
 
-		log("> Starting stdio over TCP server on port", g.Port)
+		log("> Start stdio over TCP server on port", g.Port)
 		return startStdioOverTCPServer(ctx, newMCPServer, ln)
 
 	case "sse":
@@ -193,7 +193,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 			return errors.New("missing 'port' for 'sse' server")
 		}
 
-		log("> Starting sse server on port", g.Port)
+		log("> Start sse server on port", g.Port)
 		return startSseServer(ctx, newMCPServer, ln)
 
 	case "streaming":
@@ -201,7 +201,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 			return errors.New("missing 'port' for streaming server")
 		}
 
-		log("> Starting streaming server on port", g.Port)
+		log("> Start streaming server on port", g.Port)
 		return startStreamingServer(ctx, newMCPServer, ln)
 
 	default:
