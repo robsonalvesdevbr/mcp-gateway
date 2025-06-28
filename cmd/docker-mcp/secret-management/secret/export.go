@@ -56,5 +56,5 @@ func exportSecrets(ctx context.Context, docker docker.Client, serverNames []stri
 
 	sort.Strings(secretNames)
 
-	return docker.ReadSecrets(ctx, secretNames)
+	return docker.ReadSecrets(ctx, secretNames, false)
 }

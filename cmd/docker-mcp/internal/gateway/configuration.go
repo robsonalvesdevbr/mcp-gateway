@@ -301,7 +301,7 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 	}
 
 	log("  - Reading secrets", secretNames)
-	secretsByName, err := c.docker.ReadSecrets(ctx, secretNames)
+	secretsByName, err := c.docker.ReadSecrets(ctx, secretNames, true)
 	if err != nil {
 		return nil, fmt.Errorf("finding secrets %s: %w", secretNames, err)
 	}
