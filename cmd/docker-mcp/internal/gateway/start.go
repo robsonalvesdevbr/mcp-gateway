@@ -34,10 +34,10 @@ func (g *Gateway) baseArgs(name string) []string {
 
 	// Add a few labels to the container for identification
 	args = append(args,
-		"--label", "docker-mcp=true",
-		"--label", "docker-mcp-tool-type=mcp",
-		"--label", "docker-mcp-name="+name,
-		"--label", "docker-mcp-transport=stdio",
+		"-l", "docker-mcp=true",
+		"-l", "docker-mcp-tool-type=mcp",
+		"-l", "docker-mcp-name="+name,
+		"-l", "docker-mcp-transport=stdio",
 	)
 
 	return args
@@ -102,9 +102,9 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 
 		command := expandEnvList(eval.EvaluateList(serverConfig.Spec.Command, serverConfig.Config), env)
 		if len(command) == 0 {
-			log("  - Running server", imageBaseName(image), "with", args)
+			log("  - Running", imageBaseName(image), "with", args)
 		} else {
-			log("  - Running server", imageBaseName(image), "with", args, "and command", command)
+			log("  - Running", imageBaseName(image), "with", args, "and command", command)
 		}
 
 		var runArgs []string
