@@ -20,10 +20,15 @@ func (c *dockerClient) ReadSecrets(ctx context.Context, names []string, lenient 
 		return nil, err
 	}
 
+	if lenient && len(names) == 1 {
+		// If there's only one secret, read it directly and fall back to one-by-one reading if needed
+		return c.readSecretsOneByOneOptional(ctx, names)
+	}
+
 	secrets, err := c.readSecrets(ctx, names)
 	if err != nil {
 		if lenient && strings.Contains(err.Error(), "no such secret") {
-			return c.readSecretsOneByOne(ctx, names)
+			return c.readSecretsOneByOneOptional(ctx, names)
 		}
 
 		return nil, fmt.Errorf("reading secrets %w", err)
@@ -66,7 +71,7 @@ func (c *dockerClient) readSecrets(ctx context.Context, names []string) (map[str
 
 // readSecretsOneByOne reads secrets one by one, which is useful for lenient mode.
 // It's slower but can handle cases where some secrets might not exist.
-func (c *dockerClient) readSecretsOneByOne(ctx context.Context, names []string) (map[string]string, error) {
+func (c *dockerClient) readSecretsOneByOneOptional(ctx context.Context, names []string) (map[string]string, error) {
 	secrets := map[string]string{}
 
 	for _, name := range names {
