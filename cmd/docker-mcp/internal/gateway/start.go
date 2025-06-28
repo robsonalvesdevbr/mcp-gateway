@@ -126,7 +126,7 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 	defer cancel()
 
 	if _, err := client.Initialize(ctx, initRequest, g.Verbose); err != nil {
-		return nil, fmt.Errorf("initializing %s: %w", serverConfig.Name, err)
+		return nil, err
 	}
 
 	return newClientWithCleanup(client, cleanup), nil
