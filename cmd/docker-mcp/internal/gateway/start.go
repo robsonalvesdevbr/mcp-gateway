@@ -126,11 +126,7 @@ func (g *Gateway) startMCPClient(ctx context.Context, serverConfig ServerConfig,
 	defer cancel()
 
 	if _, err := client.Initialize(ctx, initRequest, g.Verbose); err != nil {
-		initializedObject := serverConfig.Spec.Image
-		if serverConfig.Spec.SSEEndpoint != "" {
-			initializedObject = serverConfig.Spec.SSEEndpoint
-		}
-		return nil, fmt.Errorf("initializing %s: %w", initializedObject, err)
+		return nil, fmt.Errorf("initializing %s: %w", serverConfig.Name, err)
 	}
 
 	return newClientWithCleanup(client, cleanup), nil
