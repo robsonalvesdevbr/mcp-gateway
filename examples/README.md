@@ -1,6 +1,7 @@
-# Using the MCP Gateway with Docker Compose and the MCP Toolkit
+# Examples of MCP Gateway setup
 
-+ `minimal` - Simplest Compose file. Just one MCP Server, without configuration or secrets.
++ `container` - Run the MCP Gateway in a container.
++ `minimal-compose` - Simplest Compose file. Just one MCP Server, without configuration or secrets.
 + `config` - Just one MCP Server with configuration and secrets.
 + `client` - A Python client connecting to the MCP Gateway over http streaming transport.
 + `secrets` - Just one MCP Server, with a secret handled in an `.env` file.
