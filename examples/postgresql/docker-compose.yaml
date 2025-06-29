@@ -5,7 +5,6 @@ services:
       - MCP_HOST=http://gateway:8811/mcp
     depends_on:
       - gateway
-      - pg
 
   gateway:
     image: docker/mcp-gateway
@@ -19,6 +18,9 @@ services:
       - --secrets=/run/secrets/database_url
     secrets:
       - database_url
+    depends_on:
+      pg:
+        condition: service_healthy
 
   pg:
     image: postgres
