@@ -8,3 +8,4 @@
 + `mcp_toolkit` - Connect to the MCP Toolkit and let it handle all the configuration and secrets.
 + `postgresql` - Query a PostgreSQL DB through a PostgreSQL MCP Server, through the Gateway, from a python client.
 + `docker-in-docker` - Run the MCP Gateway and the MCP server into the same Docker in Docker container.
++ `interceptors` - Configure interceptors on Tool Calls.
