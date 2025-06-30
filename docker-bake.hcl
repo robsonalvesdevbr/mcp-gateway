@@ -62,6 +62,10 @@ target mcp-gateway {
   inherits = ["_base"]
   context = "."
   target = "mcp-gateway"
-  output = ["type=image,name=docker/mcp-gateway", "type=image,name=docker/agents_gateway:v2"]
+  output = [
+    "type=image,name=docker/mcp-gateway",
+    "type=image,name=docker/mcp-gateway:v1",
+    "type=image,name=docker/agents_gateway:v2",
+  ]
 }
 
