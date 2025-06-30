@@ -161,7 +161,13 @@ func (g *Gateway) argsAndEnv(serverConfig ServerConfig, readOnly *bool, targetCo
 	// Secrets
 	for _, s := range serverConfig.Spec.Secrets {
 		args = append(args, "-e", s.Env)
-		env = append(env, fmt.Sprintf("%s=%s", s.Env, serverConfig.Secrets[s.Name]))
+
+		secretValue, ok := serverConfig.Secrets[s.Name]
+		if ok {
+			env = append(env, fmt.Sprintf("%s=%s", s.Env, secretValue))
+		} else {
+			env = append(env, fmt.Sprintf("%s=%s", s.Env, "<UNKNOWN>"))
+		}
 	}
 
 	// Env
