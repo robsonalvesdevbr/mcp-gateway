@@ -62,3 +62,27 @@ e.g:
 
 The tool call request (`before`) or tool call response (`after`) are passed as json objects into a `POST` request.
 To return a custom response, the interceptor needs to write a non empty json object.
+
+# Examples
+
+Log the tool request's arguments:
+
+```yaml
+- --interceptor
+- before:exec:echo Arguments=$(jq -r ".params.arguments") >&2
+```
+
+Log the tool call's response:
+
+```yaml
+- --interceptor
+- after:exec:echo Response=$(jq -r ".") >&2
+```
+
+Trim down the tool's response text:
+
+```yaml
+- --interceptor
+- after:exec:jq -c '.content[].text |= (.[:100])'
+```
+
