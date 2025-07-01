@@ -54,7 +54,7 @@ func (c *dockerClient) readSecrets(ctx context.Context, names []string) (map[str
 	var args []string
 
 	// When running in cloud mode but not in a container, we might be able to use Docker Desktop's special socket
-	// to rad the secrets.
+	// to read the secrets.
 	if os.Getenv("DOCKER_MCP_IN_CONTAINER") != "1" {
 		var path string
 		switch runtime.GOOS {
