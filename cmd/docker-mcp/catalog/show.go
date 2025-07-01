@@ -62,9 +62,14 @@ func newShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show <name>",
 		Short: "Show a catalog",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runShow(cmd.Context(), args[0], *opts)
+			name := DockerCatalogName
+			if len(args) > 0 {
+				name = args[0]
+			}
+
+			return runShow(cmd.Context(), name, *opts)
 		},
 	}
 	flags := cmd.Flags()
