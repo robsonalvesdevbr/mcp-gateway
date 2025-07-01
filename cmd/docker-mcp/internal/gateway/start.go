@@ -26,7 +26,14 @@ func (g *Gateway) baseArgs(name string) []string {
 		args = append(args, "--rm")
 	}
 
-	args = append(args, "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", fmt.Sprintf("%d", g.Cpus), "--memory", g.Memory, "--pull", "never")
+	args = append(args, "-i", "--init", "--security-opt", "no-new-privileges")
+	if g.Cpus > 0 {
+		args = append(args, "--cpus", fmt.Sprintf("%d", g.Cpus))
+	}
+	if g.Memory != "" {
+		args = append(args, "--memory", g.Memory)
+	}
+	args = append(args, "--pull", "never")
 
 	if os.Getenv("DOCKER_MCP_IN_DIND") == "1" {
 		args = append(args, "--privileged")
