@@ -4,6 +4,7 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -35,4 +36,15 @@ func TestIntegrationCatalogLs(t *testing.T) {
 func TestIntegrationCatalogShow(t *testing.T) {
 	out := runDockerMCP(t, "catalog", "show")
 	assert.Contains(t, out, "playwright:")
+}
+
+func TestIntegrationCatalogDryRunEmpty(t *testing.T) {
+	out := runDockerMCP(t, "gateway", "run", "--dry-run", "--servers=")
+	assert.Contains(t, out, "Initialized in")
+}
+
+func TestIntegrationCatalogDryRunFetch(t *testing.T) {
+	out := runDockerMCP(t, "gateway", "run", "--dry-run", "--servers=fetch", "--catalog="+catalog.DockerCatalogURL)
+	assert.Contains(t, out, "fetch: (1 tools)")
+	assert.Contains(t, out, "Initialized in")
 }
