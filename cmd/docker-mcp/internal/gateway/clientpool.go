@@ -238,11 +238,11 @@ func (cp *clientPool) argsAndEnv(serverConfig ServerConfig, readOnly *bool, targ
 	for _, e := range serverConfig.Spec.Env {
 		args = append(args, "-e", e.Name)
 
-		value := e.Value
+		var value string
 		if strings.Contains(e.Value, "{{") && strings.Contains(e.Value, "}}") {
-			value = fmt.Sprintf("%v", eval.Evaluate(value, serverConfig.Config))
+			value = fmt.Sprintf("%v", eval.Evaluate(e.Value, serverConfig.Config))
 		} else {
-			value = expandEnv(value, env)
+			value = expandEnv(e.Value, env)
 		}
 
 		env = append(env, fmt.Sprintf("%s=%s", e.Name, value))
