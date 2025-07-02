@@ -51,7 +51,7 @@ func readMCPServers(ctx context.Context, fileOrURL string) (map[string]Server, e
 
 func readFileOrURL(ctx context.Context, fileOrURL string) ([]byte, error) {
 	switch {
-	case strings.HasPrefix(fileOrURL, "http://") || strings.HasPrefix(fileOrURL, "https://"):
+	case isURL(fileOrURL):
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fileOrURL, nil)
 		if err != nil {
 			return nil, err
@@ -96,4 +96,8 @@ func readFileOrURL(ctx context.Context, fileOrURL string) ([]byte, error) {
 		}
 		return buf, nil
 	}
+}
+
+func isURL(fileOrURL string) bool {
+	return strings.HasPrefix(fileOrURL, "http://") || strings.HasPrefix(fileOrURL, "https://")
 }

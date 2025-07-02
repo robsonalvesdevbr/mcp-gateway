@@ -89,7 +89,7 @@ func runShow(ctx context.Context, name string, opts showOpts) error {
 
 	// Auto update the catalog if it's "too old"
 	needsUpdate := false
-	if name == DockerCatalogName {
+	if name == DockerCatalogName && isURL(catalog.URL) {
 		if catalog.LastUpdate == "" {
 			needsUpdate = true
 		} else {
@@ -157,4 +157,8 @@ func getSortedKeys(m map[string]Tile) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+func isURL(fileOrURL string) bool {
+	return strings.HasPrefix(fileOrURL, "http://") || strings.HasPrefix(fileOrURL, "https://")
 }
