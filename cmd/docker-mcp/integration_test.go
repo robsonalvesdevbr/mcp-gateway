@@ -8,36 +8,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func thisIsAnIntegrationTest(t *testing.T) {
+func runDockerMCP(t *testing.T, args ...string) string {
 	t.Helper()
 	if testing.Short() {
 		t.Skip("skipping integration test.")
 	}
+
+	args = append([]string{"mcp"}, args...)
+	cmd := exec.CommandContext(t.Context(), "docker", args...)
+	out, err := cmd.CombinedOutput()
+	require.NoError(t, err)
+
+	return string(out)
 }
 
 func TestIntegrationVersion(t *testing.T) {
-	thisIsAnIntegrationTest(t)
-
-	cmd := exec.CommandContext(t.Context(), "docker", "mcp", "version")
-	out, err := cmd.CombinedOutput()
-	require.NoError(t, err)
+	out := runDockerMCP(t, "version")
 	assert.NotEmpty(t, out)
 }
 
 func TestIntegrationCatalogLs(t *testing.T) {
-	thisIsAnIntegrationTest(t)
-
-	cmd := exec.CommandContext(t.Context(), "docker", "mcp", "catalog", "ls")
-	out, err := cmd.CombinedOutput()
-	require.NoError(t, err)
-	assert.Contains(t, string(out), "docker-mcp: Docker MCP Catalog")
+	out := runDockerMCP(t, "catalog", "ls")
+	assert.Contains(t, out, "docker-mcp: Docker MCP Catalog")
 }
 
 func TestIntegrationCatalogShow(t *testing.T) {
-	thisIsAnIntegrationTest(t)
-
-	cmd := exec.CommandContext(t.Context(), "docker", "mcp", "catalog", "show")
-	out, err := cmd.CombinedOutput()
-	require.NoError(t, err)
-	assert.Contains(t, string(out), "playwright:")
+	out := runDockerMCP(t, "catalog", "show")
+	assert.Contains(t, out, "playwright:")
 }
