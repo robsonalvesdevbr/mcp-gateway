@@ -102,3 +102,7 @@ Flags:
       --verify-signatures         Verify signatures of the server images
       --watch                     Watch for changes and reconfigure the gateway (default true)
 ```
+
+## Troubleshooting
+
+Look at our [Troubleshooting Guide](/docs/troubleshooting.md)
