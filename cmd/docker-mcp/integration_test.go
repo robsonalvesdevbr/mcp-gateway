@@ -8,9 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
 )
 
 func runDockerMCP(t *testing.T, args ...string) string {
@@ -31,8 +32,8 @@ func runDockerMCP(t *testing.T, args ...string) string {
 func writeFile(t *testing.T, parent, name string, content string) {
 	t.Helper()
 	path := filepath.Join(parent, name)
-	require.NoError(t, os.MkdirAll(filepath.Base(parent), 0755))
-	require.NoError(t, os.WriteFile(path, []byte(content), 0644))
+	require.NoError(t, os.MkdirAll(filepath.Base(parent), 0o755))
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
 }
 
 func TestIntegrationVersion(t *testing.T) {
