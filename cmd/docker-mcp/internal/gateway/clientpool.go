@@ -236,8 +236,6 @@ func (cp *clientPool) argsAndEnv(serverConfig ServerConfig, readOnly *bool, targ
 
 	// Env
 	for _, e := range serverConfig.Spec.Env {
-		args = append(args, "-e", e.Name)
-
 		var value string
 		if strings.Contains(e.Value, "{{") && strings.Contains(e.Value, "}}") {
 			value = fmt.Sprintf("%v", eval.Evaluate(e.Value, serverConfig.Config))
@@ -245,7 +243,10 @@ func (cp *clientPool) argsAndEnv(serverConfig ServerConfig, readOnly *bool, targ
 			value = expandEnv(e.Value, env)
 		}
 
-		env = append(env, fmt.Sprintf("%s=%s", e.Name, value))
+		if value != "" {
+			args = append(args, "-e", e.Name)
+			env = append(env, fmt.Sprintf("%s=%s", e.Name, value))
+		}
 	}
 
 	// Volumes
