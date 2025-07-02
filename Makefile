@@ -50,6 +50,9 @@ mcp-package:
 test:
 	docker buildx build $(DOCKER_BUILD_ARGS) --target=test .
 
+integration:
+	go test -count=1 ./... -run 'TestIntegration'
+
 docker-mcp:
 	CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -trimpath -ldflags "-s -w ${GO_LDFLAGS}" -o ./dist/$(DOCKER_MCP_PLUGIN_BINARY)$(EXTENSION) ./cmd/docker-mcp
 	rm "$(DOCKER_MCP_CLI_PLUGIN_DST)" || true

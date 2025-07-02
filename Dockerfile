@@ -26,7 +26,7 @@ RUN --mount=target=. \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build <<EOD
     set -e
-    CGO_ENABLED=0 go test --count=1 -v ./...
+    CGO_ENABLED=0 go test -short --count=1 -v ./...
 EOD
 
 FROM base AS do-format
