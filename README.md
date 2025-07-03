@@ -83,6 +83,8 @@ docker mcp catalog ls
 docker mcp catalog show docker-mcp
 ```
 
+More about [the MCP Catalog](docs/catalog.md).
+
 ### MCP Gateway Operations
 
 Start up an MCP Gateway. This can be used for one client, or to service multiple clients if using either `sse` or `streaming` transports.
@@ -210,6 +212,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
+- 💬 [Troubleshooting](/docs/troubleshooting.md)
 - 📖 [MCP Specification](https://spec.modelcontextprotocol.io/)
 - 🐳 [Docker Desktop Documentation](https://docs.docker.com/desktop/)
 - 🐛 [Report Issues](https://github.com/docker/mcp-gateway/issues)
