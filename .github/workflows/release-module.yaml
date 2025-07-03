@@ -15,8 +15,6 @@ on:
         description: ""
         required: false
         type: string
-env:
-  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
 jobs:
   build:
     runs-on: ubuntu-latest
