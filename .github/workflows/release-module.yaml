@@ -22,7 +22,7 @@ jobs:
       GITHUB_WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: ${{ github.event.inputs.branch }}
 
@@ -52,7 +52,7 @@ jobs:
           make GIT_TAG=${{ github.event.inputs.tag }} docker-mcp-cross
 
       - name: Upload binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist
           path: |
@@ -75,12 +75,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           ref: ${{ github.event.inputs.branch }}
 
       - name: Download signed binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@b14cf4c92620c250e1c074ab0a5800e37df86765 # v4
         with:
           name: dist
           path: dist
@@ -111,7 +111,7 @@ jobs:
 
       - name: Create release with artifacts
         if: ${{ github.event.inputs.tag != '' }} # don't release if no tag is specified
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@bcfe5470707e8832e12347755757cec0eb3c22af # 1.18.0
         with:
           artifacts: "./dist/*.tar.gz"
           prerelease: true
