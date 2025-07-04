@@ -93,3 +93,37 @@ COPY --from=build-mcp-bridge /docker-mcp-bridge /misc/
 ENV DOCKER_MCP_IN_CONTAINER=1
 ENTRYPOINT ["/docker-mcp", "gateway", "run"]
 COPY --from=build-mcp-gateway /docker-mcp /
+
+FROM docker:dind@sha256:0a2ee60851e1b61a54707476526c4ed48cc55641a17a5cba8a77fb78e7a4742c AS dind
+RUN rm /usr/local/bin/docker-compose \
+    /usr/local/libexec/docker/cli-plugins/docker-compose \
+    /usr/local/libexec/docker/cli-plugins/docker-buildx
+
+FROM scratch AS mcp-gateway-dind
+COPY --from=dind / /
+RUN apk add --no-cache socat jq
+COPY --from=docker/mcp-gateway /docker-mcp /
+RUN cat <<-'EOF' >/run.sh
+	#!/usr/bin/env sh
+	set -euxo pipefail
+
+	echo "Starting dockerd..."
+	export TINI_SUBREAPER=1
+	export DOCKER_DRIVER=vfs
+	dockerd-entrypoint.sh dockerd &
+
+	until docker info > /dev/null 2>&1
+	do
+	echo "Waiting for dockerd..."
+	sleep 1
+	done
+	echo "Detected dockerd ready for work!"
+
+	export DOCKER_MCP_IN_CONTAINER=1
+	export DOCKER_MCP_IN_DIND=1
+	echo "Starting MCP Gateway on port $PORT..."
+	exec /docker-mcp gateway run --port=$PORT "$@"
+EOF
+RUN chmod +x /run.sh
+ENV PORT=8080
+ENTRYPOINT ["/run.sh"]

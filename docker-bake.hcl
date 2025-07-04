@@ -7,7 +7,8 @@ group default {
 
 group all {
   targets = [
-    "amcp-gateway",
+    "mcp-gateway",
+    "mcp-gateway-dind",
     "jcat",
     "l4proxy",
     "l7proxy",
@@ -68,3 +69,11 @@ target mcp-gateway {
   ]
 }
 
+target mcp-gateway-dind {
+  inherits = ["_base"]
+  context = "."
+  target = "mcp-gateway-dind"
+  output = [
+    "type=image,name=docker/mcp-gateway:dind",
+  ]
+}

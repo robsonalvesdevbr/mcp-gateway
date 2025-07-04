@@ -59,7 +59,7 @@ docker-mcp:
 	cp "dist/$(DOCKER_MCP_PLUGIN_BINARY)$(EXTENSION)" "$(DOCKER_MCP_CLI_PLUGIN_DST)"
 
 push-mcp-gateway:
-	docker buildx bake mcp-gateway --push
+	docker buildx bake mcp-gateway mcp-gateway-dind --push
 
 push-l4proxy-image:
 	docker buildx bake l4proxy --push

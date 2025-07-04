@@ -5,5 +5,5 @@ This example shows how to run the MCP Gateway and the MCP Servers in a single Do
 ## How to run
 
 ```console
-docker compose up --build
+docker compose up
 ```
