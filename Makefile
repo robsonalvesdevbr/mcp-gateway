@@ -1,4 +1,3 @@
-MODULE_IMAGE?=docker/docker-mcp-cli-desktop-module
 MODULE := $(shell sh -c "awk '/^module/ { print \$$2 }' go.mod")
 GIT_TAG ?= $(shell git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse HEAD)
 GO_LDFLAGS = -X $(MODULE)/cmd/docker-mcp/version.Version=$(GIT_TAG)
@@ -37,7 +36,7 @@ docker-mcp-%:
 
 push-module-image:
 	cp -r dist ./module-image
-	docker buildx build --push --platform=linux/amd64,linux/arm64,darwin/amd64,darwin/arm64,windows/amd64,windows/arm64 --build-arg TAG=$(TAG) --tag=$(MODULE_IMAGE):$(TAG) ./module-image
+	docker buildx build --push --platform=linux/amd64,linux/arm64,darwin/amd64,darwin/arm64,windows/amd64,windows/arm64 --build-arg TAG=$(TAG) --tag=docker/docker-mcp-cli-desktop-module:$(TAG) ./module-image
 	rm -rf ./module-image/dist
 
 mcp-package:
