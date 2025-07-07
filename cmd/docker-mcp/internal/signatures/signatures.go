@@ -16,6 +16,8 @@ import (
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/version"
 )
 
 // https://raw.githubusercontent.com/docker/keyring/refs/heads/main/public/mcp/latest.pub
@@ -59,7 +61,7 @@ func Verify(ctx context.Context, images []string) error {
 					ociremote.WithTargetRepository(signatures),
 					ociremote.WithRemoteOptions(
 						remote.WithContext(ctxVerify),
-						remote.WithUserAgent("docker/mcp_gateway"),
+						remote.WithUserAgent(version.UserAgent()),
 						// remote.WithAuthFromKeychain(authn.DefaultKeychain),
 					),
 				},

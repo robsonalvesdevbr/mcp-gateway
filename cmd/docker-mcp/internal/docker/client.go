@@ -42,7 +42,7 @@ func NewClient(cli command.Cli) Client {
 		apiClient: sync.OnceValue(func() client.APIClient {
 			_ = cli.Apply(func(cli *command.DockerCli) error {
 				if mobyClient, ok := cli.Client().(*client.Client); ok {
-					_ = client.WithUserAgent("mcp/" + version.Version)(mobyClient)
+					_ = client.WithUserAgent(version.UserAgent())(mobyClient)
 				}
 				return nil
 			})
