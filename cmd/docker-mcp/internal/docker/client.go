@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/version"
 )
 
 type Client interface {
@@ -38,6 +39,13 @@ type dockerClient struct {
 func NewClient(cli command.Cli) Client {
 	return &dockerClient{
 		apiClient: sync.OnceValue(func() client.APIClient {
+			_ = cli.Apply(func(cli *command.DockerCli) error {
+				if mobyClient, ok := cli.Client().(*client.Client); ok {
+					_ = client.WithUserAgent("mcp/" + version.Version)(mobyClient)
+				}
+				return nil
+			})
+
 			return cli.Client()
 		}),
 	}
