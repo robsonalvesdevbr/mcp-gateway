@@ -4,6 +4,10 @@ import "fmt"
 
 func volume(value any) string {
 	source := fmt.Sprintf("%v", value)
+	if source == "" {
+		return ""
+	}
+
 	target := source
 	if isWindowsPath(target) {
 		target = toLinuxPath(target)
