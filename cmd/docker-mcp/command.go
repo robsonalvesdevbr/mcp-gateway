@@ -57,6 +57,7 @@ func rootCommand(ctx context.Context, cwd string, docker docker.Client) *cobra.C
 				return err
 			}
 
+			// TODO(dga): We should also disable this check when running in Docker CE.
 			if os.Getenv("DOCKER_MCP_IN_CONTAINER") != "1" {
 				return desktop.CheckFeatureIsEnabled(ctx, "enableDockerMCPToolkit", "Docker MCP Toolkit")
 			}
