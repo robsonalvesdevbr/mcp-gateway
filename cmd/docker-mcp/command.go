@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli-plugins/plugin"
+	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/backup"
@@ -43,7 +44,7 @@ Examples:
 `
 
 // rootCommand returns the root command for the init plugin
-func rootCommand(ctx context.Context, cwd string, docker docker.Client) *cobra.Command {
+func rootCommand(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:              "mcp [OPTIONS]",
 		TraverseChildren: true,
@@ -74,15 +75,17 @@ func rootCommand(ctx context.Context, cwd string, docker docker.Client) *cobra.C
 		return []string{"--help"}, cobra.ShellCompDirectiveNoFileComp
 	})
 
-	cmd.AddCommand(secret.NewSecretsCmd(docker))
+	dockerClient := docker.NewClient(dockerCli)
+
+	cmd.AddCommand(secret.NewSecretsCmd(dockerClient))
 	cmd.AddCommand(policy.NewPolicyCmd())
 	cmd.AddCommand(oauth.NewOAuthCmd())
 	cmd.AddCommand(client.NewClientCmd(cwd))
 	cmd.AddCommand(catalog.NewCatalogCmd())
 	cmd.AddCommand(versionCommand())
-	cmd.AddCommand(gatewayCommand(docker))
-	cmd.AddCommand(configCommand(docker))
-	cmd.AddCommand(serverCommand(docker))
+	cmd.AddCommand(gatewayCommand(dockerClient))
+	cmd.AddCommand(configCommand(dockerClient))
+	cmd.AddCommand(serverCommand(dockerClient))
 	cmd.AddCommand(toolsCommand())
 
 	if os.Getenv("DOCKER_MCP_SHOW_HIDDEN") == "1" {
