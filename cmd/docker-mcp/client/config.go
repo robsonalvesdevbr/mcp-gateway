@@ -116,6 +116,7 @@ func newMCPGatewayServer() *MCPServerSTDIO {
 		env = map[string]string{
 			"LOCALAPPDATA": os.Getenv("LOCALAPPDATA"),
 			"ProgramFiles": os.Getenv("ProgramFiles"),
+			"ProgramData":  os.Getenv("ProgramData"),
 		}
 	}
 	return &MCPServerSTDIO{
