@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"strings"
 	"sync"
 
 	cerrdefs "github.com/containerd/errdefs"
@@ -69,8 +70,9 @@ func (c *dockerClient) pullImage(ctx context.Context, imageName string, registry
 		}
 	}
 
-	pullOptions := image.PullOptions{
-		RegistryAuth: registryAuthFn(),
+	var pullOptions image.PullOptions
+	if strings.HasPrefix(ref.Name(), "docker.io/") {
+		pullOptions.RegistryAuth = registryAuthFn()
 	}
 
 	response, err := c.apiClient().ImagePull(ctx, imageName, pullOptions)
