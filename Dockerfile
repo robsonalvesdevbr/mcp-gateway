@@ -96,7 +96,7 @@ ENV DOCKER_MCP_IN_CONTAINER=1
 ENTRYPOINT ["/docker-mcp", "gateway", "run"]
 COPY --from=build-mcp-gateway /docker-mcp /
 
-FROM docker:dind@sha256:0a2ee60851e1b61a54707476526c4ed48cc55641a17a5cba8a77fb78e7a4742c AS dind
+FROM docker:dind@sha256:4dd2f7e405b1a10fda628f22cd466be1e3be2bcfc46db653ab620e02eeed5794 AS dind
 RUN rm /usr/local/bin/docker-compose \
     /usr/local/libexec/docker/cli-plugins/docker-compose \
     /usr/local/libexec/docker/cli-plugins/docker-buildx
