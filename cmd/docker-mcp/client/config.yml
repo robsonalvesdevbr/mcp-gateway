@@ -41,6 +41,20 @@ system:
       list: '.mcpServers | to_entries | map(.value + {"name": .key})'
       set: .mcpServers[$NAME] = $JSON
       del: del(.mcpServers[$NAME])
+  lmstudio:
+    displayName: LM Studio
+    source: https://lmstudio.ai/
+    installCheckPaths:
+    - $HOME/.lmstudio
+    - $USERPROFILE\.lmstudio
+    paths:
+      linux: $HOME/.lmstudio/mcp.json
+      darwin: $HOME/.lmstudio/mcp.json
+      windows: $USERPROFILE\.lmstudio\mcp.json
+    yq:
+      list: '.mcpServers | to_entries | map(.value + {"name": .key})'
+      set: .mcpServers[$NAME] = $JSON
+      del: del(.mcpServers[$NAME])
 project:
   cursor:
     displayname: Cursor
