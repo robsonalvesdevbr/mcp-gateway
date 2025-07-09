@@ -55,6 +55,20 @@ system:
       list: '.mcpServers | to_entries | map(.value + {"name": .key})'
       set: .mcpServers[$NAME] = $JSON
       del: del(.mcpServers[$NAME])
+  sema4:
+    displayName: Sema4
+    source: https://sema4.ai/links/docker-mcp-download
+    installCheckPaths:
+    - $HOME/.sema4ai
+    - $USERPROFILE\AppData\Local\sema4ai
+    paths:
+      linux: $HOME/.sema4ai/sema4ai-studio/mcp_servers.json
+      darwin: $HOME/.sema4ai/sema4ai-studio/mcp_servers.json
+      windows: $USERPROFILE\AppData\Local\sema4ai\sema4ai-studio\mcp_servers.json
+    yq:
+      list: '.mcpServers | to_entries | map(.value + {"name": .key})'
+      set: .mcpServers[$NAME] = $JSON+{"transport":"stdio"}
+      del: del(.mcpServers[$NAME])
 project:
   cursor:
     displayname: Cursor
