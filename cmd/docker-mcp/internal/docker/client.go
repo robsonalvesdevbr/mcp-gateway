@@ -2,7 +2,9 @@ package docker
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"runtime"
 	"sync"
 
 	"github.com/docker/cli/cli/command"
@@ -50,4 +52,17 @@ func NewClient(cli command.Cli) Client {
 			return cli.Client()
 		}),
 	}
+}
+
+func RunningInDockerCE(ctx context.Context, dockerCli command.Cli) (bool, error) {
+	if runtime.GOOS == "windows" || runtime.GOOS == "darwin" {
+		return false, nil
+	}
+
+	info, err := dockerCli.Client().Info(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to ping Docker daemon: %w", err)
+	}
+
+	return info.OperatingSystem != "Docker Desktop", nil
 }
