@@ -33,8 +33,7 @@ jobs:
         run: make docker-mcp-cross
 
       - name: Hub login
-        if: github.event_name != 'pull_request'
-        uses: docker/loginaction@v3
+        uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERPUBLICBOT_USERNAME }}
           password: ${{ secrets.DOCKERPUBLICBOT_WRITE_PAT }}
