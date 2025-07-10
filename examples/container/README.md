@@ -7,7 +7,20 @@ automatically on Docker's reboot.
 ## How to run
 
 ```console
-docker run -d -p 8811:8811 --restart=always --name=mcp-gateway -v /var/run/docker.sock:/var/run/docker.sock -v $HOME/.docker/mcp:/mcp:ro docker/mcp-gateway --catalog=/mcp/catalogs/docker-mcp.yaml --config=/mcp/config.yaml --registry=/mcp/registry.yaml --secrets=docker-desktop --watch=true --transport=sse --port=8811
+docker run -d \
+    -p 8811:8811 \
+    --restart=always \
+    --name=mcp-gateway \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v $HOME/.docker/mcp:/mcp:ro \
+    docker/mcp-gateway \
+    --catalog=/mcp/catalogs/docker-mcp.yaml \
+    --config=/mcp/config.yaml \
+    --registry=/mcp/registry.yaml \
+    --secrets=docker-desktop \
+    --watch=true \
+    --transport=sse \
+    --port=8811
 ```
 
 Connect to it on `http://localhost:8811/sse`
