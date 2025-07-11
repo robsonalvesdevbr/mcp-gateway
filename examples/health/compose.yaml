@@ -16,8 +16,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     healthcheck:
-      test: wget http://localhost:9011/health
+      test: wget -O- http://localhost:9011/health
       interval: 1s
-      timeout: 10s
+      timeout: 2s
       retries: 60
       start_period: 2s
