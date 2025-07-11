@@ -56,7 +56,7 @@ system:
       set: .mcpServers[$NAME] = $JSON
       del: del(.mcpServers[$NAME])
   sema4:
-    displayName: Sema4
+    displayName: Sema4.ai Studio
     source: https://sema4.ai/links/docker-mcp-download
     installCheckPaths:
     - $HOME/.sema4ai
