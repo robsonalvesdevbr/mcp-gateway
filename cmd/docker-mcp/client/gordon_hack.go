@@ -11,6 +11,7 @@ func getGordonSetup(ctx context.Context) MCPClientCfg {
 		MCPClientCfgBase: MCPClientCfgBase{
 			DisplayName: "Gordon",
 			Source:      "https://docs.docker.com/ai/gordon/",
+			Icon:        "https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/gordon.png",
 			ConfigName:  vendorGordon,
 			Err:         nil,
 		},
