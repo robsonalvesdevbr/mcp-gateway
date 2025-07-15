@@ -14,6 +14,7 @@ const (
 type globalCfg struct {
 	DisplayName       string   `yaml:"displayName"`
 	Source            string   `yaml:"source"`
+	Icon              string   `yaml:"icon"`
 	InstallCheckPaths []string `yaml:"installCheckPaths"`
 	Paths             `yaml:"paths"`
 	YQ                `yaml:"yq"`
@@ -68,7 +69,7 @@ func NewGlobalCfgProcessor(g globalCfg) (*GlobalCfgProcessor, error) {
 }
 
 func (c *GlobalCfgProcessor) ParseConfig() MCPClientCfg {
-	result := MCPClientCfg{MCPClientCfgBase: MCPClientCfgBase{DisplayName: c.DisplayName, Source: c.Source}}
+	result := MCPClientCfg{MCPClientCfgBase: MCPClientCfgBase{DisplayName: c.DisplayName, Source: c.Source, Icon: c.Icon}}
 
 	path := c.GetPathsForCurrentOS()
 	if path == "" {
