@@ -8,6 +8,7 @@ import (
 type localCfg struct {
 	DisplayName string
 	ProjectFile string
+	Icon        string `yaml:"icon"`
 	YQ          `yaml:"yq"`
 }
 
@@ -30,7 +31,7 @@ func NewLocalCfgProcessor(cfg localCfg, projectRoot string) (*LocalCfgProcessor,
 }
 
 func (c *LocalCfgProcessor) Parse() ProjectMCPClientCfg {
-	result := ProjectMCPClientCfg{MCPClientCfgBase: MCPClientCfgBase{DisplayName: c.DisplayName}}
+	result := ProjectMCPClientCfg{MCPClientCfgBase: MCPClientCfgBase{DisplayName: c.DisplayName, Icon: c.Icon}}
 	file := filepath.Join(c.projectRoot, c.ProjectFile)
 	dir := filepath.Dir(file)
 	if _, err := os.Stat(dir); err != nil {

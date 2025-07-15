@@ -2,6 +2,7 @@ system:
   claude-desktop:
     displayName: Claude Desktop
     source: https://claude.ai/download
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/claude.svg
     installCheckPaths:
     - /Applications/Claude.app
     - $AppData\Claude\
@@ -16,6 +17,7 @@ system:
   continue:
     displayName: Continue.dev
     source: https://www.continue.dev/
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/continue.svg
     installCheckPaths:
     - $HOME/.continue
     - $USERPROFILE\.continue
@@ -30,6 +32,7 @@ system:
   cursor:
     displayName: Cursor
     source: https://www.cursor.com/
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/cursor.svg
     installCheckPaths:
     - /Applications/Cursor.app
     - $AppData/Cursor/
@@ -44,6 +47,7 @@ system:
   lmstudio:
     displayName: LM Studio
     source: https://lmstudio.ai/
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/lmstudio.png
     installCheckPaths:
     - $HOME/.lmstudio
     - $USERPROFILE\.lmstudio
@@ -58,6 +62,7 @@ system:
   sema4:
     displayName: Sema4.ai Studio
     source: https://sema4.ai/links/docker-mcp-download
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/sema4.png
     installCheckPaths:
     - $HOME/.sema4ai
     - $USERPROFILE\AppData\Local\sema4ai
@@ -73,6 +78,7 @@ project:
   cursor:
     displayname: Cursor
     projectfile: .cursor/mcp.json
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/cursor.svg
     yq:
       list: '.mcpServers | to_entries | map(.value + {"name": .key})'
       set: .mcpServers[$NAME] = $JSON
@@ -80,6 +86,7 @@ project:
   vscode:
     displayname: VSCode
     projectfile: .vscode/mcp.json
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/vscode.svg
     yq:
       list: '.servers | to_entries | map(.value + {"name": .key})'
       set: .servers[$NAME] = $JSON+{"type":"stdio"}

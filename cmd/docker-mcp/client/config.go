@@ -156,6 +156,7 @@ func GetUpdater(vendor string, global bool, cwd string, config Config) (Updater,
 type MCPClientCfgBase struct {
 	DisplayName           string    `json:"displayName"`
 	Source                string    `json:"source"`
+	Icon                  string    `json:"icon"`
 	ConfigName            string    `json:"configName"`
 	IsMCPCatalogConnected bool      `json:"dockerMCPCatalogConnected"`
 	Err                   *CfgError `json:"error"`
