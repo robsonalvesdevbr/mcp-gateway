@@ -47,6 +47,7 @@ system:
   goose:
     displayName: Goose
     source: https://github.com/block/goose
+    icon: https://raw.githubusercontent.com/docker/mcp-gateway/main/img/client/goose.png
     installCheckPaths:
     - $HOME/.config/goose
     - $USERPROFILE\.config\goose
