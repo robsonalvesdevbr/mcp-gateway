@@ -7,30 +7,9 @@ import (
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/formatting"
-
-	"github.com/spf13/cobra"
 )
 
-type listOptions struct {
-	JSON bool
-}
-
-func NewLsCmd() *cobra.Command {
-	opts := listOptions{}
-	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List available OAuth apps.",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runLs(cmd.Context(), opts)
-		},
-	}
-	flags := cmd.Flags()
-	flags.BoolVar(&opts.JSON, "json", false, "Print as JSON.")
-	return cmd
-}
-
-func runLs(ctx context.Context, opts listOptions) error {
+func Ls(ctx context.Context, outputJSON bool) error {
 	client := desktop.NewAuthClient()
 
 	apps, err := client.ListOAuthApps(ctx)
@@ -38,7 +17,7 @@ func runLs(ctx context.Context, opts listOptions) error {
 		return err
 	}
 
-	if opts.JSON {
+	if outputJSON {
 		if len(apps) == 0 {
 			apps = make([]desktop.OAuthApp, 0) // Guarantee empty list (instead of displaying null)
 		}

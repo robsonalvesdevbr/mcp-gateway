@@ -3,39 +3,15 @@ package client
 import (
 	"context"
 	"fmt"
-	"strings"
-
-	"github.com/spf13/cobra"
 )
 
-type connectOpts struct {
-	Global bool
-	Quiet  bool
-}
-
-func ConnectCommand(cwd string, cfg Config) *cobra.Command {
-	opts := &connectOpts{}
-	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("connect [OPTIONS] <mcp-client>\n\nSupported clients: %s", strings.Join(getSupportedMCPClients(cfg), " ")),
-		Short: "Connect the Docker MCP Toolkit to a client",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runConnect(cmd.Context(), cwd, cfg, args[0], *opts)
-		},
-	}
-	flags := cmd.Flags()
-	addGlobalFlag(flags, &opts.Global)
-	addQuietFlag(flags, &opts.Quiet)
-	return cmd
-}
-
-func runConnect(ctx context.Context, cwd string, config Config, vendor string, opts connectOpts) error {
-	if vendor == vendorGordon && opts.Global {
+func Connect(ctx context.Context, cwd string, config Config, vendor string, global, quiet bool) error {
+	if vendor == vendorGordon && global {
 		if err := connectGordon(ctx); err != nil {
 			return err
 		}
 	} else {
-		updater, err := GetUpdater(vendor, opts.Global, cwd, config)
+		updater, err := GetUpdater(vendor, global, cwd, config)
 		if err != nil {
 			return err
 		}
@@ -43,10 +19,10 @@ func runConnect(ctx context.Context, cwd string, config Config, vendor string, o
 			return err
 		}
 	}
-	if opts.Quiet {
+	if quiet {
 		return nil
 	}
-	if err := runList(ctx, cwd, config, listOptions{Global: opts.Global}); err != nil {
+	if err := List(ctx, cwd, config, global, false); err != nil {
 		return err
 	}
 	fmt.Printf("You might have to restart '%s'.\n", vendor)
