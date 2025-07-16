@@ -13,7 +13,6 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/oauth"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/policy"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/version"
 )
 
@@ -74,7 +73,7 @@ func Root(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.Command
 	dockerClient := docker.NewClient(dockerCli)
 
 	cmd.AddCommand(secretCommand(dockerClient))
-	cmd.AddCommand(policy.NewPolicyCmd())
+	cmd.AddCommand(policyCommand())
 	cmd.AddCommand(oauth.NewOAuthCmd())
 	cmd.AddCommand(client.NewClientCmd(cwd))
 	cmd.AddCommand(catalog.NewCatalogCmd())

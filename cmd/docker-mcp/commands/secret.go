@@ -11,7 +11,7 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/secret"
 )
 
-const setExample = `
+const setSecretExample = `
 # Using secrets for postgres password with default policy:
 docker mcp secret set POSTGRES_PASSWORD=my-secret-password
 docker run -d -l x-secret:POSTGRES_PASSWORD=/pwd.txt -e POSTGRES_PASSWORD_FILE=/pwd.txt -p 5432 postgres
@@ -25,16 +25,16 @@ func secretCommand(docker docker.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "secret",
 		Short:   "Manage secrets",
-		Example: strings.Trim(setExample, "\n"),
+		Example: strings.Trim(setSecretExample, "\n"),
 	}
-	cmd.AddCommand(rmCommand())
-	cmd.AddCommand(listCommand())
-	cmd.AddCommand(setCommand())
-	cmd.AddCommand(exportCommand(docker))
+	cmd.AddCommand(rmSecretCommand())
+	cmd.AddCommand(listSecretCommand())
+	cmd.AddCommand(setSecretCommand())
+	cmd.AddCommand(exportSecretCommand(docker))
 	return cmd
 }
 
-func rmCommand() *cobra.Command {
+func rmSecretCommand() *cobra.Command {
 	var opts secret.RmOpts
 	cmd := &cobra.Command{
 		Use:   "rm name1 name2 ...",
@@ -58,7 +58,7 @@ func validateRmArgs(args []string, opts secret.RmOpts) error {
 	return nil
 }
 
-func listCommand() *cobra.Command {
+func listSecretCommand() *cobra.Command {
 	var opts secret.ListOptions
 	cmd := &cobra.Command{
 		Use:   "ls",
@@ -73,12 +73,12 @@ func listCommand() *cobra.Command {
 	return cmd
 }
 
-func setCommand() *cobra.Command {
+func setSecretCommand() *cobra.Command {
 	opts := &secret.SetOpts{}
 	cmd := &cobra.Command{
 		Use:     "set key[=value]",
 		Short:   "Set a secret in Docker Desktop's secret store",
-		Example: strings.Trim(setExample, "\n"),
+		Example: strings.Trim(setSecretExample, "\n"),
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if !secret.IsValidProvider(opts.Provider) {
@@ -110,7 +110,7 @@ func isNotImplicitReadFromStdinSyntax(args []string, opts secret.SetOpts) bool {
 	return strings.Contains(args[0], "=") || len(args) > 1 || opts.Provider != ""
 }
 
-func exportCommand(docker docker.Client) *cobra.Command {
+func exportSecretCommand(docker docker.Client) *cobra.Command {
 	return &cobra.Command{
 		Use:    "export [server1] [server2] ...",
 		Short:  "Export secrets for the specified servers",
