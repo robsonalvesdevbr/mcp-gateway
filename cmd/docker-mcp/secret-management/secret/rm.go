@@ -5,37 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 )
 
 type RmOpts struct {
 	All bool
-}
-
-func rmCommand() *cobra.Command {
-	var opts RmOpts
-	cmd := &cobra.Command{
-		Use:   "rm name1 name2 ...",
-		Short: "Remove secrets from Docker Desktop's secret store",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := validateArgs(args, opts); err != nil {
-				return err
-			}
-			return Remove(cmd.Context(), args, opts)
-		},
-	}
-	flags := cmd.Flags()
-	flags.BoolVar(&opts.All, "all", false, "Remove all secrets")
-	return cmd
-}
-
-func validateArgs(args []string, opts RmOpts) error {
-	if len(args) == 0 && !opts.All {
-		return errors.New("either provide a secret name or use --all to remove all secrets")
-	}
-	return nil
 }
 
 func Remove(ctx context.Context, names []string, opts RmOpts) error {

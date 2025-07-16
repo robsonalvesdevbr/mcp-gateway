@@ -5,29 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/formatting"
 )
 
 type ListOptions struct {
 	JSON bool
-}
-
-func listCommand() *cobra.Command {
-	var opts ListOptions
-	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List all secret names in Docker Desktop's secret store",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return List(cmd.Context(), opts)
-		},
-	}
-	flags := cmd.Flags()
-	flags.BoolVar(&opts.JSON, "json", false, "Print as JSON.")
-	return cmd
 }
 
 func List(ctx context.Context, opts ListOptions) error {
