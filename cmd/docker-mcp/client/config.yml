@@ -44,6 +44,21 @@ system:
       list: '.mcpServers | to_entries | map(.value + {"name": .key})'
       set: .mcpServers[$NAME] = $JSON
       del: del(.mcpServers[$NAME])
+  gemini:
+    displayName: Gemini CLI
+    source: https://github.com/google-gemini/gemini-cli
+    icon: https://avatars.githubusercontent.com/u/161781182?s=120&v=4
+    installCheckPaths:
+    - $HOME/.gemini
+    - $USERPROFILE\.gemini
+    paths:
+      linux: $HOME/.gemini/settings.json
+      darwin: $HOME/.gemini/settings.json
+      windows: $USERPROFILE\.gemini\settings.json
+    yq:
+      list: '.mcpServers | to_entries | map(.value + {"name": .key})'
+      set: .mcpServers[$NAME] = $JSON
+      del: del(.mcpServers[$NAME])
   lmstudio:
     displayName: LM Studio
     source: https://lmstudio.ai/
