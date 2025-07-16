@@ -11,14 +11,14 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
 )
 
-func ExportCommand(docker docker.Client) *cobra.Command {
+func exportCommand(docker docker.Client) *cobra.Command {
 	return &cobra.Command{
 		Use:    "export [server1] [server2] ...",
 		Short:  "Export secrets for the specified servers",
 		Hidden: true,
 		Args:   cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			secrets, err := exportSecrets(cmd.Context(), docker, args)
+			secrets, err := Export(cmd.Context(), docker, args)
 			if err != nil {
 				return err
 			}
@@ -32,7 +32,7 @@ func ExportCommand(docker docker.Client) *cobra.Command {
 	}
 }
 
-func exportSecrets(ctx context.Context, docker docker.Client, serverNames []string) (map[string]string, error) {
+func Export(ctx context.Context, docker docker.Client, serverNames []string) (map[string]string, error) {
 	catalog, err := catalog.Get(ctx)
 	if err != nil {
 		return nil, err

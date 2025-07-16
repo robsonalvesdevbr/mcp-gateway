@@ -26,12 +26,12 @@ const (
 	Credstore = "credstore"
 )
 
-type setOpts struct {
+type SetOpts struct {
 	Provider string
 }
 
-func SetCommand() *cobra.Command {
-	opts := &setOpts{}
+func setCommand() *cobra.Command {
+	opts := &SetOpts{}
 	cmd := &cobra.Command{
 		Use:     "set key[=value]",
 		Short:   "Set a secret in Docker Desktop's secret store",
@@ -55,7 +55,7 @@ func SetCommand() *cobra.Command {
 				}
 				s = *val
 			}
-			return runSet(cmd.Context(), s, *opts)
+			return Set(cmd.Context(), s, *opts)
 		},
 	}
 	flags := cmd.Flags()
@@ -63,7 +63,7 @@ func SetCommand() *cobra.Command {
 	return cmd
 }
 
-func isNotImplicitReadFromStdinSyntax(args []string, opts setOpts) bool {
+func isNotImplicitReadFromStdinSyntax(args []string, opts SetOpts) bool {
 	return strings.Contains(args[0], "=") || len(args) > 1 || opts.Provider != ""
 }
 
@@ -84,7 +84,7 @@ type secret struct {
 	val string
 }
 
-func parseArg(arg string, opts setOpts) (*secret, error) {
+func parseArg(arg string, opts SetOpts) (*secret, error) {
 	if !isDirectValueProvider(opts.Provider) && strings.Contains(arg, "=") {
 		return nil, fmt.Errorf("provider cannot be used with key=value pairs: %s", arg)
 	}
@@ -102,7 +102,7 @@ func isDirectValueProvider(provider string) bool {
 	return provider == "" || provider == Credstore
 }
 
-func runSet(ctx context.Context, s secret, opts setOpts) error {
+func Set(ctx context.Context, s secret, opts SetOpts) error {
 	if opts.Provider == Credstore {
 		p := NewCredStoreProvider()
 		if err := p.SetSecret(s.key, s.val); err != nil {

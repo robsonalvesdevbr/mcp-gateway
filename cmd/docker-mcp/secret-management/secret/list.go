@@ -11,18 +11,18 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/formatting"
 )
 
-type listOptions struct {
+type ListOptions struct {
 	JSON bool
 }
 
-func ListCommand() *cobra.Command {
-	opts := listOptions{}
+func listCommand() *cobra.Command {
+	var opts ListOptions
 	cmd := &cobra.Command{
 		Use:   "ls",
 		Short: "List all secret names in Docker Desktop's secret store",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runList(cmd.Context(), opts)
+			return List(cmd.Context(), opts)
 		},
 	}
 	flags := cmd.Flags()
@@ -30,7 +30,7 @@ func ListCommand() *cobra.Command {
 	return cmd
 }
 
-func runList(ctx context.Context, opts listOptions) error {
+func List(ctx context.Context, opts ListOptions) error {
 	l, err := desktop.NewSecretsClient().ListJfsSecrets(ctx)
 	if err != nil {
 		return err

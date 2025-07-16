@@ -10,12 +10,12 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 )
 
-type rmOpts struct {
+type RmOpts struct {
 	All bool
 }
 
-func RmCommand() *cobra.Command {
-	opts := rmOpts{}
+func rmCommand() *cobra.Command {
+	var opts RmOpts
 	cmd := &cobra.Command{
 		Use:   "rm name1 name2 ...",
 		Short: "Remove secrets from Docker Desktop's secret store",
@@ -23,7 +23,7 @@ func RmCommand() *cobra.Command {
 			if err := validateArgs(args, opts); err != nil {
 				return err
 			}
-			return runRm(cmd.Context(), args, opts)
+			return Remove(cmd.Context(), args, opts)
 		},
 	}
 	flags := cmd.Flags()
@@ -31,14 +31,14 @@ func RmCommand() *cobra.Command {
 	return cmd
 }
 
-func validateArgs(args []string, opts rmOpts) error {
+func validateArgs(args []string, opts RmOpts) error {
 	if len(args) == 0 && !opts.All {
 		return errors.New("either provide a secret name or use --all to remove all secrets")
 	}
 	return nil
 }
 
-func runRm(ctx context.Context, names []string, opts rmOpts) error {
+func Remove(ctx context.Context, names []string, opts RmOpts) error {
 	c := desktop.NewSecretsClient()
 	if opts.All && len(names) == 0 {
 		l, err := c.ListJfsSecrets(ctx)

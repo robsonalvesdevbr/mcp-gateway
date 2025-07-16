@@ -14,9 +14,9 @@ func NewSecretsCmd(docker docker.Client) *cobra.Command {
 		Short:   "Manage secrets",
 		Example: strings.Trim(setExample, "\n"),
 	}
-	cmd.AddCommand(RmCommand())
-	cmd.AddCommand(ListCommand())
-	cmd.AddCommand(SetCommand())
-	cmd.AddCommand(ExportCommand(docker))
+	cmd.AddCommand(rmCommand())
+	cmd.AddCommand(listCommand())
+	cmd.AddCommand(setCommand())
+	cmd.AddCommand(exportCommand(docker))
 	return cmd
 }
