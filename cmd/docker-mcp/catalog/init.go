@@ -1,16 +1,9 @@
 package catalog
 
 import (
-	"github.com/spf13/cobra"
+	"context"
 )
 
-func newInitCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "init",
-		Short: "Initialize the catalog",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runImport(cmd.Context(), DockerCatalogName)
-		},
-	}
+func Init(ctx context.Context) error {
+	return Import(ctx, DockerCatalogName)
 }

@@ -5,34 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/yq"
 )
-
-type addOpts struct {
-	Force bool
-}
-
-func newAddCommand() *cobra.Command {
-	opts := &addOpts{}
-	cmd := &cobra.Command{
-		Use:   "add <catalog> <server-name> <catalog-file>",
-		Short: "Add a server to your catalog",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(_ *cobra.Command, args []string) error {
-			parsedArgs := parseAddArgs(args[0], args[1], args[2])
-			if err := validateArgs(*parsedArgs); err != nil {
-				return err
-			}
-			return runAdd(*parsedArgs, *opts)
-		},
-		Hidden: true,
-	}
-	flags := cmd.Flags()
-	flags.BoolVar(&opts.Force, "force", false, "Overwrite existing server in the catalog")
-	return cmd
-}
 
 type ParsedAddArgs struct {
 	Src       string
@@ -40,7 +14,7 @@ type ParsedAddArgs struct {
 	SeverName string
 }
 
-func parseAddArgs(dst, src, catalogFile string) *ParsedAddArgs {
+func ParseAddArgs(dst, src, catalogFile string) *ParsedAddArgs {
 	return &ParsedAddArgs{
 		Src:       catalogFile,
 		Dst:       dst,
@@ -48,7 +22,7 @@ func parseAddArgs(dst, src, catalogFile string) *ParsedAddArgs {
 	}
 }
 
-func validateArgs(args ParsedAddArgs) error {
+func ValidateArgs(args ParsedAddArgs) error {
 	cfg, err := ReadConfig()
 	if err != nil {
 		return err
@@ -73,7 +47,7 @@ func validateArgs(args ParsedAddArgs) error {
 	return nil
 }
 
-func runAdd(args ParsedAddArgs, opts addOpts) error {
+func Add(args ParsedAddArgs, force bool) error {
 	srcContent, err := os.ReadFile(args.Src)
 	if err != nil {
 		return err
@@ -90,7 +64,7 @@ func runAdd(args ParsedAddArgs, opts addOpts) error {
 		return err
 	}
 	dstServerJSON, err := extractServerJSON(dstContentBefore, args.SeverName)
-	if err == nil && len(dstServerJSON) > 4 && !opts.Force {
+	if err == nil && len(dstServerJSON) > 4 && !force {
 		fmt.Println(string(dstServerJSON))
 		return fmt.Errorf("server %q already exists in catalog %q (use --force to overwrite)", args.SeverName, args.Dst)
 	}

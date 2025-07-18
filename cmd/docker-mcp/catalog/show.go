@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/mikefarah/yq/v4/pkg/yqlib"
-	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/yq"
@@ -37,7 +36,7 @@ func (e *Format) Set(v string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("must be one of %s", PrintSupportedFormats())
+	return fmt.Errorf("must be one of %s", SupportedFormats())
 }
 
 // Type is only used in help text
@@ -45,7 +44,7 @@ func (e *Format) Type() string {
 	return "format"
 }
 
-func PrintSupportedFormats() string {
+func SupportedFormats() string {
 	var quoted []string
 	for _, v := range supportedFormats {
 		quoted = append(quoted, "\""+string(v)+"\"")
@@ -53,31 +52,7 @@ func PrintSupportedFormats() string {
 	return strings.Join(quoted, ", ")
 }
 
-type showOpts struct {
-	Format
-}
-
-func newShowCommand() *cobra.Command {
-	opts := &showOpts{}
-	cmd := &cobra.Command{
-		Use:   "show <name>",
-		Short: "Show a catalog",
-		Args:  cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			name := DockerCatalogName
-			if len(args) > 0 {
-				name = args[0]
-			}
-
-			return runShow(cmd.Context(), name, *opts)
-		},
-	}
-	flags := cmd.Flags()
-	flags.Var(&opts.Format, "format", fmt.Sprintf("Supported: %s.", PrintSupportedFormats()))
-	return cmd
-}
-
-func runShow(ctx context.Context, name string, opts showOpts) error {
+func Show(ctx context.Context, name string, format Format) error {
 	cfg, err := ReadConfigWithDefaultCatalog(ctx)
 	if err != nil {
 		return err
@@ -118,15 +93,15 @@ func runShow(ctx context.Context, name string, opts showOpts) error {
 		return err
 	}
 
-	if opts.Format != "" {
+	if format != "" {
 		var encoder yqlib.Encoder
-		switch opts.Format {
+		switch format {
 		case JSON:
 			encoder = yq.NewJSONEncoder()
 		case YAML:
 			encoder = yq.NewYamlEncoder()
 		default:
-			return fmt.Errorf("unsupported format %q", opts.Format)
+			return fmt.Errorf("unsupported format %q", format)
 		}
 		transformed, err := yq.Evaluate(".", data, yq.NewYamlDecoder(), encoder)
 		if err != nil {

@@ -3,7 +3,6 @@ package catalog
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/yq"
@@ -16,25 +15,6 @@ const (
 
 var aliasToURL = map[string]string{
 	DockerCatalogName: DockerCatalogURL,
-}
-
-func NewCatalogCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "catalog",
-		Aliases: []string{"catalogs"},
-		Short:   "Manage the catalog",
-	}
-	cmd.AddCommand(newImportCmd())
-	cmd.AddCommand(newLsCommand())
-	cmd.AddCommand(newRmCommand())
-	cmd.AddCommand(newUpdateCommand())
-	cmd.AddCommand(newShowCommand())
-	cmd.AddCommand(newForkCmd())
-	cmd.AddCommand(newCreateCmd())
-	cmd.AddCommand(newInitCmd())
-	cmd.AddCommand(newAddCommand())
-	cmd.AddCommand(newResetCommand())
-	return cmd
 }
 
 type MetaData struct {
