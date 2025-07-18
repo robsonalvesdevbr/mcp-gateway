@@ -26,7 +26,6 @@ This should also be done actively, at runtime, but the usage of an LLM makes it 
 
 ### Signing /Attestation
 
-Docker Desktop 4.43 (signature done in 4.42. Verification will be activated in 4.43)
 We sign our MCP Servers images, so that we can be sure that we use the right images coming from the right provider. We have full SBOM attestation that explains how an image was built, and what it contains.
 
 ## Active security
