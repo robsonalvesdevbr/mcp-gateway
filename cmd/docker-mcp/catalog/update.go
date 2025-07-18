@@ -6,22 +6,9 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/spf13/cobra"
 )
 
-func newUpdateCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "update [name]",
-		Short: "Update a specific catalog or all catalogs if no name is provided",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runUpdate(cmd.Context(), args)
-		},
-	}
-	return cmd
-}
-
-func runUpdate(ctx context.Context, args []string) error {
+func Update(ctx context.Context, args []string) error {
 	cfg, err := ReadConfig()
 	if err != nil {
 		return err

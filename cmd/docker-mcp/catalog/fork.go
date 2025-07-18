@@ -2,24 +2,9 @@ package catalog
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
 )
 
-func newForkCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "fork <src-catalog> <new-name>",
-		Short: "Fork a catalog",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(_ *cobra.Command, args []string) error {
-			return runFork(args[0], args[1])
-		},
-		Hidden: true,
-	}
-	return cmd
-}
-
-func runFork(src, dst string) error {
+func Fork(src, dst string) error {
 	cfg, err := ReadConfig()
 	if err != nil {
 		return err

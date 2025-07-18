@@ -9,23 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
-
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/tui"
 )
-
-func newImportCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "import <alias|url|file>",
-		Short: "Import a catalog",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runImport(cmd.Context(), args[0])
-		},
-		Hidden: true,
-	}
-	return cmd
-}
 
 func isValidURL(u string) bool {
 	parsedURL, err := url.ParseRequestURI(u)
@@ -55,7 +40,7 @@ func DownloadFile(ctx context.Context, url string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
-func runImport(ctx context.Context, nameOrURL string) error {
+func Import(ctx context.Context, nameOrURL string) error {
 	// Accept urls or catalog names.
 	url := nameOrURL
 	if urlFromAlias, ok := aliasToURL[nameOrURL]; ok {

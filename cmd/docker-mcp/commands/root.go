@@ -8,7 +8,6 @@ import (
 	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/version"
@@ -70,16 +69,16 @@ func Root(ctx context.Context, cwd string, dockerCli command.Cli) *cobra.Command
 
 	dockerClient := docker.NewClient(dockerCli)
 
-	cmd.AddCommand(secretCommand(dockerClient))
-	cmd.AddCommand(policyCommand())
-	cmd.AddCommand(oauthCommand())
+	cmd.AddCommand(catalogCommand())
 	cmd.AddCommand(clientCommand(cwd))
-	cmd.AddCommand(catalog.NewCatalogCmd())
-	cmd.AddCommand(versionCommand())
-	cmd.AddCommand(gatewayCommand(dockerClient))
 	cmd.AddCommand(configCommand(dockerClient))
+	cmd.AddCommand(gatewayCommand(dockerClient))
+	cmd.AddCommand(oauthCommand())
+	cmd.AddCommand(policyCommand())
+	cmd.AddCommand(secretCommand(dockerClient))
 	cmd.AddCommand(serverCommand(dockerClient))
 	cmd.AddCommand(toolsCommand())
+	cmd.AddCommand(versionCommand())
 
 	if os.Getenv("DOCKER_MCP_SHOW_HIDDEN") == "1" {
 		unhideHiddenCommands(cmd)
