@@ -4,36 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	"github.com/spf13/cobra"
 )
 
-type lsOpts struct {
-	JSON bool
-}
-
-func newLsCommand() *cobra.Command {
-	opts := &lsOpts{}
-	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List configured catalogs",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runLs(cmd.Context(), *opts)
-		},
-	}
-	flags := cmd.Flags()
-	flags.BoolVar(&opts.JSON, "json", false, "Print as JSON.")
-	return cmd
-}
-
-func runLs(ctx context.Context, opts lsOpts) error {
+func Ls(ctx context.Context, outputJSON bool) error {
 	cfg, err := ReadConfigWithDefaultCatalog(ctx)
 	if err != nil {
 		return err
 	}
 
-	if opts.JSON {
+	if outputJSON {
 		data, err := json.Marshal(cfg)
 		if err != nil {
 			return err
@@ -42,6 +21,7 @@ func runLs(ctx context.Context, opts lsOpts) error {
 	} else {
 		humanPrintCatalog(*cfg)
 	}
+
 	return nil
 }
 
@@ -50,6 +30,7 @@ func humanPrintCatalog(cfg Config) {
 		fmt.Println("No catalogs configured.")
 		return
 	}
+
 	for name, catalog := range cfg.Catalogs {
 		fmt.Printf("%s: %s\n", name, catalog.DisplayName)
 	}

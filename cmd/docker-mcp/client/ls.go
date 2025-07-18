@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/spf13/cobra"
-
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 )
 
@@ -32,30 +30,9 @@ var (
 	orangeCircle = fmt.Sprintf("%s\u25CF%s", orangeYellowColor, resetColor)
 )
 
-type listOptions struct {
-	Global bool
-	JSON   bool
-}
-
-func ListCommand(cwd string, cfg Config) *cobra.Command {
-	opts := &listOptions{}
-	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List client configurations",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			return runList(cmd.Context(), cwd, cfg, *opts)
-		},
-	}
-	flags := cmd.Flags()
-	addGlobalFlag(flags, &opts.Global)
-	flags.BoolVar(&opts.JSON, "json", false, "Print as JSON.")
-	return cmd
-}
-
-func runList(ctx context.Context, cwd string, config Config, opts listOptions) error {
+func List(ctx context.Context, cwd string, config Config, global, outputJSON bool) error {
 	var result Configs
-	if opts.Global {
+	if global {
 		result = parseGlobalConfigs(ctx, config)
 	} else {
 		projectRoot := findGitProjectRoot(cwd)
@@ -64,7 +41,7 @@ func runList(ctx context.Context, cwd string, config Config, opts listOptions) e
 		}
 		result = parseLocalProjectConfigs(projectRoot, config)
 	}
-	if opts.JSON {
+	if outputJSON {
 		jsonData, err := json.MarshalIndent(result.GetData(), "", "  ")
 		if err != nil {
 			return err

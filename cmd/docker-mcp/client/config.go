@@ -3,16 +3,12 @@ package client
 import (
 	_ "embed"
 	"errors"
-	"fmt"
 	"maps"
 	"os"
 	"path/filepath"
 	"runtime"
 	"slices"
-	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"gopkg.in/yaml.v3"
 )
 
@@ -24,39 +20,18 @@ var (
 	errNotInGitRepo = errors.New("not in a git repo")
 )
 
-func NewClientCmd(cwd string) *cobra.Command {
-	cfg := readConfig()
-	cmd := &cobra.Command{
-		Use:   fmt.Sprintf("client (Supported: %s)", strings.Join(getSupportedMCPClients(*cfg), ", ")),
-		Short: "Manage MCP clients",
-	}
-	cmd.AddCommand(ListCommand(cwd, *cfg))
-	cmd.AddCommand(ConnectCommand(cwd, *cfg))
-	cmd.AddCommand(DisconnectCommand(cwd, *cfg))
-	cmd.AddCommand(ManualCommand())
-	return cmd
-}
-
 type Config struct {
 	System  map[string]globalCfg `yaml:"system"`
 	Project map[string]localCfg  `yaml:"project"`
 }
 
-func readConfig() *Config {
+func ReadConfig() *Config {
 	var result Config
 	// We know it parses since it's embedded and covered by tests.
 	if err := yaml.Unmarshal([]byte(configYaml), &result); err != nil {
 		panic("Failed to parse config")
 	}
 	return &result
-}
-
-func addGlobalFlag(flags *pflag.FlagSet, p *bool) {
-	flags.BoolVarP(p, "global", "g", false, "Change the system wide configuration or the clients setup in your current git repo.")
-}
-
-func addQuietFlag(flags *pflag.FlagSet, p *bool) {
-	flags.BoolVarP(p, "quiet", "q", false, "Only display errors.")
 }
 
 func findGitProjectRoot(dir string) string {
@@ -74,7 +49,7 @@ func findGitProjectRoot(dir string) string {
 	return ""
 }
 
-func getSupportedMCPClients(cfg Config) []string {
+func GetSupportedMCPClients(cfg Config) []string {
 	tmp := map[string]struct{}{
 		vendorGordon: {},
 	}

@@ -2,24 +2,9 @@ package catalog
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
 )
 
-func newCreateCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "create <name>",
-		Short: "Create a new catalog",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(_ *cobra.Command, args []string) error {
-			return runCreate(args[0])
-		},
-		Hidden: true,
-	}
-	return cmd
-}
-
-func runCreate(name string) error {
+func Create(name string) error {
 	cfg, err := ReadConfig()
 	if err != nil {
 		return err

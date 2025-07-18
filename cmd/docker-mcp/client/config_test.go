@@ -13,7 +13,7 @@ import (
 var testData embed.FS
 
 func Test_yq_list(t *testing.T) {
-	config := readConfig()
+	config := ReadConfig()
 	tests := []struct {
 		name    string
 		cfg     any
@@ -121,7 +121,7 @@ func readTestData(t *testing.T, path string) []byte {
 }
 
 func Test_yq_add_del(t *testing.T) {
-	config := readConfig()
+	config := ReadConfig()
 	tests := []struct {
 		name     string
 		cfg      any

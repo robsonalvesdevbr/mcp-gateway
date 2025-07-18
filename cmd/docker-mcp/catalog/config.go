@@ -60,7 +60,7 @@ func ReadConfigWithDefaultCatalog(ctx context.Context) (*Config, error) {
 		return cfg, nil
 	}
 
-	if err := runImport(ctx, DockerCatalogName); err != nil {
+	if err := Import(ctx, DockerCatalogName); err != nil {
 		return nil, err
 	}
 
