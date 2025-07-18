@@ -58,6 +58,7 @@ func serverCommand(docker docker.Client) *cobra.Command {
 			return server.Enable(cmd.Context(), docker, args)
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:     "disable",
 		Aliases: []string{"remove", "rm"},
@@ -67,6 +68,7 @@ func serverCommand(docker docker.Client) *cobra.Command {
 			return server.Disable(cmd.Context(), docker, args)
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:   "inspect",
 		Short: "Get information about a server",
@@ -86,6 +88,7 @@ func serverCommand(docker docker.Client) *cobra.Command {
 			return nil
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:   "reset",
 		Short: "Disable all the servers",

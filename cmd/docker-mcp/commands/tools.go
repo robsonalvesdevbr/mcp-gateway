@@ -12,10 +12,12 @@ func toolsCommand() *cobra.Command {
 		Short: "List/count/call MCP tools",
 	}
 
-	var version string
-	var verbose bool
-	var format string
-	var gatewayArgs []string
+	var (
+		version     string
+		verbose     bool
+		format      string
+		gatewayArgs []string
+	)
 	cmd.PersistentFlags().StringVar(&version, "version", "2", "Version of the gateway")
 	cmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Verbose output")
 	cmd.PersistentFlags().StringVar(&format, "format", "list", "Output format (json|list)")
@@ -30,6 +32,7 @@ func toolsCommand() *cobra.Command {
 			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "list", "", format)
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:   "count",
 		Short: "count tools",
@@ -38,6 +41,7 @@ func toolsCommand() *cobra.Command {
 			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "count", "", format)
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:   "inspect",
 		Short: "inspect a tool",

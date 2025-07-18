@@ -31,6 +31,7 @@ func configCommand(docker docker.Client) *cobra.Command {
 			return nil
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:   "write",
 		Short: "Write the configuration",
@@ -39,6 +40,7 @@ func configCommand(docker docker.Client) *cobra.Command {
 			return config.WriteConfig([]byte(args[0]))
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:   "reset",
 		Short: "Reset the configuration",
@@ -47,6 +49,7 @@ func configCommand(docker docker.Client) *cobra.Command {
 			return config.WriteConfig(nil)
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:    "dump",
 		Short:  "Dump the whole configuration",
@@ -61,6 +64,7 @@ func configCommand(docker docker.Client) *cobra.Command {
 			return nil
 		},
 	})
+
 	cmd.AddCommand(&cobra.Command{
 		Use:    "restore",
 		Short:  "Restore the whole configuration",
