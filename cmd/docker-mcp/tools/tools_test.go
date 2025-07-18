@@ -16,7 +16,7 @@ import (
 )
 
 func TestEnableToolsEmpty(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Enable(ctx, docker, []string{"search_duckduckgo"}, "duckduckgo")
 	require.NoError(t, err)
@@ -30,7 +30,7 @@ func TestEnableToolsEmpty(t *testing.T) {
 }
 
 func TestEnableToolsExistingServer(t *testing.T) {
-	ctx, _, docker := setup(t,
+	ctx, docker := setup(t,
 		withToolsConfig("duckduckgo:\n  - other_tool"),
 		withSampleCatalog())
 
@@ -47,7 +47,7 @@ func TestEnableToolsExistingServer(t *testing.T) {
 }
 
 func TestEnableToolsExistingTool(t *testing.T) {
-	ctx, _, docker := setup(t,
+	ctx, docker := setup(t,
 		withToolsConfig("duckduckgo:\n  - other_tool"),
 		withSampleCatalog())
 
@@ -64,7 +64,7 @@ func TestEnableToolsExistingTool(t *testing.T) {
 }
 
 func TestEnableToolsDuplicateTool(t *testing.T) {
-	ctx, _, docker := setup(t,
+	ctx, docker := setup(t,
 		withEmptyToolsConfig(),
 		withSampleCatalog())
 
@@ -92,21 +92,21 @@ func TestEnableToolsDuplicateTool(t *testing.T) {
 }
 
 func TestEnableToolNotFound(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Enable(ctx, docker, []string{"nonexistent_tool"}, "duckduckgo")
 	require.ErrorContains(t, err, "tool \"nonexistent_tool\" not found in server \"duckduckgo\"")
 }
 
 func TestEnableServerNotFound(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Enable(ctx, docker, []string{"nonexistent_tool"}, "nonexistent_server")
 	require.ErrorContains(t, err, "server \"nonexistent_server\" not found in catalog")
 }
 
 func TestEnableToolAutoDiscoverServer(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Enable(ctx, docker, []string{"search_duckduckgo"}, "")
 	require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestEnableToolAutoDiscoverServer(t *testing.T) {
 }
 
 func TestEnableToolAutoDiscoverServerExistingServer(t *testing.T) {
-	ctx, _, docker := setup(t, withToolsConfig("duckduckgo:\n  - other_tool"), withSampleCatalog())
+	ctx, docker := setup(t, withToolsConfig("duckduckgo:\n  - other_tool"), withSampleCatalog())
 
 	err := Enable(ctx, docker, []string{"search_duckduckgo"}, "")
 	require.NoError(t, err)
@@ -135,7 +135,7 @@ func TestEnableToolAutoDiscoverServerExistingServer(t *testing.T) {
 }
 
 func TestEnableToolAutoDiscoverServerExistingTool(t *testing.T) {
-	ctx, _, docker := setup(t,
+	ctx, docker := setup(t,
 		withToolsConfig("duckduckgo:\n  - other_tool"),
 		withSampleCatalog())
 
@@ -152,14 +152,14 @@ func TestEnableToolAutoDiscoverServerExistingTool(t *testing.T) {
 }
 
 func TestEnableToolAutoDiscoverNotFound(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Enable(ctx, docker, []string{"nonexistent_tool"}, "")
 	require.ErrorContains(t, err, "tool \"nonexistent_tool\" not found in any server")
 }
 
 func TestEnableMultipleTools(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Enable(ctx, docker, []string{"search_duckduckgo", "other_tool"}, "duckduckgo")
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func TestEnableMultipleTools(t *testing.T) {
 }
 
 func TestDisableEmpty(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Disable(ctx, docker, []string{"search_duckduckgo"}, "duckduckgo")
 	require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestDisableEmpty(t *testing.T) {
 }
 
 func TestDisableToolExistingServer(t *testing.T) {
-	ctx, _, docker := setup(t,
+	ctx, docker := setup(t,
 		withToolsConfig("duckduckgo:\n  - search_duckduckgo\n  - other_tool"),
 		withSampleCatalog())
 
@@ -207,7 +207,7 @@ func TestDisableToolExistingServer(t *testing.T) {
 }
 
 func TestDisableToolExistingServerToolAlreadyDisabled(t *testing.T) {
-	ctx, _, docker := setup(t,
+	ctx, docker := setup(t,
 		withToolsConfig("duckduckgo:\n  - search_duckduckgo"),
 		withSampleCatalog())
 
@@ -224,14 +224,14 @@ func TestDisableToolExistingServerToolAlreadyDisabled(t *testing.T) {
 }
 
 func TestDisableServerNotFound(t *testing.T) {
-	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+	ctx, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
 	err := Disable(ctx, docker, []string{"nonexistent_tool"}, "nonexistent_server")
 	require.ErrorContains(t, err, "server \"nonexistent_server\" not found in catalog")
 }
 
 func TestDisableMultipleTools(t *testing.T) {
-	ctx, _, docker := setup(t,
+	ctx, docker := setup(t,
 		withToolsConfig("duckduckgo:\n  - search_duckduckgo\n  - other_tool"),
 		withSampleCatalog())
 
@@ -250,7 +250,7 @@ func TestDisableMultipleTools(t *testing.T) {
 
 // Fixtures and helpers
 
-func setup(t *testing.T, options ...option) (context.Context, string, docker.Client) {
+func setup(t *testing.T, options ...option) (context.Context, docker.Client) {
 	t.Helper()
 
 	docker := &fakeDocker{}
@@ -266,7 +266,7 @@ func setup(t *testing.T, options ...option) (context.Context, string, docker.Cli
 		o(t, home, docker)
 	}
 
-	return t.Context(), home, docker
+	return t.Context(), docker
 }
 
 func writeFile(t *testing.T, path string, content []byte) {
