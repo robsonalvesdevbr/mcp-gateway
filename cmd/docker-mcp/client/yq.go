@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
+	"unicode"
 
 	"github.com/mikefarah/yq/v4/pkg/yqlib"
 
@@ -62,6 +64,8 @@ func expandDelQuery(name string, key string) string {
 	switch name {
 	case "NAME":
 		return stringEscape(key)
+	case "SIMPLE_NAME":
+		return stringEscape(makeSimpleName(key))
 	default:
 		return ""
 	}
@@ -92,6 +96,8 @@ func expandSetQuery(name string, server MCPServerSTDIO) string {
 	switch name {
 	case "NAME":
 		return stringEscape(server.Name)
+	case "SIMPLE_NAME":
+		return stringEscape(makeSimpleName(server.Name))
 	case "JSON":
 		result, err := json.Marshal(temp)
 		if err != nil {
@@ -101,4 +107,14 @@ func expandSetQuery(name string, server MCPServerSTDIO) string {
 	default:
 		return ""
 	}
+}
+
+func makeSimpleName(name string) string {
+	var b strings.Builder
+	for _, r := range name {
+		if unicode.IsLetter(r) {
+			b.WriteRune(unicode.ToLower(r))
+		}
+	}
+	return b.String()
 }
