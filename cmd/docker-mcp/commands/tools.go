@@ -61,26 +61,26 @@ func toolsCommand(docker docker.Client) *cobra.Command {
 
 	var enableServerName string
 	enableCmd := &cobra.Command{
-		Use:   "enable",
-		Short: "enable a tool",
-		Args:  cobra.ExactArgs(1),
+		Use:   "enable [tool1] [tool2] ...",
+		Short: "enable one or more tools",
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return tools.Enable(cmd.Context(), docker, args, enableServerName)
 		},
 	}
-	enableCmd.Flags().StringVar(&enableServerName, "server", "", "Specify which server provides the tool (optional, will auto-discover if not provided)")
+	enableCmd.Flags().StringVar(&enableServerName, "server", "", "Specify which server provides the tools (optional, will auto-discover if not provided)")
 	cmd.AddCommand(enableCmd)
 
 	var disableServerName string
 	disableCmd := &cobra.Command{
-		Use:   "disable",
-		Short: "disable a tool",
-		Args:  cobra.ExactArgs(1),
+		Use:   "disable [tool1] [tool2] ...",
+		Short: "disable one or more tools",
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return tools.Disable(cmd.Context(), docker, args, disableServerName)
 		},
 	}
-	disableCmd.Flags().StringVar(&disableServerName, "server", "", "Specify which server provides the tool (optional, will auto-discover if not provided)")
+	disableCmd.Flags().StringVar(&disableServerName, "server", "", "Specify which server provides the tools (optional, will auto-discover if not provided)")
 	cmd.AddCommand(disableCmd)
 
 	return cmd

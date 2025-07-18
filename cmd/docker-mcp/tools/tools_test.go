@@ -158,6 +158,22 @@ func TestEnableToolAutoDiscoverNotFound(t *testing.T) {
 	require.ErrorContains(t, err, "tool \"nonexistent_tool\" not found in any server")
 }
 
+func TestEnableMultipleTools(t *testing.T) {
+	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
+
+	err := Enable(ctx, docker, []string{"search_duckduckgo", "other_tool"}, "duckduckgo")
+	require.NoError(t, err)
+
+	toolsYAML, err := config.ReadTools(ctx, docker)
+	require.NoError(t, err)
+	toolsConfig, err := config.ParseToolsConfig(toolsYAML)
+	require.NoError(t, err)
+
+	assert.Contains(t, toolsConfig.ServerTools["duckduckgo"], "search_duckduckgo")
+	assert.Contains(t, toolsConfig.ServerTools["duckduckgo"], "other_tool")
+	assert.Len(t, toolsConfig.ServerTools["duckduckgo"], 2)
+}
+
 func TestDisableEmpty(t *testing.T) {
 	ctx, _, docker := setup(t, withEmptyToolsConfig(), withSampleCatalog())
 
@@ -212,6 +228,24 @@ func TestDisableServerNotFound(t *testing.T) {
 
 	err := Disable(ctx, docker, []string{"nonexistent_tool"}, "nonexistent_server")
 	require.ErrorContains(t, err, "server \"nonexistent_server\" not found in catalog")
+}
+
+func TestDisableMultipleTools(t *testing.T) {
+	ctx, _, docker := setup(t,
+		withToolsConfig("duckduckgo:\n  - search_duckduckgo\n  - other_tool"),
+		withSampleCatalog())
+
+	err := Disable(ctx, docker, []string{"search_duckduckgo", "other_tool"}, "duckduckgo")
+	require.NoError(t, err)
+
+	toolsYAML, err := config.ReadTools(ctx, docker)
+	require.NoError(t, err)
+	toolsConfig, err := config.ParseToolsConfig(toolsYAML)
+	require.NoError(t, err)
+
+	assert.NotContains(t, toolsConfig.ServerTools["duckduckgo"], "search_duckduckgo")
+	assert.NotContains(t, toolsConfig.ServerTools["duckduckgo"], "other_tool")
+	assert.Empty(t, toolsConfig.ServerTools["duckduckgo"])
 }
 
 // Fixtures and helpers
