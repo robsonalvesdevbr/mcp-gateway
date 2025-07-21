@@ -1,16 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"strings"
 
 	clidocstool "github.com/docker/cli-docs-tool"
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/commands"
 )
 
 const defaultSourcePath = "/reference/"
@@ -33,7 +35,7 @@ func gen(opts *options) error {
 		DisableAutoGenTag: true,
 	}
 
-	cmd.AddCommand(commands.NewRootCmd(dockerCLI))
+	cmd.AddCommand(commands.Root(context.TODO(), "", dockerCLI))
 
 	c, err := clidocstool.New(clidocstool.Options{
 		Root:      cmd,
