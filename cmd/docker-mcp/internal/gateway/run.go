@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
@@ -93,6 +94,13 @@ func (g *Gateway) Run(ctx context.Context) error {
 		"Docker AI MCP Gateway",
 		"2.0.1",
 		server.WithToolHandlerMiddleware(toolCallbacks),
+		server.WithHooks(&server.Hooks{
+			OnBeforeInitialize: []server.OnBeforeInitializeFunc{
+				func(ctx context.Context, id any, message *mcp.InitializeRequest) {
+					log("> Initializing MCP server with ID:", id)
+				},
+			},
+		}),
 	)
 
 	if err := g.reloadConfiguration(ctx, mcpServer, configuration); err != nil {
