@@ -253,7 +253,7 @@ func (cp *clientPool) argsAndEnv(serverConfig ServerConfig, readOnly *bool, targ
 			continue
 		}
 
-		if readOnly != nil && *readOnly {
+		if readOnly != nil && *readOnly && !strings.HasSuffix(mount, ":ro") {
 			args = append(args, "-v", mount+":ro")
 		} else {
 			args = append(args, "-v", mount)
