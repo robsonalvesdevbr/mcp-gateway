@@ -148,7 +148,7 @@ func argsAndEnv(t *testing.T, name, catalogYAML, configYAML string, secrets map[
 			Memory: "2Gb",
 		},
 	}
-	return clientPool.argsAndEnv(ServerConfig{
+	return clientPool.argsAndEnv(catalog.ServerConfig{
 		Name:    name,
 		Spec:    parseSpec(t, catalogYAML),
 		Config:  parseConfig(t, configYAML),

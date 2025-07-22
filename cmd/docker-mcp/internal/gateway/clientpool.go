@@ -21,7 +21,7 @@ import (
 type keptClient struct {
 	Name   string
 	Getter *clientGetter
-	Config ServerConfig
+	Config catalog.ServerConfig
 }
 
 type clientPool struct {
@@ -40,7 +40,7 @@ func newClientPool(options Options, docker docker.Client) *clientPool {
 	}
 }
 
-func (cp *clientPool) AcquireClient(ctx context.Context, serverConfig ServerConfig, readOnly *bool) (mcpclient.Client, error) {
+func (cp *clientPool) AcquireClient(ctx context.Context, serverConfig catalog.ServerConfig, readOnly *bool) (mcpclient.Client, error) {
 	var getter *clientGetter
 
 	// Check if client is kept, can be returned immediately
@@ -194,7 +194,7 @@ func (cp *clientPool) baseArgs(name string) []string {
 	return args
 }
 
-func (cp *clientPool) argsAndEnv(serverConfig ServerConfig, readOnly *bool, targetConfig proxies.TargetConfig) ([]string, []string) {
+func (cp *clientPool) argsAndEnv(serverConfig catalog.ServerConfig, readOnly *bool, targetConfig proxies.TargetConfig) ([]string, []string) {
 	args := cp.baseArgs(serverConfig.Name)
 	var env []string
 
@@ -287,12 +287,12 @@ type clientGetter struct {
 	client mcpclient.Client
 	err    error
 
-	serverConfig ServerConfig
+	serverConfig catalog.ServerConfig
 	cp           *clientPool
 	readOnly     *bool
 }
 
-func newClientGetter(serverConfig ServerConfig, cp *clientPool, readOnly *bool) *clientGetter {
+func newClientGetter(serverConfig catalog.ServerConfig, cp *clientPool, readOnly *bool) *clientGetter {
 	return &clientGetter{
 		serverConfig: serverConfig,
 		cp:           cp,

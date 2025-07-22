@@ -28,13 +28,6 @@ type Configuration struct {
 	secrets     map[string]string
 }
 
-type ServerConfig struct {
-	Name    string
-	Spec    catalog.Server
-	Config  map[string]any
-	Secrets map[string]string
-}
-
 func (c *Configuration) ServerNames() []string {
 	return c.serverNames
 }
@@ -65,7 +58,7 @@ func (c *Configuration) DockerImages() []string {
 	return dockerImages
 }
 
-func (c *Configuration) Find(serverName string) (*ServerConfig, *map[string]catalog.Tool, bool) {
+func (c *Configuration) Find(serverName string) (*catalog.ServerConfig, *map[string]catalog.Tool, bool) {
 	// Is it in the catalog?
 	server, ok := c.servers[serverName]
 	if !ok {
@@ -74,7 +67,7 @@ func (c *Configuration) Find(serverName string) (*ServerConfig, *map[string]cata
 
 	// Is it an MCP Server?
 	if server.Image != "" || server.SSEEndpoint != "" || server.Remote.URL != "" {
-		return &ServerConfig{
+		return &catalog.ServerConfig{
 			Name: serverName,
 			Spec: server,
 			Config: map[string]any{

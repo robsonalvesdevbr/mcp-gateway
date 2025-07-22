@@ -15,7 +15,7 @@ func (g *Gateway) mcpToolHandler(tool catalog.Tool) server.ToolHandlerFunc {
 	}
 }
 
-func (g *Gateway) mcpServerToolHandler(serverConfig ServerConfig, annotations mcp.ToolAnnotation) server.ToolHandlerFunc {
+func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annotations mcp.ToolAnnotation) server.ToolHandlerFunc {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, annotations.ReadOnlyHint)
 		if err != nil {
@@ -27,7 +27,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig ServerConfig, annotations mc
 	}
 }
 
-func (g *Gateway) mcpServerPromptHandler(serverConfig ServerConfig) server.PromptHandlerFunc {
+func (g *Gateway) mcpServerPromptHandler(serverConfig catalog.ServerConfig) server.PromptHandlerFunc {
 	return func(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
 		if err != nil {
@@ -39,7 +39,7 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig ServerConfig) server.Promp
 	}
 }
 
-func (g *Gateway) mcpServerResourceHandler(serverConfig ServerConfig) server.ResourceHandlerFunc {
+func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig) server.ResourceHandlerFunc {
 	return func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
 		if err != nil {
@@ -56,7 +56,7 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig ServerConfig) server.Res
 	}
 }
 
-func (g *Gateway) mcpServerResourceTemplateHandler(serverConfig ServerConfig) server.ResourceTemplateHandlerFunc {
+func (g *Gateway) mcpServerResourceTemplateHandler(serverConfig catalog.ServerConfig) server.ResourceTemplateHandlerFunc {
 	return func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
 		if err != nil {

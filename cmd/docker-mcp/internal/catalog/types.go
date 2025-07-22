@@ -111,3 +111,12 @@ func (p *Properties) ToMap() map[string]any {
 
 	return m
 }
+
+// Config
+
+type ServerConfig struct {
+	Name    string
+	Spec    Server
+	Config  map[string]any
+	Secrets map[string]string
+}
