@@ -4,4 +4,6 @@ registry:
   gitmcpmoby:
     description: Connect to the moby repo.
     title: GitMCP Moby
-    sseEndpoint: "https://gitmcp.io/moby/moby"
+    remote:
+      url: "https://gitmcp.io/moby/moby"
+      transport: sse
