@@ -362,7 +362,7 @@ github.com/magiconair/properties
 github.com/mailru/easyjson/buffer
 github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
-# github.com/mark3labs/mcp-go v0.34.0 => github.com/dgageot/mcp-go v0.0.0-20250722130225-9209f9178429
+# github.com/mark3labs/mcp-go v0.34.0 => github.com/dgageot/mcp-go v0.0.0-20250722181725-fc67445a7583
 ## explicit; go 1.23
 github.com/mark3labs/mcp-go/client
 github.com/mark3labs/mcp-go/client/transport
@@ -947,4 +947,4 @@ gopkg.in/yaml.v3
 ## explicit; go 1.17
 # k8s.io/client-go v0.33.1
 ## explicit; go 1.24.0
-# github.com/mark3labs/mcp-go => github.com/dgageot/mcp-go v0.0.0-20250722130225-9209f9178429
+# github.com/mark3labs/mcp-go => github.com/dgageot/mcp-go v0.0.0-20250722181725-fc67445a7583

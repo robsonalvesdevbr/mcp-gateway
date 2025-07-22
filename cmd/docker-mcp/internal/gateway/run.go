@@ -121,8 +121,8 @@ func (g *Gateway) Run(ctx context.Context) error {
 		)
 
 		current := capabilities
-		mcpServer.AddTools(current.Tools...)
-		mcpServer.AddPrompts(current.Prompts...)
+		mcpServer.SetTools(current.Tools...)
+		mcpServer.SetPrompts(current.Prompts...)
 		mcpServer.AddResources(current.Resources...)
 		for _, v := range current.ResourceTemplates {
 			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
@@ -131,8 +131,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		lock.Lock()
 		changeListeners = append(changeListeners, func(newConfig *Capabilities) {
 			mcpServer.SetTools(newConfig.Tools...)
-			mcpServer.DeletePrompts(current.PromptNames()...)
-			mcpServer.AddPrompts(newConfig.Prompts...)
+			mcpServer.SetPrompts(newConfig.Prompts...)
 
 			// TODO: sync other things than tools
 
