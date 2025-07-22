@@ -123,6 +123,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		mcpServer.SetTools(capabilities.Tools...)
 		mcpServer.SetPrompts(capabilities.Prompts...)
 		mcpServer.SetResources(capabilities.Resources...)
+		mcpServer.RemoveAllResourceTemplates()
 		for _, v := range capabilities.ResourceTemplates {
 			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 		}
@@ -132,7 +133,10 @@ func (g *Gateway) Run(ctx context.Context) error {
 			mcpServer.SetTools(newCapabilities.Tools...)
 			mcpServer.SetPrompts(newCapabilities.Prompts...)
 			mcpServer.SetResources(newCapabilities.Resources...)
-			// TODO: sync Resource Templates
+			mcpServer.RemoveAllResourceTemplates()
+			for _, v := range newCapabilities.ResourceTemplates {
+				mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
+			}
 		})
 		lock.Unlock()
 
