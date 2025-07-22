@@ -90,28 +90,16 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
 
-	// Which servers are enabled in the registry.yaml?
-	serverNames := configuration.ServerNames()
-	if len(serverNames) == 0 {
-		log("- No server is enabled")
-	} else {
-		log("- Those servers are enabled:", strings.Join(serverNames, ", "))
-	}
-
-	// List all the available tools.
-	startList := time.Now()
-	log("- Listing MCP tools...")
-	capabilities, err := g.listCapabilities(ctx, configuration, serverNames)
-	if err != nil {
-		return fmt.Errorf("listing resources: %w", err)
-	}
-	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
-
 	// TODO: cleanup stopped servers. That happens in stdio over TCP mode.
 	var (
 		lock            sync.Mutex
 		changeListeners []func(*Capabilities)
 	)
+
+	capabilities, err := g.listServersAndCapabilities(ctx, configuration)
+	if err != nil {
+		return fmt.Errorf("listing capabilities: %w", err)
+	}
 
 	newMCPServer := func() *server.MCPServer {
 		mcpServer := server.NewMCPServer(
@@ -120,6 +108,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 			server.WithToolHandlerMiddleware(toolCallbacks),
 		)
 
+		// TODO: This will create a new server instance with an outdated vision of the capabilities.
 		refreshCapabilities(mcpServer, capabilities)
 
 		lock.Lock()
@@ -148,7 +137,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 						continue
 					}
 
-					capabilities, err := g.listCapabilities(ctx, configuration, configuration.ServerNames())
+					capabilities, err := g.listServersAndCapabilities(ctx, configuration)
 					if err != nil {
 						logf("> Unable to list capabilities: %s", err)
 						continue
@@ -195,6 +184,27 @@ func (g *Gateway) Run(ctx context.Context) error {
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio', 'sse' or 'streaming", g.Transport)
 	}
+}
+
+func (g *Gateway) listServersAndCapabilities(ctx context.Context, configuration Configuration) (*Capabilities, error) {
+	// Which servers are enabled in the registry.yaml?
+	serverNames := configuration.ServerNames()
+	if len(serverNames) == 0 {
+		log("- No server is enabled")
+	} else {
+		log("- Those servers are enabled:", strings.Join(serverNames, ", "))
+	}
+
+	// List all the available tools.
+	startList := time.Now()
+	log("- Listing MCP tools...")
+	capabilities, err := g.listCapabilities(ctx, configuration, serverNames)
+	if err != nil {
+		return nil, fmt.Errorf("listing resources: %w", err)
+	}
+	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
+
+	return capabilities, nil
 }
 
 func refreshCapabilities(s *server.MCPServer, c *Capabilities) {
