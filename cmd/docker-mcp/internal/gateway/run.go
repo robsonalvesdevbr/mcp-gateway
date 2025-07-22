@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mark3labs/mcp-go/server"
@@ -90,34 +89,14 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
 
-	// TODO: cleanup stopped servers. That happens in stdio over TCP mode.
-	var (
-		lock            sync.Mutex
-		changeListeners []func(*Capabilities)
+	mcpServer := server.NewMCPServer(
+		"Docker AI MCP Gateway",
+		"2.0.1",
+		server.WithToolHandlerMiddleware(toolCallbacks),
 	)
 
-	capabilities, err := g.listServersAndCapabilities(ctx, configuration)
-	if err != nil {
-		return fmt.Errorf("listing capabilities: %w", err)
-	}
-
-	newMCPServer := func() *server.MCPServer {
-		mcpServer := server.NewMCPServer(
-			"Docker AI MCP Gateway",
-			"2.0.1",
-			server.WithToolHandlerMiddleware(toolCallbacks),
-		)
-
-		// TODO: This will create a new server instance with an outdated vision of the capabilities.
-		refreshCapabilities(mcpServer, capabilities)
-
-		lock.Lock()
-		changeListeners = append(changeListeners, func(newCapabilities *Capabilities) {
-			refreshCapabilities(mcpServer, newCapabilities)
-		})
-		lock.Unlock()
-
-		return mcpServer
+	if err := g.reloadConfiguration(ctx, mcpServer, configuration); err != nil {
+		return fmt.Errorf("loading configuration: %w", err)
 	}
 
 	// Optionally watch for configuration updates.
@@ -137,19 +116,10 @@ func (g *Gateway) Run(ctx context.Context) error {
 						continue
 					}
 
-					capabilities, err := g.listServersAndCapabilities(ctx, configuration)
-					if err != nil {
+					if err := g.reloadConfiguration(ctx, mcpServer, configuration); err != nil {
 						logf("> Unable to list capabilities: %s", err)
 						continue
 					}
-
-					g.health.SetUnhealthy()
-					lock.Lock()
-					for _, listener := range changeListeners {
-						listener(capabilities)
-					}
-					lock.Unlock()
-					g.health.SetHealthy()
 				}
 			}
 		}()
@@ -162,31 +132,25 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 
 	// Start the server
-	g.health.SetHealthy()
 	switch strings.ToLower(g.Transport) {
 	case "stdio":
-		if g.Port == 0 {
-			log("> Start stdio server")
-			return g.startStdioServer(ctx, newMCPServer, os.Stdin, os.Stdout)
-		}
-
-		log("> Start stdio over TCP server on port", g.Port)
-		return g.startStdioOverTCPServer(ctx, newMCPServer, ln)
+		log("> Start stdio server")
+		return g.startStdioServer(ctx, mcpServer, os.Stdin, os.Stdout)
 
 	case "sse":
 		log("> Start sse server on port", g.Port)
-		return g.startSseServer(ctx, newMCPServer, ln)
+		return g.startSseServer(ctx, mcpServer, ln)
 
 	case "streaming":
 		log("> Start streaming server on port", g.Port)
-		return g.startStreamingServer(ctx, newMCPServer, ln)
+		return g.startStreamingServer(ctx, mcpServer, ln)
 
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio', 'sse' or 'streaming", g.Transport)
 	}
 }
 
-func (g *Gateway) listServersAndCapabilities(ctx context.Context, configuration Configuration) (*Capabilities, error) {
+func (g *Gateway) reloadConfiguration(ctx context.Context, mcpServer *server.MCPServer, configuration Configuration) error {
 	// Which servers are enabled in the registry.yaml?
 	serverNames := configuration.ServerNames()
 	if len(serverNames) == 0 {
@@ -200,19 +164,20 @@ func (g *Gateway) listServersAndCapabilities(ctx context.Context, configuration 
 	log("- Listing MCP tools...")
 	capabilities, err := g.listCapabilities(ctx, configuration, serverNames)
 	if err != nil {
-		return nil, fmt.Errorf("listing resources: %w", err)
+		return fmt.Errorf("listing resources: %w", err)
 	}
 	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
 
-	return capabilities, nil
-}
-
-func refreshCapabilities(s *server.MCPServer, c *Capabilities) {
-	s.SetTools(c.Tools...)
-	s.SetPrompts(c.Prompts...)
-	s.SetResources(c.Resources...)
-	s.RemoveAllResourceTemplates()
-	for _, v := range c.ResourceTemplates {
-		s.AddResourceTemplate(v.ResourceTemplate, v.Handler)
+	// Update the server's capabilities.
+	g.health.SetUnhealthy()
+	mcpServer.SetTools(capabilities.Tools...)
+	mcpServer.SetPrompts(capabilities.Prompts...)
+	mcpServer.SetResources(capabilities.Resources...)
+	mcpServer.RemoveAllResourceTemplates()
+	for _, v := range capabilities.ResourceTemplates {
+		mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 	}
+	g.health.SetHealthy()
+
+	return nil
 }
