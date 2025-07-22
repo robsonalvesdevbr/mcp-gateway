@@ -38,7 +38,7 @@ type Env struct {
 
 type Remote struct {
 	URL       string            `yaml:"url" json:"url"`
-	Transport string            `yaml:"transport,omitempty" json:"transport,omitempty"`
+	Transport string            `yaml:"transport_type,omitempty" json:"transport_type,omitempty"`
 	Headers   map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
 }
 

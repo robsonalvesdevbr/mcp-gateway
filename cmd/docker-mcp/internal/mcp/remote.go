@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"sync/atomic"
 
 	"github.com/mark3labs/mcp-go/client"
@@ -62,13 +63,13 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, request mcp.Initialize
 		headers[k] = expandEnv(v, env)
 	}
 
-	switch transport {
+	switch strings.ToLower(transport) {
 	case "sse":
 		remoteClient, err = client.NewSSEMCPClient(url, client.WithHeaders(headers))
 		if err != nil {
 			return nil, err
 		}
-	case "http":
+	case "http", "streamable":
 		remoteClient, err = client.NewStreamableHttpClient(url, mcptransport.WithHTTPHeaders(headers))
 		if err != nil {
 			return nil, err

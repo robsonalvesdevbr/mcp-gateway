@@ -2,5 +2,5 @@ registry:
   gitmcpmoby:
     remote:
       url: "https://gitmcp.io/moby/moby"
-      transport: http
-      # transport: sse
+      transport_type: http
+      # transport_type: sse
