@@ -120,23 +120,11 @@ func (g *Gateway) Run(ctx context.Context) error {
 			server.WithToolHandlerMiddleware(toolCallbacks),
 		)
 
-		mcpServer.SetTools(capabilities.Tools...)
-		mcpServer.SetPrompts(capabilities.Prompts...)
-		mcpServer.SetResources(capabilities.Resources...)
-		mcpServer.RemoveAllResourceTemplates()
-		for _, v := range capabilities.ResourceTemplates {
-			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
-		}
+		refreshCapabilities(mcpServer, capabilities)
 
 		lock.Lock()
 		changeListeners = append(changeListeners, func(newCapabilities *Capabilities) {
-			mcpServer.SetTools(newCapabilities.Tools...)
-			mcpServer.SetPrompts(newCapabilities.Prompts...)
-			mcpServer.SetResources(newCapabilities.Resources...)
-			mcpServer.RemoveAllResourceTemplates()
-			for _, v := range newCapabilities.ResourceTemplates {
-				mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
-			}
+			refreshCapabilities(mcpServer, newCapabilities)
 		})
 		lock.Unlock()
 
@@ -206,5 +194,15 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio', 'sse' or 'streaming", g.Transport)
+	}
+}
+
+func refreshCapabilities(s *server.MCPServer, c *Capabilities) {
+	s.SetTools(c.Tools...)
+	s.SetPrompts(c.Prompts...)
+	s.SetResources(c.Resources...)
+	s.RemoveAllResourceTemplates()
+	for _, v := range c.ResourceTemplates {
+		s.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 	}
 }
