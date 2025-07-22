@@ -9,13 +9,13 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
-func (g *Gateway) startStdioServer(ctx context.Context, mcpServer *server.MCPServer, stdin io.Reader, stdout io.Writer) error {
-	return server.NewStdioServer(mcpServer).Listen(ctx, stdin, stdout)
+func (g *Gateway) startStdioServer(ctx context.Context, stdin io.Reader, stdout io.Writer) error {
+	return server.NewStdioServer(g.mcpServer).Listen(ctx, stdin, stdout)
 }
 
-func (g *Gateway) startSseServer(ctx context.Context, mcpServer *server.MCPServer, ln net.Listener) error {
+func (g *Gateway) startSseServer(ctx context.Context, ln net.Listener) error {
 	mux := http.NewServeMux()
-	sseServer := server.NewSSEServer(mcpServer)
+	sseServer := server.NewSSEServer(g.mcpServer)
 	mux.Handle("/sse", sseServer.SSEHandler())
 	mux.Handle("/message", sseServer.MessageHandler())
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -38,9 +38,9 @@ func (g *Gateway) startSseServer(ctx context.Context, mcpServer *server.MCPServe
 	return httpServer.Serve(ln)
 }
 
-func (g *Gateway) startStreamingServer(ctx context.Context, mcpServer *server.MCPServer, ln net.Listener) error {
+func (g *Gateway) startStreamingServer(ctx context.Context, ln net.Listener) error {
 	mux := http.NewServeMux()
-	mux.Handle("/mcp", server.NewStreamableHTTPServer(mcpServer))
+	mux.Handle("/mcp", server.NewStreamableHTTPServer(g.mcpServer))
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/mcp", http.StatusTemporaryRedirect)
 	})

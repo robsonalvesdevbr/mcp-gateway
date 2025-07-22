@@ -21,6 +21,7 @@ type Gateway struct {
 	docker       docker.Client
 	configurator Configurator
 	clientPool   *clientPool
+	mcpServer    *server.MCPServer
 	health       health.State
 }
 
@@ -90,7 +91,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
 
-	mcpServer := server.NewMCPServer(
+	g.mcpServer = server.NewMCPServer(
 		"Docker AI MCP Gateway",
 		"2.0.1",
 		server.WithToolHandlerMiddleware(toolCallbacks),
@@ -103,7 +104,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		}),
 	)
 
-	if err := g.reloadConfiguration(ctx, mcpServer, configuration); err != nil {
+	if err := g.reloadConfiguration(ctx, configuration); err != nil {
 		return fmt.Errorf("loading configuration: %w", err)
 	}
 
@@ -124,7 +125,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 						continue
 					}
 
-					if err := g.reloadConfiguration(ctx, mcpServer, configuration); err != nil {
+					if err := g.reloadConfiguration(ctx, configuration); err != nil {
 						logf("> Unable to list capabilities: %s", err)
 						continue
 					}
@@ -143,22 +144,22 @@ func (g *Gateway) Run(ctx context.Context) error {
 	switch strings.ToLower(g.Transport) {
 	case "stdio":
 		log("> Start stdio server")
-		return g.startStdioServer(ctx, mcpServer, os.Stdin, os.Stdout)
+		return g.startStdioServer(ctx, os.Stdin, os.Stdout)
 
 	case "sse":
 		log("> Start sse server on port", g.Port)
-		return g.startSseServer(ctx, mcpServer, ln)
+		return g.startSseServer(ctx, ln)
 
 	case "streaming":
 		log("> Start streaming server on port", g.Port)
-		return g.startStreamingServer(ctx, mcpServer, ln)
+		return g.startStreamingServer(ctx, ln)
 
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio', 'sse' or 'streaming", g.Transport)
 	}
 }
 
-func (g *Gateway) reloadConfiguration(ctx context.Context, mcpServer *server.MCPServer, configuration Configuration) error {
+func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configuration) error {
 	// Which servers are enabled in the registry.yaml?
 	serverNames := configuration.ServerNames()
 	if len(serverNames) == 0 {
@@ -178,12 +179,12 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, mcpServer *server.MCP
 
 	// Update the server's capabilities.
 	g.health.SetUnhealthy()
-	mcpServer.SetTools(capabilities.Tools...)
-	mcpServer.SetPrompts(capabilities.Prompts...)
-	mcpServer.SetResources(capabilities.Resources...)
-	mcpServer.RemoveAllResourceTemplates()
+	g.mcpServer.SetTools(capabilities.Tools...)
+	g.mcpServer.SetPrompts(capabilities.Prompts...)
+	g.mcpServer.SetResources(capabilities.Resources...)
+	g.mcpServer.RemoveAllResourceTemplates()
 	for _, v := range capabilities.ResourceTemplates {
-		mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
+		g.mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 	}
 	g.health.SetHealthy()
 
