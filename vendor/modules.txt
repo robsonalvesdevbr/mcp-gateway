@@ -364,6 +364,8 @@ github.com/mailru/easyjson/jlexer
 github.com/mailru/easyjson/jwriter
 # github.com/mark3labs/mcp-go v0.34.0 => github.com/dgageot/mcp-go v0.0.0-20250722130225-9209f9178429
 ## explicit; go 1.23
+github.com/mark3labs/mcp-go/client
+github.com/mark3labs/mcp-go/client/transport
 github.com/mark3labs/mcp-go/mcp
 github.com/mark3labs/mcp-go/server
 github.com/mark3labs/mcp-go/util
