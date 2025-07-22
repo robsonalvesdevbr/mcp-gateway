@@ -1,9 +1,6 @@
-version: 2
-name: my-catalog
 registry:
   gitmcpmoby:
-    description: Connect to the moby repo.
-    title: GitMCP Moby
     remote:
       url: "https://gitmcp.io/moby/moby"
-      transport: sse
+      transport: http
+      # transport: sse

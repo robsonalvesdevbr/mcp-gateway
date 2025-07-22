@@ -318,6 +318,8 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 				switch cg.serverConfig.Spec.Remote.Transport {
 				case "sse":
 					client = mcpclient.NewSSEClient(cg.serverConfig.Name, cg.serverConfig.Spec.Remote.URL)
+				case "http":
+					client = mcpclient.NewStreamableHTTPMCPClient(cg.serverConfig.Spec.Remote.URL)
 				default:
 					return nil, fmt.Errorf("unsupported remote transport: %s", cg.serverConfig.Spec.Remote.Transport)
 				}
