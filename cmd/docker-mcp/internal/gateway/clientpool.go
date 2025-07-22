@@ -18,8 +18,6 @@ import (
 	mcpclient "github.com/docker/mcp-gateway/cmd/docker-mcp/internal/mcp"
 )
 
-var readOnly = true
-
 type keptClient struct {
 	Name   string
 	Getter *clientGetter

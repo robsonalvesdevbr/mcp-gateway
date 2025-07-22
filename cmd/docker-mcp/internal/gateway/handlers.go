@@ -29,7 +29,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig ServerConfig, annotations mc
 
 func (g *Gateway) mcpServerPromptHandler(serverConfig ServerConfig) server.PromptHandlerFunc {
 	return func(ctx context.Context, request mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, &readOnly)
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +41,7 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig ServerConfig) server.Promp
 
 func (g *Gateway) mcpServerResourceHandler(serverConfig ServerConfig) server.ResourceHandlerFunc {
 	return func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, &readOnly)
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig ServerConfig) server.Res
 
 func (g *Gateway) mcpServerResourceTemplateHandler(serverConfig ServerConfig) server.ResourceTemplateHandlerFunc {
 	return func(ctx context.Context, request mcp.ReadResourceRequest) ([]mcp.ResourceContents, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, &readOnly)
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
 		if err != nil {
 			return nil, err
 		}

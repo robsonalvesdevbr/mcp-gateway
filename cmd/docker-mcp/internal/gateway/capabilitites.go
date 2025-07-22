@@ -42,7 +42,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 		// It's an MCP Server
 		case serverConfig != nil:
 			errs.Go(func() error {
-				client, err := g.clientPool.AcquireClient(ctx, *serverConfig, &readOnly)
+				client, err := g.clientPool.AcquireClient(ctx, *serverConfig, nil)
 				if err != nil {
 					logf("  > Can't start %s: %s", serverConfig.Name, err)
 					return nil
