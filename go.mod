@@ -17,7 +17,6 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/mark3labs/mcp-go v0.34.0
 	github.com/mikefarah/yq/v4 v4.45.4
-	github.com/r3labs/sse/v2 v2.10.0
 	github.com/sigstore/cosign/v2 v2.5.0
 	github.com/sigstore/sigstore v1.9.5
 	github.com/spf13/cobra v1.9.1
@@ -166,7 +165,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
-	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/client-go v0.33.1 // indirect
 )

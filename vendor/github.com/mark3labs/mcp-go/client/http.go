@@ -11,7 +11,7 @@ import (
 func NewStreamableHttpClient(baseURL string, options ...transport.StreamableHTTPCOption) (*Client, error) {
 	trans, err := transport.NewStreamableHTTP(baseURL, options...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create HTTP transport: %w", err)
+		return nil, fmt.Errorf("failed to create SSE transport: %w", err)
 	}
 	clientOptions := make([]ClientOption, 0)
 	sessionID := trans.GetSessionId()

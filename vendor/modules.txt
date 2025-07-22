@@ -440,9 +440,6 @@ github.com/pkg/errors
 github.com/pmezard/go-difflib/difflib
 # github.com/prometheus/client_model v0.6.2
 ## explicit; go 1.22.0
-# github.com/r3labs/sse/v2 v2.10.0
-## explicit; go 1.13
-github.com/r3labs/sse/v2
 # github.com/rivo/uniseg v0.4.7
 ## explicit; go 1.18
 github.com/rivo/uniseg
@@ -783,7 +780,6 @@ golang.org/x/mod/semver
 golang.org/x/mod/sumdb/note
 # golang.org/x/net v0.41.0
 ## explicit; go 1.23.0
-golang.org/x/net/context
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
@@ -941,9 +937,6 @@ google.golang.org/protobuf/types/known/fieldmaskpb
 google.golang.org/protobuf/types/known/structpb
 google.golang.org/protobuf/types/known/timestamppb
 google.golang.org/protobuf/types/known/wrapperspb
-# gopkg.in/cenkalti/backoff.v1 v1.1.0
-## explicit
-gopkg.in/cenkalti/backoff.v1
 # gopkg.in/op/go-logging.v1 v1.0.0-20160211212156-b2cb9fa56473
 ## explicit
 gopkg.in/op/go-logging.v1
