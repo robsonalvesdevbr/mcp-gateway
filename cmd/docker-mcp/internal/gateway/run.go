@@ -122,7 +122,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 		mcpServer.SetTools(capabilities.Tools...)
 		mcpServer.SetPrompts(capabilities.Prompts...)
-		mcpServer.AddResources(capabilities.Resources...)
+		mcpServer.SetResources(capabilities.Resources...)
 		for _, v := range capabilities.ResourceTemplates {
 			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 		}
@@ -131,7 +131,8 @@ func (g *Gateway) Run(ctx context.Context) error {
 		changeListeners = append(changeListeners, func(newCapabilities *Capabilities) {
 			mcpServer.SetTools(newCapabilities.Tools...)
 			mcpServer.SetPrompts(newCapabilities.Prompts...)
-			// TODO: sync Resources and Resource Templates
+			mcpServer.SetResources(newCapabilities.Resources...)
+			// TODO: sync Resource Templates
 		})
 		lock.Unlock()
 
