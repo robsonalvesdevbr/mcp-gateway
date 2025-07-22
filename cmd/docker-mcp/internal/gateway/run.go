@@ -66,14 +66,6 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 	defer func() { _ = stopConfigWatcher() }()
 
-	// Which servers are enabled in the registry.yaml?
-	serverNames := configuration.ServerNames()
-	if len(serverNames) == 0 {
-		log("- No server is enabled")
-	} else {
-		log("- Those servers are enabled:", strings.Join(serverNames, ", "))
-	}
-
 	// Which docker images are used?
 	// Pull them and verify them if possible.
 	if !g.Static {
@@ -91,6 +83,21 @@ func (g *Gateway) Run(ctx context.Context) error {
 		}
 	}
 
+	// Build a list of interceptors.
+	customInterceptors, err := interceptors.Parse(g.Interceptors)
+	if err != nil {
+		return fmt.Errorf("parsing interceptors: %w", err)
+	}
+	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
+
+	// Which servers are enabled in the registry.yaml?
+	serverNames := configuration.ServerNames()
+	if len(serverNames) == 0 {
+		log("- No server is enabled")
+	} else {
+		log("- Those servers are enabled:", strings.Join(serverNames, ", "))
+	}
+
 	// List all the available tools.
 	startList := time.Now()
 	log("- Listing MCP tools...")
@@ -99,13 +106,6 @@ func (g *Gateway) Run(ctx context.Context) error {
 		return fmt.Errorf("listing resources: %w", err)
 	}
 	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
-
-	// Build a list of interceptors.
-	customInterceptors, err := interceptors.Parse(g.Interceptors)
-	if err != nil {
-		return fmt.Errorf("parsing interceptors: %w", err)
-	}
-	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
 
 	// TODO: cleanup stopped servers. That happens in stdio over TCP mode.
 	var (
