@@ -9,27 +9,25 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-type sseMCPClient struct {
-	name     string
+type streamableHTTPMCPClient struct {
 	endpoint string
 
 	initialized atomic.Bool
 	*client.Client
 }
 
-func NewSSEClient(name string, endpoint string) Client {
-	return &sseMCPClient{
-		name:     name,
+func NewStreamableHTTPMCPClient(endpoint string) Client {
+	return &streamableHTTPMCPClient{
 		endpoint: endpoint,
 	}
 }
 
-func (c *sseMCPClient) Initialize(ctx context.Context, request mcp.InitializeRequest, _ bool) (*mcp.InitializeResult, error) {
+func (c *streamableHTTPMCPClient) Initialize(ctx context.Context, request mcp.InitializeRequest, _ bool) (*mcp.InitializeResult, error) {
 	if c.initialized.Load() {
 		return nil, fmt.Errorf("client already initialized")
 	}
 
-	sseClient, err := client.NewSSEMCPClient(c.endpoint)
+	sseClient, err := client.NewStreamableHttpClient(c.endpoint)
 	if err != nil {
 		return nil, err
 	}
