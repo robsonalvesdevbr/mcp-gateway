@@ -15,7 +15,8 @@ type topLevel struct {
 type Server struct {
 	Image          string   `yaml:"image" json:"image"`
 	LongLived      bool     `yaml:"longLived,omitempty" json:"longLived,omitempty"`
-	SSEEndpoint    string   `yaml:"sseEndpoint,omitempty" json:"sseEndpoint,omitempty"`
+	Remote         Remote   `yaml:"remote,omitempty" json:"remote,omitempty"`
+	SSEEndpoint    string   `yaml:"sseEndpoint,omitempty" json:"sseEndpoint,omitempty"` // Deprecated: Use Remote instead
 	Secrets        []Secret `yaml:"secrets,omitempty" json:"secrets,omitempty"`
 	Env            []Env    `yaml:"env,omitempty" json:"env,omitempty"`
 	Command        []string `yaml:"command,omitempty" json:"command,omitempty"`
@@ -33,6 +34,11 @@ type Secret struct {
 type Env struct {
 	Name  string `yaml:"name" json:"name"`
 	Value string `yaml:"value" json:"value"`
+}
+
+type Remote struct {
+	URL       string `yaml:"url" json:"url"`
+	Transport string `yaml:"transport,omitempty" json:"transport,omitempty"`
 }
 
 // POCI tools
