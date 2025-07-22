@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/yosida95/uritemplate/v3"
+	"net/http"
 )
 
 type MCPMethod string
@@ -399,6 +400,7 @@ type CancelledNotificationParams struct {
 type InitializeRequest struct {
 	Request
 	Params InitializeParams `json:"params"`
+	Header http.Header      `json:"-"`
 }
 
 type InitializeParams struct {
@@ -489,6 +491,7 @@ type Implementation struct {
 // or else may be disconnected.
 type PingRequest struct {
 	Request
+	Header http.Header `json:"-"`
 }
 
 /* Progress notifications */
@@ -541,6 +544,7 @@ type PaginatedResult struct {
 // the server has.
 type ListResourcesRequest struct {
 	PaginatedRequest
+	Header http.Header `json:"-"`
 }
 
 // ListResourcesResult is the server's response to a resources/list request
@@ -554,6 +558,7 @@ type ListResourcesResult struct {
 // resource templates the server has.
 type ListResourceTemplatesRequest struct {
 	PaginatedRequest
+	Header http.Header `json:"-"`
 }
 
 // ListResourceTemplatesResult is the server's response to a
@@ -567,6 +572,7 @@ type ListResourceTemplatesResult struct {
 // specific resource URI.
 type ReadResourceRequest struct {
 	Request
+	Header http.Header        `json:"-"`
 	Params ReadResourceParams `json:"params"`
 }
 
@@ -598,6 +604,7 @@ type ResourceListChangedNotification struct {
 type SubscribeRequest struct {
 	Request
 	Params SubscribeParams `json:"params"`
+	Header http.Header     `json:"-"`
 }
 
 type SubscribeParams struct {
@@ -612,6 +619,7 @@ type SubscribeParams struct {
 type UnsubscribeRequest struct {
 	Request
 	Params UnsubscribeParams `json:"params"`
+	Header http.Header       `json:"-"`
 }
 
 type UnsubscribeParams struct {
@@ -717,6 +725,7 @@ func (BlobResourceContents) isResourceContents() {}
 type SetLevelRequest struct {
 	Request
 	Params SetLevelParams `json:"params"`
+	Header http.Header    `json:"-"`
 }
 
 type SetLevelParams struct {
@@ -761,7 +770,32 @@ const (
 	LoggingLevelEmergency LoggingLevel = "emergency"
 )
 
+var levelToInt = map[LoggingLevel]int{
+	LoggingLevelDebug:     0,
+	LoggingLevelInfo:      1,
+	LoggingLevelNotice:    2,
+	LoggingLevelWarning:   3,
+	LoggingLevelError:     4,
+	LoggingLevelCritical:  5,
+	LoggingLevelAlert:     6,
+	LoggingLevelEmergency: 7,
+}
+
+func (l LoggingLevel) ShouldSendTo(minLevel LoggingLevel) bool {
+	ia, oka := levelToInt[l]
+	ib, okb := levelToInt[minLevel]
+	if !oka || !okb {
+		return false
+	}
+	return ia >= ib
+}
+
 /* Sampling */
+
+const (
+	// MethodSamplingCreateMessage allows servers to request LLM completions from clients
+	MethodSamplingCreateMessage MCPMethod = "sampling/createMessage"
+)
 
 // CreateMessageRequest is a request from the server to sample an LLM via the
 // client. The client has full discretion over which model to select. The client
@@ -865,6 +899,22 @@ type AudioContent struct {
 
 func (AudioContent) isContent() {}
 
+// ResourceLink represents a link to a resource that the client can access.
+type ResourceLink struct {
+	Annotated
+	Type string `json:"type"` // Must be "resource_link"
+	// The URI of the resource.
+	URI string `json:"uri"`
+	// The name of the resource.
+	Name string `json:"name"`
+	// The description of the resource.
+	Description string `json:"description"`
+	// The MIME type of the resource.
+	MIMEType string `json:"mimeType"`
+}
+
+func (ResourceLink) isContent() {}
+
 // EmbeddedResource represents the contents of a resource, embedded into a prompt or tool call result.
 //
 // It is up to the client how best to render embedded resources for the
@@ -939,6 +989,7 @@ type ModelHint struct {
 type CompleteRequest struct {
 	Request
 	Params CompleteParams `json:"params"`
+	Header http.Header    `json:"-"`
 }
 
 type CompleteParams struct {
@@ -991,6 +1042,7 @@ type PromptReference struct {
 // structure or access specific locations that the client has permission to read from.
 type ListRootsRequest struct {
 	Request
+	Header http.Header `json:"-"`
 }
 
 // ListRootsResult is the client's response to a roots/list request from the server.
@@ -1041,4 +1093,47 @@ type ServerResult any
 
 type Named interface {
 	GetName() string
+}
+
+// MarshalJSON implements custom JSON marshaling for Content interface
+func MarshalContent(content Content) ([]byte, error) {
+	return json.Marshal(content)
+}
+
+// UnmarshalContent implements custom JSON unmarshaling for Content interface
+func UnmarshalContent(data []byte) (Content, error) {
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, err
+	}
+
+	contentType, ok := raw["type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid type field")
+	}
+
+	switch contentType {
+	case "text":
+		var content TextContent
+		err := json.Unmarshal(data, &content)
+		return content, err
+	case "image":
+		var content ImageContent
+		err := json.Unmarshal(data, &content)
+		return content, err
+	case "audio":
+		var content AudioContent
+		err := json.Unmarshal(data, &content)
+		return content, err
+	case "resource_link":
+		var content ResourceLink
+		err := json.Unmarshal(data, &content)
+		return content, err
+	case "resource":
+		var content EmbeddedResource
+		err := json.Unmarshal(data, &content)
+		return content, err
+	default:
+		return nil, fmt.Errorf("unknown content type: %s", contentType)
+	}
 }
