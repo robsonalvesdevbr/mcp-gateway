@@ -68,10 +68,15 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 				options.Port = 8811
 			}
 
+			if options.Static && options.Watch {
+				return errors.New("cannot use --static with --watch")
+			}
+
 			// Append additional catalogs to the main catalog path
 			options.CatalogPath = append(options.CatalogPath, additionalCatalogs...)
 			options.RegistryPath = append(options.RegistryPath, additionalRegistries...)
 			options.ConfigPath = append(options.ConfigPath, additionalConfigs...)
+
 			return gateway.NewGateway(options, docker).Run(cmd.Context())
 		},
 	}
