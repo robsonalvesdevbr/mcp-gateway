@@ -120,22 +120,18 @@ func (g *Gateway) Run(ctx context.Context) error {
 			server.WithToolHandlerMiddleware(toolCallbacks),
 		)
 
-		current := capabilities
-		mcpServer.SetTools(current.Tools...)
-		mcpServer.SetPrompts(current.Prompts...)
-		mcpServer.AddResources(current.Resources...)
-		for _, v := range current.ResourceTemplates {
+		mcpServer.SetTools(capabilities.Tools...)
+		mcpServer.SetPrompts(capabilities.Prompts...)
+		mcpServer.AddResources(capabilities.Resources...)
+		for _, v := range capabilities.ResourceTemplates {
 			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
 		}
 
 		lock.Lock()
-		changeListeners = append(changeListeners, func(newConfig *Capabilities) {
-			mcpServer.SetTools(newConfig.Tools...)
-			mcpServer.SetPrompts(newConfig.Prompts...)
-
-			// TODO: sync other things than tools
-
-			current = newConfig
+		changeListeners = append(changeListeners, func(newCapabilities *Capabilities) {
+			mcpServer.SetTools(newCapabilities.Tools...)
+			mcpServer.SetPrompts(newCapabilities.Prompts...)
+			// TODO: sync Resources and Resource Templates
 		})
 		lock.Unlock()
 
