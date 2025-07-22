@@ -4,8 +4,8 @@ type Config struct {
 	Options
 	ServerNames  []string
 	CatalogPath  []string
-	ConfigPath   string
-	RegistryPath string
+	ConfigPath   []string
+	RegistryPath []string
 	SecretsPath  string
 }
 

@@ -88,8 +88,8 @@ func (c *Configuration) Find(serverName string) (*catalog.ServerConfig, *map[str
 type FileBasedConfiguration struct {
 	CatalogPath  []string
 	ServerNames  []string // Takes precedence over the RegistryPath
-	RegistryPath string
-	ConfigPath   string
+	RegistryPath []string
+	ConfigPath   []string
 	SecretsPath  string // Optional, if not set, use Docker Desktop's secrets API
 	Watch        bool
 
@@ -105,17 +105,28 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 		return configuration, nil, func() error { return nil }, nil
 	}
 
-	var registryPath string
+	var registryPaths []string
 	if len(c.ServerNames) == 0 {
-		registryPath, err = config.FilePath(c.RegistryPath)
-		if err != nil {
-			return Configuration{}, nil, nil, err
+		for _, path := range c.RegistryPath {
+			if path != "" {
+				registryPath, err := config.FilePath(path)
+				if err != nil {
+					return Configuration{}, nil, nil, err
+				}
+				registryPaths = append(registryPaths, registryPath)
+			}
 		}
 	}
 
-	configPath, err := config.FilePath(c.ConfigPath)
-	if err != nil {
-		return Configuration{}, nil, nil, err
+	var configPaths []string
+	for _, path := range c.ConfigPath {
+		if path != "" {
+			configPath, err := config.FilePath(path)
+			if err != nil {
+				return Configuration{}, nil, nil, err
+			}
+			configPaths = append(configPaths, configPath)
+		}
 	}
 
 	watcher, err := fsnotify.NewWatcher()
@@ -142,29 +153,30 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 					}
 				}
 
-				if configuration, err := c.readOnce(ctx); err == nil {
-					updates <- configuration
+				configuration, err := c.readOnce(ctx)
+				if err != nil {
+					log("Error reading configuration:", err)
+					continue
 				}
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				logf("watch error: %s", err)
+
+				updates <- configuration
+
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()
 
-	if registryPath != "" {
-		log("- Watching registry at", registryPath)
-		if err := watcher.Add(registryPath); err != nil {
-			_ = watcher.Close()
+	// Add all registry paths to watcher
+	for _, path := range registryPaths {
+		if err := watcher.Add(path); err != nil && !os.IsNotExist(err) {
 			return Configuration{}, nil, nil, err
 		}
 	}
-	if configPath != "" {
-		log("- Watching config at", configPath)
-		if err := watcher.Add(configPath); err != nil {
-			_ = watcher.Close()
+
+	// Add all config paths to watcher
+	for _, path := range configPaths {
+		if err := watcher.Add(path); err != nil && !os.IsNotExist(err) {
 			return Configuration{}, nil, nil, err
 		}
 	}
@@ -239,41 +251,75 @@ func (c *FileBasedConfiguration) readCatalog(ctx context.Context) (catalog.Catal
 }
 
 func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Registry, error) {
-	if c.RegistryPath == "" {
+	if len(c.RegistryPath) == 0 {
 		return config.Registry{}, nil
 	}
 
-	log("  - Reading registry from", c.RegistryPath)
-	yaml, err := config.ReadConfigFile(ctx, c.docker, c.RegistryPath)
-	if err != nil {
-		return config.Registry{}, fmt.Errorf("reading registry.yaml: %w", err)
+	mergedRegistry := config.Registry{
+		Servers: map[string]config.Tile{},
 	}
 
-	cfg, err := config.ParseRegistryConfig(yaml)
-	if err != nil {
-		return config.Registry{}, fmt.Errorf("parsing registry.yaml: %w", err)
+	for _, registryPath := range c.RegistryPath {
+		if registryPath == "" {
+			continue
+		}
+
+		log("  - Reading registry from", registryPath)
+		yaml, err := config.ReadConfigFile(ctx, c.docker, registryPath)
+		if err != nil {
+			return config.Registry{}, fmt.Errorf("reading registry file %s: %w", registryPath, err)
+		}
+
+		cfg, err := config.ParseRegistryConfig(yaml)
+		if err != nil {
+			return config.Registry{}, fmt.Errorf("parsing registry file %s: %w", registryPath, err)
+		}
+
+		// Merge servers into the combined registry, checking for overlaps
+		for serverName, tile := range cfg.Servers {
+			if _, exists := mergedRegistry.Servers[serverName]; exists {
+				log(fmt.Sprintf("Warning: overlapping server '%s' found in registry '%s', overwriting previous value", serverName, registryPath))
+			}
+			mergedRegistry.Servers[serverName] = tile
+		}
 	}
 
-	return cfg, nil
+	return mergedRegistry, nil
 }
 
 func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map[string]any, error) {
-	if c.ConfigPath == "" {
+	if len(c.ConfigPath) == 0 {
 		return map[string]map[string]any{}, nil
 	}
 
-	log("  - Reading config from", c.ConfigPath)
-	yaml, err := config.ReadConfigFile(ctx, c.docker, c.ConfigPath)
-	if err != nil {
-		return nil, fmt.Errorf("reading config.yaml: %w", err)
+	mergedConfig := map[string]map[string]any{}
+
+	for _, configPath := range c.ConfigPath {
+		if configPath == "" {
+			continue
+		}
+
+		log("  - Reading config from", configPath)
+		yaml, err := config.ReadConfigFile(ctx, c.docker, configPath)
+		if err != nil {
+			return nil, fmt.Errorf("reading config file %s: %w", configPath, err)
+		}
+
+		cfg, err := config.ParseConfig(yaml)
+		if err != nil {
+			return nil, fmt.Errorf("parsing config file %s: %w", configPath, err)
+		}
+
+		// Merge configs into the combined config, checking for overlaps
+		for serverName, serverConfig := range cfg {
+			if _, exists := mergedConfig[serverName]; exists {
+				log(fmt.Sprintf("Warning: overlapping server config '%s' found in config file '%s', overwriting previous value", serverName, configPath))
+			}
+			mergedConfig[serverName] = serverConfig
+		}
 	}
 
-	cfg, err := config.ParseConfig(yaml)
-	if err != nil {
-		return nil, fmt.Errorf("parsing config.yaml: %w", err)
-	}
-
-	return cfg, nil
+	return mergedConfig, nil
 }
 
 func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, servers map[string]catalog.Server, serverNames []string) (map[string]string, error) {
