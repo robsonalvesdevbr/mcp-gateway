@@ -37,8 +37,9 @@ type Env struct {
 }
 
 type Remote struct {
-	URL       string `yaml:"url" json:"url"`
-	Transport string `yaml:"transport,omitempty" json:"transport,omitempty"`
+	URL       string            `yaml:"url" json:"url"`
+	Transport string            `yaml:"transport,omitempty" json:"transport,omitempty"`
+	Headers   map[string]string `yaml:"headers,omitempty" json:"headers,omitempty"`
 }
 
 // POCI tools
