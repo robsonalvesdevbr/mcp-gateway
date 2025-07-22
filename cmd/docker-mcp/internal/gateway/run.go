@@ -2,7 +2,6 @@ package gateway
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -199,26 +198,10 @@ func (g *Gateway) Run(ctx context.Context) error {
 		return g.startStdioOverTCPServer(ctx, newMCPServer, ln)
 
 	case "sse":
-		if g.Port == 0 {
-			if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
-				g.Port = 8811
-			} else {
-				return errors.New("missing 'port' for 'sse' server")
-			}
-		}
-
 		log("> Start sse server on port", g.Port)
 		return g.startSseServer(ctx, newMCPServer, ln)
 
 	case "streaming":
-		if g.Port == 0 {
-			if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
-				g.Port = 8811
-			} else {
-				return errors.New("missing 'port' for streaming server")
-			}
-		}
-
 		log("> Start streaming server on port", g.Port)
 		return g.startStreamingServer(ctx, newMCPServer, ln)
 

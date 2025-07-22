@@ -56,6 +56,10 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 		Short: "Run the gateway",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if options.Port == 0 && options.Transport != "stdio" {
+				options.Port = 8811
+			}
+
 			return gateway.NewGateway(options, docker).Run(cmd.Context())
 		},
 	}
