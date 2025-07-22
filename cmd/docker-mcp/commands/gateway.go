@@ -27,7 +27,6 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 				Cpus:             1,
 				Memory:           "2Gb",
 				Transport:        "stdio",
-				Port:             8811,
 				LogCalls:         true,
 				BlockSecrets:     true,
 				VerifySignatures: true,

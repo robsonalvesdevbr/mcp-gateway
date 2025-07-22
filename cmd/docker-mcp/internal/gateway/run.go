@@ -200,7 +200,11 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	case "sse":
 		if g.Port == 0 {
-			return errors.New("missing 'port' for 'sse' server")
+			if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
+				g.Port = 8811
+			} else {
+				return errors.New("missing 'port' for 'sse' server")
+			}
 		}
 
 		log("> Start sse server on port", g.Port)
@@ -208,7 +212,11 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	case "streaming":
 		if g.Port == 0 {
-			return errors.New("missing 'port' for streaming server")
+			if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
+				g.Port = 8811
+			} else {
+				return errors.New("missing 'port' for streaming server")
+			}
 		}
 
 		log("> Start streaming server on port", g.Port)
