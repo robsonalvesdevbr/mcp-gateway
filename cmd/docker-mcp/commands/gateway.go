@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -56,7 +57,11 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 		Short: "Run the gateway",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if options.Port == 0 && options.Transport != "stdio" {
+			if options.Transport == "stdio" {
+				if options.Port != 0 {
+					return errors.New("cannot use --port with --transport=stdio")
+				}
+			} else if options.Port == 0 {
 				options.Port = 8811
 			}
 
