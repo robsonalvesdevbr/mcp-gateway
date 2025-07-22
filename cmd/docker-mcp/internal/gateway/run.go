@@ -130,9 +130,8 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 		lock.Lock()
 		changeListeners = append(changeListeners, func(newConfig *Capabilities) {
-			mcpServer.DeleteTools(current.ToolNames()...)
+			mcpServer.SetTools(newConfig.Tools...)
 			mcpServer.DeletePrompts(current.PromptNames()...)
-			mcpServer.AddTools(newConfig.Tools...)
 			mcpServer.AddPrompts(newConfig.Prompts...)
 
 			// TODO: sync other things than tools
