@@ -311,18 +311,14 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 
 			var client mcpclient.Client
 
+			// Deprecated: Use Remote instead
 			if cg.serverConfig.Spec.SSEEndpoint != "" {
-				// Deprecated: Use Remote instead
-				client = mcpclient.NewSSEClient(cg.serverConfig.Name, cg.serverConfig.Spec.SSEEndpoint)
+				client = mcpclient.NewRemoteMCPClient(cg.serverConfig.Name, catalog.Remote{
+					URL:       cg.serverConfig.Spec.SSEEndpoint,
+					Transport: "sse",
+				})
 			} else if cg.serverConfig.Spec.Remote.URL != "" {
-				switch cg.serverConfig.Spec.Remote.Transport {
-				case "sse":
-					client = mcpclient.NewSSEClient(cg.serverConfig.Name, cg.serverConfig.Spec.Remote.URL)
-				case "http":
-					client = mcpclient.NewStreamableHTTPMCPClient(cg.serverConfig.Spec.Remote.URL)
-				default:
-					return nil, fmt.Errorf("unsupported remote transport: %s", cg.serverConfig.Spec.Remote.Transport)
-				}
+				client = mcpclient.NewRemoteMCPClient(cg.serverConfig.Name, cg.serverConfig.Spec.Remote)
 			} else if cg.cp.Static {
 				client = mcpclient.NewStdioCmdClient(cg.serverConfig.Name, "socat", nil, "STDIO", fmt.Sprintf("TCP:mcp-%s:4444", cg.serverConfig.Name))
 			} else {
