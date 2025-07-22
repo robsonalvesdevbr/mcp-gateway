@@ -86,7 +86,7 @@ func (c *Configuration) Find(serverName string) (*catalog.ServerConfig, *map[str
 }
 
 type FileBasedConfiguration struct {
-	CatalogPath  string
+	CatalogPath  []string
 	ServerNames  []string // Takes precedence over the RegistryPath
 	RegistryPath string
 	ConfigPath   string

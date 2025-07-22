@@ -18,10 +18,11 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 
 	// Have different defaults for the on-host gateway and the in-container gateway.
 	var options gateway.Config
+	var additionalCatalogs []string
 	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
 		// In-container.
 		options = gateway.Config{
-			CatalogPath: catalog.DockerCatalogURL,
+			CatalogPath: []string{catalog.DockerCatalogURL},
 			SecretsPath: "docker-desktop:/run/secrets/mcp_secret:/.env",
 			Options: gateway.Options{
 				Cpus:             1,
@@ -36,7 +37,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	} else {
 		// On-host.
 		options = gateway.Config{
-			CatalogPath:  "docker-mcp.yaml",
+			CatalogPath:  []string{"docker-mcp.yaml"},
 			RegistryPath: "registry.yaml",
 			ConfigPath:   "config.yaml",
 			SecretsPath:  "docker-desktop",
@@ -60,12 +61,15 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 				options.Port = 8811
 			}
 
+			// Append additional catalogs to the main catalog path
+			options.CatalogPath = append(options.CatalogPath, additionalCatalogs...)
 			return gateway.NewGateway(options, docker).Run(cmd.Context())
 		},
 	}
 
 	runCmd.Flags().StringSliceVar(&options.ServerNames, "servers", nil, "names of the servers to enable (if non empty, ignore --registry flag)")
-	runCmd.Flags().StringVar(&options.CatalogPath, "catalog", options.CatalogPath, "path to the docker-mcp.yaml catalog (absolute or relative to ~/.docker/mcp/catalogs/)")
+	runCmd.Flags().StringSliceVar(&options.CatalogPath, "catalog", options.CatalogPath, "paths to docker catalogs (absolute or relative to ~/.docker/mcp/catalogs/)")
+	runCmd.Flags().StringSliceVar(&additionalCatalogs, "additional-catalog", nil, "additional catalog paths to append to the default catalogs")
 	runCmd.Flags().StringVar(&options.RegistryPath, "registry", options.RegistryPath, "path to the registry.yaml (absolute or relative to ~/.docker/mcp/)")
 	runCmd.Flags().StringVar(&options.ConfigPath, "config", options.ConfigPath, "path to the config.yaml (absolute or relative to ~/.docker/mcp/)")
 	runCmd.Flags().StringVar(&options.SecretsPath, "secrets", options.SecretsPath, "colon separated paths to search for secrets. Can be `docker-desktop` or a path to a .env file (default to using Docker Deskop's secrets API)")
