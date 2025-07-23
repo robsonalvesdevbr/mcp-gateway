@@ -5,6 +5,36 @@ usage: docker mcp gateway run
 pname: docker mcp gateway
 plink: docker_mcp_gateway.yaml
 options:
+    - option: additional-catalog
+      value_type: stringSlice
+      default_value: '[]'
+      description: additional catalog paths to append to the default catalogs
+      deprecated: false
+      hidden: false
+      experimental: false
+      experimentalcli: false
+      kubernetes: false
+      swarm: false
+    - option: additional-config
+      value_type: stringSlice
+      default_value: '[]'
+      description: additional config paths to merge with the default config.yaml
+      deprecated: false
+      hidden: false
+      experimental: false
+      experimentalcli: false
+      kubernetes: false
+      swarm: false
+    - option: additional-registry
+      value_type: stringSlice
+      default_value: '[]'
+      description: additional registry paths to merge with the default registry.yaml
+      deprecated: false
+      hidden: false
+      experimental: false
+      experimentalcli: false
+      kubernetes: false
+      swarm: false
     - option: block-network
       value_type: bool
       default_value: "false"
@@ -26,10 +56,10 @@ options:
       kubernetes: false
       swarm: false
     - option: catalog
-      value_type: string
-      default_value: docker-mcp.yaml
+      value_type: stringSlice
+      default_value: '[docker-mcp.yaml]'
       description: |
-        path to the docker-mcp.yaml catalog (absolute or relative to ~/.docker/mcp/catalogs/)
+        paths to docker catalogs (absolute or relative to ~/.docker/mcp/catalogs/)
       deprecated: false
       hidden: false
       experimental: false
@@ -37,9 +67,9 @@ options:
       kubernetes: false
       swarm: false
     - option: config
-      value_type: string
-      default_value: config.yaml
-      description: path to the config.yaml (absolute or relative to ~/.docker/mcp/)
+      value_type: stringSlice
+      default_value: '[config.yaml]'
+      description: paths to the config files (absolute or relative to ~/.docker/mcp/)
       deprecated: false
       hidden: false
       experimental: false
@@ -130,9 +160,10 @@ options:
       kubernetes: false
       swarm: false
     - option: registry
-      value_type: string
-      default_value: registry.yaml
-      description: path to the registry.yaml (absolute or relative to ~/.docker/mcp/)
+      value_type: stringSlice
+      default_value: '[registry.yaml]'
+      description: |
+        paths to the registry files (absolute or relative to ~/.docker/mcp/)
       deprecated: false
       hidden: false
       experimental: false
