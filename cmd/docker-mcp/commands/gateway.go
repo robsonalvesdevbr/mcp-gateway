@@ -60,16 +60,21 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 		Short: "Run the gateway",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if options.Static {
+				options.Watch = false
+			}
+
+			if options.Central {
+				options.Watch = false
+				options.Transport = "streaming"
+			}
+
 			if options.Transport == "stdio" {
 				if options.Port != 0 {
 					return errors.New("cannot use --port with --transport=stdio")
 				}
 			} else if options.Port == 0 {
 				options.Port = 8811
-			}
-
-			if options.Static && options.Watch {
-				return errors.New("cannot use --static with --watch")
 			}
 
 			// Append additional catalogs to the main catalog path
@@ -105,6 +110,10 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	runCmd.Flags().IntVar(&options.Cpus, "cpus", options.Cpus, "CPUs allocated to each MCP Server (default is 1)")
 	runCmd.Flags().StringVar(&options.Memory, "memory", options.Memory, "Memory allocated to each MCP Server (default is 2Gb)")
 	runCmd.Flags().BoolVar(&options.Static, "static", options.Static, "Enable static mode (aka pre-started servers)")
+
+	// Very experimental features
+	runCmd.Flags().BoolVar(&options.Central, "central", options.Central, "In central mode, clients tell us which servers to enable")
+	_ = runCmd.Flags().MarkHidden("central")
 
 	cmd.AddCommand(runCmd)
 
