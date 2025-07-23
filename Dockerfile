@@ -1,13 +1,12 @@
 #syntax=docker/dockerfile:1
 
 ARG GO_VERSION=1.24.4
-ARG ALPINE_VERSION=3.21
 ARG DOCS_FORMATS="md,yaml"
 
 FROM --platform=${BUILDPLATFORM} golangci/golangci-lint:v2.1.6-alpine AS lint-base
 
 FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION}-alpine AS base
-RUN apk add --no-cache git
+RUN apk add --no-cache git rsync
 WORKDIR /app
 
 FROM base AS lint
@@ -132,18 +131,13 @@ RUN chmod +x /run.sh
 ENV PORT=8080
 ENTRYPOINT ["/run.sh"]
 
-FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS alpine
-RUN apk add --no-cache rsync git
-ENV CGO_ENABLED=0
-WORKDIR /src
-
-FROM alpine AS docs-gen
+FROM base AS docs-gen
 WORKDIR /src
 RUN --mount=target=. \
     --mount=target=/root/.cache,type=cache \
     go build -mod=vendor -o /out/docsgen ./docs/generator/generate.go
 
-FROM alpine AS docs-build
+FROM base AS docs-build
 COPY --from=docs-gen /out/docsgen /usr/bin
 ENV DOCKER_CLI_PLUGIN_ORIGINAL_CLI_COMMAND="mcp"
 ARG DOCS_FORMATS
