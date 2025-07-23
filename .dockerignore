@@ -6,3 +6,4 @@
 !/.golangci.yml
 !/vendor
 !/docs
+!/.git
