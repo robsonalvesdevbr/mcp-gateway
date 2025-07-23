@@ -26,4 +26,5 @@ type Options struct {
 	Cpus             int
 	Memory           string
 	Static           bool
+	Central          bool
 }

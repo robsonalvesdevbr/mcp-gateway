@@ -92,6 +92,7 @@ type FileBasedConfiguration struct {
 	ConfigPath   []string
 	SecretsPath  string // Optional, if not set, use Docker Desktop's secrets API
 	Watch        bool
+	Central      bool
 
 	docker docker.Client
 }
@@ -189,16 +190,17 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 	log("- Reading configuration...")
 
 	var serverNames []string
+	if !c.Central {
+		if len(c.ServerNames) > 0 {
+			serverNames = c.ServerNames
+		} else {
+			registryConfig, err := c.readRegistry(ctx)
+			if err != nil {
+				return Configuration{}, fmt.Errorf("reading registry: %w", err)
+			}
 
-	if len(c.ServerNames) > 0 {
-		serverNames = c.ServerNames
-	} else {
-		registryConfig, err := c.readRegistry(ctx)
-		if err != nil {
-			return Configuration{}, fmt.Errorf("reading registry: %w", err)
+			serverNames = registryConfig.ServerNames()
 		}
-
-		serverNames = registryConfig.ServerNames()
 	}
 
 	mcpCatalog, err := c.readCatalog(ctx)
@@ -207,11 +209,13 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 	}
 	servers := mcpCatalog.Servers
 
+	// TODO(dga): Do we expect every server to have a config, in Central mode?
 	serversConfig, err := c.readConfig(ctx)
 	if err != nil {
 		return Configuration{}, fmt.Errorf("reading config: %w", err)
 	}
 
+	// TODO(dga): How do we know which secrets to read, in Central mode?
 	var secrets map[string]string
 	if c.SecretsPath == "docker-desktop" {
 		secrets, err = c.readDockerDesktopSecrets(ctx, servers, serverNames)
