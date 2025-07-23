@@ -1,4 +1,4 @@
-name: validate
+name: validate docs generation
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
         id: generate
         uses: docker/bake-action/subaction/list-targets@v6
         with:
-          target: validate
+          target: validate-docs
 
   validate:
     runs-on: ubuntu-24.04
