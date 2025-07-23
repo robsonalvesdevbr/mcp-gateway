@@ -9,6 +9,44 @@ FROM --platform=${BUILDPLATFORM} golang:${GO_VERSION}-alpine AS base
 RUN apk add --no-cache git rsync
 WORKDIR /app
 
+# Docs generation and validation targets
+FROM base AS docs-gen
+WORKDIR /src
+RUN --mount=target=. \
+    --mount=target=/root/.cache,type=cache \
+    go build -mod=vendor -o /out/docsgen ./docs/generator/generate.go
+
+FROM base AS docs-build
+COPY --from=docs-gen /out/docsgen /usr/bin
+ENV DOCKER_CLI_PLUGIN_ORIGINAL_CLI_COMMAND="mcp"
+ARG DOCS_FORMATS
+RUN --mount=target=/context \
+    --mount=target=.,type=tmpfs <<EOT
+  set -e
+  rsync -a /context/. .
+  docsgen --formats "$DOCS_FORMATS" --source "docs/generator/reference"
+  mkdir /out
+  cp -r docs/generator/reference/* /out/
+EOT
+
+FROM scratch AS docs-update
+COPY --from=docs-build /out /
+
+FROM docs-build AS docs-validate
+RUN --mount=target=/context \
+    --mount=target=.,type=tmpfs <<EOT
+  set -e
+  rsync -a /context/. .
+  git add -A
+  rm -rf docs/generator/reference/*
+  cp -rf /out/* ./docs/generator/reference/
+  if [ -n "$(git status --porcelain -- docs/generator/reference)" ]; then
+    echo >&2 'ERROR: Docs result differs. Please update with "make docs"'
+    git status --porcelain -- docs/generator/reference
+    exit 1
+  fi
+EOT
+
 FROM base AS lint
 COPY --from=lint-base /usr/bin/golangci-lint /usr/bin/golangci-lint
 ARG TARGETOS
@@ -130,40 +168,3 @@ EOF
 RUN chmod +x /run.sh
 ENV PORT=8080
 ENTRYPOINT ["/run.sh"]
-
-FROM base AS docs-gen
-WORKDIR /src
-RUN --mount=target=. \
-    --mount=target=/root/.cache,type=cache \
-    go build -mod=vendor -o /out/docsgen ./docs/generator/generate.go
-
-FROM base AS docs-build
-COPY --from=docs-gen /out/docsgen /usr/bin
-ENV DOCKER_CLI_PLUGIN_ORIGINAL_CLI_COMMAND="mcp"
-ARG DOCS_FORMATS
-RUN --mount=target=/context \
-    --mount=target=.,type=tmpfs <<EOT
-  set -e
-  rsync -a /context/. .
-  docsgen --formats "$DOCS_FORMATS" --source "docs/generator/reference"
-  mkdir /out
-  cp -r docs/generator/reference/* /out/
-EOT
-
-FROM scratch AS docs-update
-COPY --from=docs-build /out /
-
-FROM docs-build AS docs-validate
-RUN --mount=target=/context \
-    --mount=target=.,type=tmpfs <<EOT
-  set -e
-  rsync -a /context/. .
-  git add -A
-  rm -rf docs/generator/reference/*
-  cp -rf /out/* ./docs/generator/reference/
-  if [ -n "$(git status --porcelain -- docs/generator/reference)" ]; then
-    echo >&2 'ERROR: Docs result differs. Please update with "make docs"'
-    git status --porcelain -- docs/generator/reference
-    exit 1
-  fi
-EOT
