@@ -3,9 +3,9 @@ package gateway
 type Config struct {
 	Options
 	ServerNames  []string
-	CatalogPath  string
-	ConfigPath   string
-	RegistryPath string
+	CatalogPath  []string
+	ConfigPath   []string
+	RegistryPath []string
 	SecretsPath  string
 }
 

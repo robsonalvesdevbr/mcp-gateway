@@ -19,10 +19,13 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 
 	// Have different defaults for the on-host gateway and the in-container gateway.
 	var options gateway.Config
+	var additionalCatalogs []string
+	var additionalRegistries []string
+	var additionalConfigs []string
 	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
 		// In-container.
 		options = gateway.Config{
-			CatalogPath: catalog.DockerCatalogURL,
+			CatalogPath: []string{catalog.DockerCatalogURL},
 			SecretsPath: "docker-desktop:/run/secrets/mcp_secret:/.env",
 			Options: gateway.Options{
 				Cpus:             1,
@@ -37,9 +40,9 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	} else {
 		// On-host.
 		options = gateway.Config{
-			CatalogPath:  "docker-mcp.yaml",
-			RegistryPath: "registry.yaml",
-			ConfigPath:   "config.yaml",
+			CatalogPath:  []string{"docker-mcp.yaml"},
+			RegistryPath: []string{"registry.yaml"},
+			ConfigPath:   []string{"config.yaml"},
 			SecretsPath:  "docker-desktop",
 			Options: gateway.Options{
 				Cpus:         1,
@@ -65,14 +68,21 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 				options.Port = 8811
 			}
 
+			// Append additional catalogs to the main catalog path
+			options.CatalogPath = append(options.CatalogPath, additionalCatalogs...)
+			options.RegistryPath = append(options.RegistryPath, additionalRegistries...)
+			options.ConfigPath = append(options.ConfigPath, additionalConfigs...)
 			return gateway.NewGateway(options, docker).Run(cmd.Context())
 		},
 	}
 
 	runCmd.Flags().StringSliceVar(&options.ServerNames, "servers", nil, "names of the servers to enable (if non empty, ignore --registry flag)")
-	runCmd.Flags().StringVar(&options.CatalogPath, "catalog", options.CatalogPath, "path to the docker-mcp.yaml catalog (absolute or relative to ~/.docker/mcp/catalogs/)")
-	runCmd.Flags().StringVar(&options.RegistryPath, "registry", options.RegistryPath, "path to the registry.yaml (absolute or relative to ~/.docker/mcp/)")
-	runCmd.Flags().StringVar(&options.ConfigPath, "config", options.ConfigPath, "path to the config.yaml (absolute or relative to ~/.docker/mcp/)")
+	runCmd.Flags().StringSliceVar(&options.CatalogPath, "catalog", options.CatalogPath, "paths to docker catalogs (absolute or relative to ~/.docker/mcp/catalogs/)")
+	runCmd.Flags().StringSliceVar(&additionalCatalogs, "additional-catalog", nil, "additional catalog paths to append to the default catalogs")
+	runCmd.Flags().StringSliceVar(&options.RegistryPath, "registry", options.RegistryPath, "paths to the registry files (absolute or relative to ~/.docker/mcp/)")
+	runCmd.Flags().StringSliceVar(&additionalRegistries, "additional-registry", nil, "additional registry paths to merge with the default registry.yaml")
+	runCmd.Flags().StringSliceVar(&options.ConfigPath, "config", options.ConfigPath, "paths to the config files (absolute or relative to ~/.docker/mcp/)")
+	runCmd.Flags().StringSliceVar(&additionalConfigs, "additional-config", nil, "additional config paths to merge with the default config.yaml")
 	runCmd.Flags().StringVar(&options.SecretsPath, "secrets", options.SecretsPath, "colon separated paths to search for secrets. Can be `docker-desktop` or a path to a .env file (default to using Docker Deskop's secrets API)")
 	runCmd.Flags().StringSliceVar(&options.ToolNames, "tools", options.ToolNames, "List of tools to enable")
 	runCmd.Flags().StringArrayVar(&options.Interceptors, "interceptor", options.Interceptors, "List of interceptors to use (format: when:type:path, e.g. 'before:exec:/bin/path')")
