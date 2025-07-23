@@ -97,7 +97,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		server.WithToolHandlerMiddleware(toolCallbacks),
 		server.WithHooks(&server.Hooks{
 			OnBeforeInitialize: []server.OnBeforeInitializeFunc{
-				func(ctx context.Context, id any, message *mcp.InitializeRequest) {
+				func(_ context.Context, id any, _ *mcp.InitializeRequest) {
 					log("> Initializing MCP server with ID:", id)
 				},
 			},
