@@ -1,4 +1,4 @@
-name: validate docs generation
+name: validate
 
 permissions:
   contents: read
