@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
@@ -17,6 +18,8 @@ func Export(ctx context.Context, docker docker.Client, serverNames []string) (ma
 
 	var secretNames []string
 	for _, serverName := range serverNames {
+		serverName = strings.TrimSpace(serverName)
+
 		serverSpec, ok := catalog.Servers[serverName]
 		if !ok {
 			return nil, fmt.Errorf("server %s not found in catalog", serverName)

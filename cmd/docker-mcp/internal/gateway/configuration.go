@@ -59,6 +59,8 @@ func (c *Configuration) DockerImages() []string {
 }
 
 func (c *Configuration) Find(serverName string) (*catalog.ServerConfig, *map[string]catalog.Tool, bool) {
+	serverName = strings.TrimSpace(serverName)
+
 	// Is it in the catalog?
 	server, ok := c.servers[serverName]
 	if !ok {
@@ -329,6 +331,8 @@ func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map
 func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, servers map[string]catalog.Server, serverNames []string) (map[string]string, error) {
 	var secretNames []string
 	for _, serverName := range serverNames {
+		serverName := strings.TrimSpace(serverName)
+
 		serverSpec, ok := servers[serverName]
 		if !ok {
 			continue
