@@ -92,7 +92,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	// Central mode.
 	if g.Central {
-		log("> Initialized in", time.Since(start))
+		log("> Initialized (in central mode) in", time.Since(start))
 		if g.DryRun {
 			log("Dry run mode enabled, not starting the server.")
 			return nil
