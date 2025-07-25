@@ -5,3 +5,5 @@
 !/go.sum
 !/.golangci.yml
 !/vendor
+!/docs
+!/.git
