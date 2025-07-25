@@ -41,7 +41,7 @@ RUN --mount=target=/context \
   rm -rf docs/generator/reference/*
   cp -rf /out/* ./docs/generator/reference/
   if [ -n "$(git status --porcelain -- docs/generator/reference)" ]; then
-    echo >&2 'ERROR: Docs result differs. Please update with "make docs"'
+    echo >&2 'ERROR: Docs result differs. Rebase on main branch and rerun "make docs"'
     git status --porcelain -- docs/generator/reference
     exit 1
   fi
