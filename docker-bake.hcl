@@ -80,7 +80,8 @@ target mcp-gateway {
   target = "mcp-gateway"
   output = [
     "type=image,name=docker/mcp-gateway",
-    "type=image,name=docker/mcp-gateway:v1",
+    #"type=image,name=docker/mcp-gateway:v1", last commit pushed with v1 tag: 261fd774d271974ae196b1cbc3acc04aceb3257b 
+    "type=image,name=docker/mcp-gateway:v2",
   ]
 }
 
