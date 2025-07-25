@@ -98,6 +98,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 			return nil
 		}
 
+		log("> Start streaming server on port", g.Port)
 		return g.startCentralStreamingServer(ctx, newMCPServer, ln, configuration)
 	}
 	mcpServer := newMCPServer()

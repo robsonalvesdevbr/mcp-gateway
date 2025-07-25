@@ -75,8 +75,9 @@ func (g *Gateway) startCentralStreamingServer(ctx context.Context, newMCPServer 
 	mux.HandleFunc("/mcp", func(w http.ResponseWriter, r *http.Request) {
 		serverNames := r.Header.Get("x-mcp-servers")
 		if len(serverNames) == 0 {
-			_, _ = w.Write([]byte("No server names provided in the request header 'x-mcp-servers'"))
+			log("No server names provided in the request header 'x-mcp-servers'")
 			w.WriteHeader(http.StatusBadRequest)
+			_, _ = io.WriteString(w, "No server names provided in the request header 'x-mcp-servers'")
 			return
 		}
 
@@ -86,8 +87,8 @@ func (g *Gateway) startCentralStreamingServer(ctx context.Context, newMCPServer 
 			mcpServer := newMCPServer()
 			if err := g.reloadConfiguration(ctx, mcpServer, configuration, parseServerNames(serverNames)); err != nil {
 				lock.Unlock()
-				_, _ = w.Write([]byte("Failed to reload configuration"))
 				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = io.WriteString(w, "Failed to reload configuration")
 				return
 			}
 			handler = server.NewStreamableHTTPServer(mcpServer)
