@@ -166,7 +166,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		log("> Start sse server on port", g.Port)
 		return g.startSseServer(ctx, mcpServer, ln)
 
-	case "streaming":
+	case "http", "streamable", "streaming", "streamable-http":
 		log("> Start streaming server on port", g.Port)
 		return g.startStreamingServer(ctx, mcpServer, ln)
 

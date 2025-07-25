@@ -69,7 +69,7 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, request mcp.Initialize
 		if err != nil {
 			return nil, err
 		}
-	case "http", "streamable", "streaming":
+	case "http", "streamable", "streaming", "streamable-http":
 		remoteClient, err = client.NewStreamableHttpClient(url, mcptransport.WithHTTPHeaders(headers))
 		if err != nil {
 			return nil, err
