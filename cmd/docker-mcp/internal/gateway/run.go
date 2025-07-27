@@ -201,9 +201,7 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, mcpServer *server.MCP
 	mcpServer.SetPrompts(capabilities.Prompts...)
 	mcpServer.SetResources(capabilities.Resources...)
 	mcpServer.RemoveAllResourceTemplates()
-	for _, v := range capabilities.ResourceTemplates {
-		mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
-	}
+	mcpServer.AddResourceTemplates(capabilities.ResourceTemplates...)
 	g.health.SetHealthy()
 
 	return nil
