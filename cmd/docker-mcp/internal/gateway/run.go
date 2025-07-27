@@ -196,7 +196,6 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, mcpServer *server.MCP
 	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
 
 	// Update the server's capabilities.
-	g.health.SetUnhealthy()
 	mcpServer.SetTools(capabilities.Tools...)
 	mcpServer.SetPrompts(capabilities.Prompts...)
 	mcpServer.SetResources(capabilities.Resources...)
