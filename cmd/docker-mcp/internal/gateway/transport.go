@@ -9,6 +9,8 @@ import (
 	"sync"
 
 	"github.com/mark3labs/mcp-go/server"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/health"
 )
 
 func (g *Gateway) startStdioServer(ctx context.Context, mcpServer *server.MCPServer, stdin io.Reader, stdout io.Writer) error {
@@ -17,19 +19,12 @@ func (g *Gateway) startStdioServer(ctx context.Context, mcpServer *server.MCPSer
 
 func (g *Gateway) startSseServer(ctx context.Context, mcpServer *server.MCPServer, ln net.Listener) error {
 	mux := http.NewServeMux()
+	mux.Handle("/health", healthHandler(&g.health))
+	mux.Handle("/", redirectHandler("/sse"))
+
 	sseServer := server.NewSSEServer(mcpServer)
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/sse", http.StatusTemporaryRedirect)
-	})
 	mux.Handle("/sse", sseServer.SSEHandler())
 	mux.Handle("/message", sseServer.MessageHandler())
-	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-		if g.health.IsHealthy() {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			w.WriteHeader(http.StatusServiceUnavailable)
-		}
-	})
 	httpServer := &http.Server{
 		Handler: mux,
 	}
@@ -42,17 +37,10 @@ func (g *Gateway) startSseServer(ctx context.Context, mcpServer *server.MCPServe
 
 func (g *Gateway) startStreamingServer(ctx context.Context, mcpServer *server.MCPServer, ln net.Listener) error {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/mcp", http.StatusTemporaryRedirect)
-	})
+	mux.Handle("/health", healthHandler(&g.health))
+	mux.Handle("/", redirectHandler("/mcp"))
+
 	mux.Handle("/mcp", server.NewStreamableHTTPServer(mcpServer))
-	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-		if g.health.IsHealthy() {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			w.WriteHeader(http.StatusServiceUnavailable)
-		}
-	})
 	httpServer := &http.Server{
 		Handler: mux,
 	}
@@ -65,13 +53,12 @@ func (g *Gateway) startStreamingServer(ctx context.Context, mcpServer *server.MC
 }
 
 func (g *Gateway) startCentralStreamingServer(ctx context.Context, newMCPServer func() *server.MCPServer, ln net.Listener, configuration Configuration) error {
+	mux := http.NewServeMux()
+	mux.Handle("/health", healthHandler(&g.health))
+	mux.Handle("/", redirectHandler("/mcp"))
+
 	var lock sync.Mutex
 	handlersPerSelectionOfServers := map[string]*server.StreamableHTTPServer{}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/mcp", http.StatusTemporaryRedirect)
-	})
 	mux.HandleFunc("/mcp", func(w http.ResponseWriter, r *http.Request) {
 		serverNames := r.Header.Get("x-mcp-servers")
 		if len(serverNames) == 0 {
@@ -98,14 +85,6 @@ func (g *Gateway) startCentralStreamingServer(ctx context.Context, newMCPServer 
 
 		handler.ServeHTTP(w, r)
 	})
-
-	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
-		if g.health.IsHealthy() {
-			w.WriteHeader(http.StatusOK)
-		} else {
-			w.WriteHeader(http.StatusServiceUnavailable)
-		}
-	})
 	httpServer := &http.Server{
 		Handler: mux,
 	}
@@ -124,4 +103,20 @@ func parseServerNames(serverNames string) []string {
 		names = append(names, strings.TrimSpace(name))
 	}
 	return names
+}
+
+func redirectHandler(target string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+	}
+}
+
+func healthHandler(state *health.State) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		if state.IsHealthy() {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+	}
 }
