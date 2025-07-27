@@ -100,7 +100,12 @@ func (g *Gateway) startCentralStreamingServer(ctx context.Context, newMCPServer 
 func parseServerNames(serverNames string) []string {
 	var names []string
 	for name := range strings.SplitSeq(serverNames, ",") {
-		names = append(names, strings.TrimSpace(name))
+		name := strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+
+		names = append(names, name)
 	}
 	return names
 }
