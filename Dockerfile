@@ -1,6 +1,6 @@
 #syntax=docker/dockerfile:1
 
-ARG GO_VERSION=1.24.4
+ARG GO_VERSION=1.24.5
 ARG DOCS_FORMATS="md,yaml"
 
 FROM --platform=${BUILDPLATFORM} golangci/golangci-lint:v2.1.6-alpine AS lint-base
@@ -115,13 +115,13 @@ COPY --from=packager-docker-mcp /out .
 
 
 # Build the mcp-gateway image
-FROM golang:1.24.4-alpine3.22@sha256:68932fa6d4d4059845c8f40ad7e654e626f3ebd3706eef7846f319293ab5cb7a AS build-mcp-gateway
+FROM golang:${GO_VERSION}-alpine AS build-mcp-gateway
 WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/go-build,id=mcp-gateway \
     --mount=source=.,target=. \
     go build -trimpath -ldflags "-s -w" -o / ./cmd/docker-mcp/
 
-FROM golang:1.24.4-alpine3.22@sha256:68932fa6d4d4059845c8f40ad7e654e626f3ebd3706eef7846f319293ab5cb7a AS build-mcp-bridge
+FROM golang:${GO_VERSION}-alpine AS build-mcp-bridge
 WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=source=./tools/docker-mcp-bridge,target=. \

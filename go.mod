@@ -1,6 +1,6 @@
 module github.com/docker/mcp-gateway
 
-go 1.24.4
+go 1.24.5
 
 replace github.com/mark3labs/mcp-go => github.com/dgageot/mcp-go v0.0.0-20250727085305-11db72a0c5e5
 
