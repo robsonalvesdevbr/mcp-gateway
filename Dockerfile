@@ -127,7 +127,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=source=./tools/docker-mcp-bridge,target=. \
     go build -trimpath -ldflags "-s -w" -o /docker-mcp-bridge .
 
-FROM alpine:3.22@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be023728e11715 AS mcp-gateway
+FROM alpine:3.22@sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1 AS mcp-gateway
 RUN apk add --no-cache docker-cli socat jq
 VOLUME /misc
 COPY --from=build-mcp-bridge /docker-mcp-bridge /misc/
