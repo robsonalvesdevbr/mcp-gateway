@@ -7,9 +7,8 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
@@ -129,7 +128,7 @@ func (cp *clientPool) SetNetworks(networks []string) {
 	cp.networks = networks
 }
 
-func (cp *clientPool) runToolContainer(ctx context.Context, tool catalog.Tool, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (cp *clientPool) runToolContainer(ctx context.Context, tool catalog.Tool, params *mcp.CallToolParams) (*mcp.CallToolResult, error) {
 	args := cp.baseArgs(tool.Name)
 
 	// Attach the MCP servers to the same network as the gateway.
@@ -137,8 +136,14 @@ func (cp *clientPool) runToolContainer(ctx context.Context, tool catalog.Tool, r
 		args = append(args, "--network", network)
 	}
 
+	// Convert params.Arguments to map[string]any
+	arguments, ok := params.Arguments.(map[string]any)
+	if !ok {
+		arguments = make(map[string]any)
+	}
+
 	// Volumes
-	for _, mount := range eval.EvaluateList(tool.Container.Volumes, request.GetArguments()) {
+	for _, mount := range eval.EvaluateList(tool.Container.Volumes, arguments) {
 		if mount == "" {
 			continue
 		}
@@ -150,7 +155,7 @@ func (cp *clientPool) runToolContainer(ctx context.Context, tool catalog.Tool, r
 	args = append(args, tool.Container.Image)
 
 	// Command
-	command := eval.EvaluateList(tool.Container.Command, request.GetArguments())
+	command := eval.EvaluateList(tool.Container.Command, arguments)
 	args = append(args, command...)
 
 	log("  - Running container", tool.Container.Image, "with args", args)
@@ -161,10 +166,20 @@ func (cp *clientPool) runToolContainer(ctx context.Context, tool catalog.Tool, r
 	}
 	out, err := cmd.Output()
 	if err != nil {
-		return mcp.NewToolResultError(string(out)), nil
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{&mcp.TextContent{
+				Text: string(out),
+			}},
+			IsError: true,
+		}, nil
 	}
 
-	return mcp.NewToolResultText(string(out)), nil
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{&mcp.TextContent{
+			Text: string(out),
+		}},
+		IsError: false,
+	}, nil
 }
 
 func (cp *clientPool) baseArgs(name string) []string {
@@ -345,17 +360,17 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 				client = mcpclient.NewStdioCmdClient(cg.serverConfig.Name, "docker", env, runArgs...)
 			}
 
-			initRequest := mcp.InitializeRequest{}
-			initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-			initRequest.Params.ClientInfo = mcp.Implementation{
-				Name:    "docker",
-				Version: "1.0.0",
+			initParams := &mcp.InitializeParams{
+				ProtocolVersion: "2024-11-05",
+				ClientInfo: &mcp.Implementation{
+					Name:    "docker",
+					Version: "1.0.0",
+				},
 			}
 
-			ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-			defer cancel()
-
-			if _, err := client.Initialize(ctx, initRequest, cg.cp.Verbose); err != nil {
+			// Use the original context instead of creating a timeout context
+			// to avoid cancellation issues
+			if _, err := client.Initialize(ctx, initParams, cg.cp.Verbose); err != nil {
 				return nil, err
 			}
 

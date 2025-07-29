@@ -8,23 +8,27 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mark3labs/mcp-go/server"
-
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/health"
 )
 
-func (g *Gateway) startStdioServer(ctx context.Context, mcpServer *server.MCPServer, stdin io.Reader, stdout io.Writer) error {
-	return server.NewStdioServer(mcpServer).Listen(ctx, stdin, stdout)
+func (g *Gateway) startStdioServer(ctx context.Context, stdin io.Reader, stdout io.Writer) error {
+	transport := mcp.NewStdioTransport()
+	_, err := g.mcpServer.Connect(ctx, transport)
+	if err != nil {
+		return err
+	}
+	return g.mcpServer.Run(ctx, transport)
 }
 
-func (g *Gateway) startSseServer(ctx context.Context, mcpServer *server.MCPServer, ln net.Listener) error {
+func (g *Gateway) startSseServer(ctx context.Context, ln net.Listener) error {
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthHandler(&g.health))
 	mux.Handle("/", redirectHandler("/sse"))
-
-	sseServer := server.NewSSEServer(mcpServer)
-	mux.Handle("/sse", sseServer.SSEHandler())
-	mux.Handle("/message", sseServer.MessageHandler())
+	sseHandler := mcp.NewSSEHandler(func(request *http.Request) *mcp.Server {
+		return g.mcpServer
+	})
+	mux.Handle("/sse", sseHandler)
 	httpServer := &http.Server{
 		Handler: mux,
 	}
@@ -35,12 +39,14 @@ func (g *Gateway) startSseServer(ctx context.Context, mcpServer *server.MCPServe
 	return httpServer.Serve(ln)
 }
 
-func (g *Gateway) startStreamingServer(ctx context.Context, mcpServer *server.MCPServer, ln net.Listener) error {
+func (g *Gateway) startStreamingServer(ctx context.Context, ln net.Listener) error {
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthHandler(&g.health))
 	mux.Handle("/", redirectHandler("/mcp"))
-
-	mux.Handle("/mcp", server.NewStreamableHTTPServer(mcpServer))
+	streamHandler := mcp.NewStreamableHTTPHandler(func(request *http.Request) *mcp.Server {
+		return g.mcpServer
+	}, nil)
+	mux.Handle("/mcp", streamHandler)
 	httpServer := &http.Server{
 		Handler: mux,
 	}
@@ -52,13 +58,13 @@ func (g *Gateway) startStreamingServer(ctx context.Context, mcpServer *server.MC
 	return httpServer.Serve(ln)
 }
 
-func (g *Gateway) startCentralStreamingServer(ctx context.Context, newMCPServer func() *server.MCPServer, ln net.Listener, configuration Configuration) error {
+func (g *Gateway) startCentralStreamingServer(ctx context.Context, ln net.Listener, configuration Configuration) error {
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthHandler(&g.health))
 	mux.Handle("/", redirectHandler("/mcp"))
 
 	var lock sync.Mutex
-	handlersPerSelectionOfServers := map[string]*server.StreamableHTTPServer{}
+	handlersPerSelectionOfServers := map[string]*mcp.StreamableHTTPHandler{}
 	mux.HandleFunc("/mcp", func(w http.ResponseWriter, r *http.Request) {
 		serverNames := r.Header.Get("x-mcp-servers")
 		if len(serverNames) == 0 {
@@ -71,14 +77,15 @@ func (g *Gateway) startCentralStreamingServer(ctx context.Context, newMCPServer 
 		lock.Lock()
 		handler := handlersPerSelectionOfServers[serverNames]
 		if handler == nil {
-			mcpServer := newMCPServer()
-			if err := g.reloadConfiguration(ctx, mcpServer, configuration, parseServerNames(serverNames)); err != nil {
+			if err := g.reloadConfiguration(ctx, configuration, parseServerNames(serverNames)); err != nil {
 				lock.Unlock()
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = io.WriteString(w, "Failed to reload configuration")
 				return
 			}
-			handler = server.NewStreamableHTTPServer(mcpServer)
+			handler = mcp.NewStreamableHTTPHandler(func(request *http.Request) *mcp.Server {
+				return g.mcpServer
+			}, nil)
 			handlersPerSelectionOfServers[serverNames] = handler
 		}
 		lock.Unlock()

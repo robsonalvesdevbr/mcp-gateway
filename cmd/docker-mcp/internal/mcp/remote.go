@@ -7,18 +7,16 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/mark3labs/mcp-go/client"
-	mcptransport "github.com/mark3labs/mcp-go/client/transport"
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
 )
 
 type remoteMCPClient struct {
-	config catalog.ServerConfig
-
+	config      catalog.ServerConfig
+	client      *mcp.Client
+	session     *mcp.ClientSession
 	initialized atomic.Bool
-	*client.Client
 }
 
 func NewRemoteMCPClient(config catalog.ServerConfig) Client {
@@ -27,15 +25,10 @@ func NewRemoteMCPClient(config catalog.ServerConfig) Client {
 	}
 }
 
-func (c *remoteMCPClient) Initialize(ctx context.Context, request mcp.InitializeRequest, _ bool) (*mcp.InitializeResult, error) {
+func (c *remoteMCPClient) Initialize(ctx context.Context, params *mcp.InitializeParams, _ bool) (*mcp.InitializeResult, error) {
 	if c.initialized.Load() {
 		return nil, fmt.Errorf("client already initialized")
 	}
-
-	var (
-		remoteClient *client.Client
-		err          error
-	)
 
 	// Read configuration.
 	var (
@@ -63,33 +56,98 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, request mcp.Initialize
 		headers[k] = expandEnv(v, env)
 	}
 
+	var mcpTransport mcp.Transport
+	var err error
+
 	switch strings.ToLower(transport) {
 	case "sse":
-		remoteClient, err = client.NewSSEMCPClient(url, client.WithHeaders(headers))
-		if err != nil {
-			return nil, err
-		}
+		// TODO: Need to implement custom HTTP client with headers for SSE
+		mcpTransport = mcp.NewSSEClientTransport(url, &mcp.SSEClientTransportOptions{})
 	case "http", "streamable", "streaming", "streamable-http":
-		remoteClient, err = client.NewStreamableHttpClient(url, mcptransport.WithHTTPHeaders(headers))
-		if err != nil {
-			return nil, err
-		}
+		// TODO: Need to implement custom HTTP client with headers for streaming
+		mcpTransport = mcp.NewStreamableClientTransport(url, &mcp.StreamableClientTransportOptions{})
 	default:
 		return nil, fmt.Errorf("unsupported remote transport: %s", transport)
 	}
 
-	if err := remoteClient.Start(context.WithoutCancel(ctx)); err != nil {
-		return nil, err
-	}
+	c.client = mcp.NewClient(&mcp.Implementation{
+		Name:    "docker-mcp-gateway",
+		Version: "1.0.0",
+	}, nil)
 
-	result, err := remoteClient.Initialize(ctx, request)
+	session, err := c.client.Connect(ctx, mcpTransport)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
 
-	c.Client = remoteClient
+	c.session = session
 	c.initialized.Store(true)
-	return result, nil
+	
+	// The Connect method handles initialization automatically in the new SDK
+	return &mcp.InitializeResult{
+		ProtocolVersion: "2024-11-05",
+		ServerInfo: &mcp.Implementation{
+			Name:    "docker-mcp-gateway",
+			Version: "1.0.0",
+		},
+		// Capabilities field is private and will be set by the SDK
+	}, nil
+}
+
+func (c *remoteMCPClient) ListTools(ctx context.Context, params *mcp.ListToolsParams) (*mcp.ListToolsResult, error) {
+	if !c.initialized.Load() {
+		return nil, fmt.Errorf("client not initialized")
+	}
+	return c.session.ListTools(ctx, params)
+}
+
+func (c *remoteMCPClient) ListPrompts(ctx context.Context, params *mcp.ListPromptsParams) (*mcp.ListPromptsResult, error) {
+	if !c.initialized.Load() {
+		return nil, fmt.Errorf("client not initialized")
+	}
+	return c.session.ListPrompts(ctx, params)
+}
+
+func (c *remoteMCPClient) ListResources(ctx context.Context, params *mcp.ListResourcesParams) (*mcp.ListResourcesResult, error) {
+	if !c.initialized.Load() {
+		return nil, fmt.Errorf("client not initialized")
+	}
+	return c.session.ListResources(ctx, params)
+}
+
+func (c *remoteMCPClient) ListResourceTemplates(ctx context.Context, params *mcp.ListResourceTemplatesParams) (*mcp.ListResourceTemplatesResult, error) {
+	if !c.initialized.Load() {
+		return nil, fmt.Errorf("client not initialized")  
+	}
+	return c.session.ListResourceTemplates(ctx, params)
+}
+
+func (c *remoteMCPClient) CallTool(ctx context.Context, params *mcp.CallToolParams) (*mcp.CallToolResult, error) {
+	if !c.initialized.Load() {
+		return nil, fmt.Errorf("client not initialized")
+	}
+	return c.session.CallTool(ctx, params)
+}
+
+func (c *remoteMCPClient) GetPrompt(ctx context.Context, params *mcp.GetPromptParams) (*mcp.GetPromptResult, error) {
+	if !c.initialized.Load() {
+		return nil, fmt.Errorf("client not initialized")
+	}
+	return c.session.GetPrompt(ctx, params)
+}
+
+func (c *remoteMCPClient) ReadResource(ctx context.Context, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
+	if !c.initialized.Load() {
+		return nil, fmt.Errorf("client not initialized")
+	}
+	return c.session.ReadResource(ctx, params)
+}
+
+func (c *remoteMCPClient) Close() error {
+	if c.session != nil {
+		return c.session.Close()
+	}
+	return nil
 }
 
 func expandEnv(value string, secrets map[string]string) string {

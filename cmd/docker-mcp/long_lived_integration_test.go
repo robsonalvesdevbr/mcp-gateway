@@ -9,7 +9,7 @@ import (
 
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/flags"
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
@@ -59,14 +59,15 @@ func newTestGatewayClient(t *testing.T, args []string) mcpclient.Client {
 		c.Close()
 	})
 
-	initRequest := mcp.InitializeRequest{}
-	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
-	initRequest.Params.ClientInfo = mcp.Implementation{
-		Name:    "docker",
-		Version: "1.0.0",
+	initParams := &mcp.InitializeParams{
+		ProtocolVersion: "2024-11-05",
+		ClientInfo: &mcp.Implementation{
+			Name:    "docker",
+			Version: "1.0.0",
+		},
 	}
 
-	_, err := c.Initialize(t.Context(), initRequest, false)
+	_, err := c.Initialize(t.Context(), initParams, false)
 	require.NoError(t, err)
 
 	return c
@@ -89,13 +90,11 @@ func TestIntegrationShortLivedContainerCloses(t *testing.T) {
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), mcp.CallToolRequest{
-		Params: mcp.CallToolParams{
+	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
 			Name: "get_current_time",
 			Arguments: map[string]any{
 				"timezone": "UTC",
 			},
-		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)
@@ -127,13 +126,11 @@ func TestIntegrationLongLivedServerStaysRunning(t *testing.T) {
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), mcp.CallToolRequest{
-		Params: mcp.CallToolParams{
+	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
 			Name: "get_current_time",
 			Arguments: map[string]any{
 				"timezone": "UTC",
 			},
-		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)
@@ -164,13 +161,11 @@ func TestIntegrationLongLivedServerWithFlagStaysRunning(t *testing.T) {
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), mcp.CallToolRequest{
-		Params: mcp.CallToolParams{
+	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
 			Name: "get_current_time",
 			Arguments: map[string]any{
 				"timezone": "UTC",
 			},
-		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)
@@ -201,13 +196,11 @@ func TestIntegrationLongLivedShouldCleanupContainerBeforeShutdown(t *testing.T) 
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), mcp.CallToolRequest{
-		Params: mcp.CallToolParams{
+	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
 			Name: "get_current_time",
 			Arguments: map[string]any{
 				"timezone": "UTC",
 			},
-		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)
