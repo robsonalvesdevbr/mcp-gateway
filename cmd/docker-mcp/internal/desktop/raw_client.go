@@ -40,7 +40,7 @@ func (c *RawClient) Get(ctx context.Context, endpoint string, v any) error {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost"+endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://localhost"+endpoint, http.NoBody)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (c *RawClient) Delete(ctx context.Context, endpoint string) error {
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, "http://localhost"+endpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, "http://localhost"+endpoint, http.NoBody)
 	if err != nil {
 		return err
 	}
