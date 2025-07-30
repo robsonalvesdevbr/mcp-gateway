@@ -17,12 +17,7 @@ type Capabilities struct {
 	Tools             []server.ServerTool
 	Prompts           []server.ServerPrompt
 	Resources         []server.ServerResource
-	ResourceTemplates []ServerResourceTemplate
-}
-
-type ServerResourceTemplate struct {
-	ResourceTemplate mcp.ResourceTemplate
-	Handler          server.ResourceTemplateHandlerFunc
+	ResourceTemplates []server.ServerResourceTemplate
 }
 
 func (g *Gateway) listCapabilities(ctx context.Context, configuration Configuration, serverNames []string) (*Capabilities, error) {
@@ -43,7 +38,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 		// It's an MCP Server
 		case serverConfig != nil:
 			errs.Go(func() error {
-				client, err := g.clientPool.AcquireClient(ctx, *serverConfig, &readOnly)
+				client, err := g.clientPool.AcquireClient(ctx, *serverConfig, nil)
 				if err != nil {
 					logf("  > Can't start %s: %s", serverConfig.Name, err)
 					return nil
@@ -90,9 +85,9 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				resourceTemplates, err := client.ListResourceTemplates(ctx, mcp.ListResourceTemplatesRequest{})
 				if err == nil {
 					for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
-						capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ServerResourceTemplate{
-							ResourceTemplate: resourceTemplate,
-							Handler:          g.mcpServerResourceTemplateHandler(*serverConfig),
+						capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, server.ServerResourceTemplate{
+							Template: resourceTemplate,
+							Handler:  g.mcpServerResourceTemplateHandler(*serverConfig),
 						})
 					}
 				}
@@ -162,7 +157,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 	var serverTools []server.ServerTool
 	var serverPrompts []server.ServerPrompt
 	var serverResources []server.ServerResource
-	var serverResourceTemplates []ServerResourceTemplate
+	var serverResourceTemplates []server.ServerResourceTemplate
 	for _, capabilities := range allCapabilities {
 		serverTools = append(serverTools, capabilities.Tools...)
 		serverPrompts = append(serverPrompts, capabilities.Prompts...)

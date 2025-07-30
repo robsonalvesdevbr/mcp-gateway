@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,20 +16,29 @@ import (
 )
 
 func Get(ctx context.Context) (Catalog, error) {
-	return ReadFrom(ctx, "docker-mcp.yaml")
+	return ReadFrom(ctx, []string{"docker-mcp.yaml"})
 }
 
-func ReadFrom(ctx context.Context, fileOrURL string) (Catalog, error) {
-	servers, err := readMCPServers(ctx, fileOrURL)
-	if err != nil {
-		return Catalog{}, err
-	}
-	if servers == nil {
-		servers = map[string]Server{}
+func ReadFrom(ctx context.Context, fileOrURLs []string) (Catalog, error) {
+	mergedServers := map[string]Server{}
+
+	for _, fileOrURL := range fileOrURLs {
+		servers, err := readMCPServers(ctx, fileOrURL)
+		if err != nil {
+			return Catalog{}, err
+		}
+
+		// Merge servers into the combined map, checking for overlaps
+		for key, server := range servers {
+			if _, exists := mergedServers[key]; exists {
+				log.Printf("Warning: overlapping key '%s' found in catalog '%s', overwriting previous value", key, fileOrURL)
+			}
+			mergedServers[key] = server
+		}
 	}
 
 	return Catalog{
-		Servers: servers,
+		Servers: mergedServers,
 	}, nil
 }
 

@@ -121,7 +121,7 @@ func (c *GlobalCfgProcessor) Update(key string, server *MCPServerSTDIO) error {
 
 func containsMCPDocker(in []MCPServerSTDIO) bool {
 	for _, server := range in {
-		if server.Name == DockerMCPCatalog {
+		if server.Name == DockerMCPCatalog || server.Name == makeSimpleName(DockerMCPCatalog) {
 			return true
 		}
 	}

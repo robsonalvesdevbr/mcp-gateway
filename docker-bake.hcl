@@ -1,3 +1,17 @@
+variable "GO_VERSION" {
+  default = null
+}
+
+target "_common" {
+  args = {
+    GO_VERSION = GO_VERSION
+    BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
+  }
+}
+
+variable "DOCS_FORMATS" {
+  default = "md,yaml"
+}
 
 group default {
   targets = [
@@ -13,6 +27,7 @@ group all {
     "l4proxy",
     "l7proxy",
     "dns-forwarder",
+    "validate-docs",
   ]
 }
 
@@ -65,7 +80,8 @@ target mcp-gateway {
   target = "mcp-gateway"
   output = [
     "type=image,name=docker/mcp-gateway",
-    "type=image,name=docker/mcp-gateway:v1",
+    #"type=image,name=docker/mcp-gateway:v1", last commit pushed with v1 tag: 261fd774d271974ae196b1cbc3acc04aceb3257b 
+    "type=image,name=docker/mcp-gateway:v2",
   ]
 }
 
@@ -76,4 +92,22 @@ target mcp-gateway-dind {
   output = [
     "type=image,name=docker/mcp-gateway:dind",
   ]
+}
+
+target "validate-docs" {
+  inherits = ["_common"]
+  args = {
+    DOCS_FORMATS = DOCS_FORMATS
+  }
+  target = "docs-validate"
+  output = ["type=cacheonly"]
+}
+
+target "update-docs" {
+  inherits = ["_common"]
+  args = {
+    DOCS_FORMATS = DOCS_FORMATS
+  }
+  target = "docs-update"
+  output = ["./docs/generator/reference"]
 }

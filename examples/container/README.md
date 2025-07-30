@@ -11,7 +11,7 @@ docker run -d \
     -p 8811:8811 \
     --restart=always \
     --name=mcp-gateway \
-    -v /var/run/docker.sock:/var/run/docker.sock \
+    --use-api-socket \
     -v $HOME/.docker/mcp:/mcp:ro \
     docker/mcp-gateway \
     --catalog=/mcp/catalogs/docker-mcp.yaml \

@@ -3,10 +3,10 @@ package gateway
 type Config struct {
 	Options
 	ServerNames  []string
-	CatalogPath  string
-	ConfigPath   string
-	RegistryPath string
-	ToolsPath    string
+	CatalogPath  []string
+	ConfigPath   []string
+	RegistryPath []string
+	ToolsPath    []string
 	SecretsPath  string
 }
 
@@ -27,4 +27,5 @@ type Options struct {
 	Cpus             int
 	Memory           string
 	Static           bool
+	Central          bool
 }

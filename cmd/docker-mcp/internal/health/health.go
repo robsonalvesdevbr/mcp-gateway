@@ -13,7 +13,3 @@ func (h *State) IsHealthy() bool {
 func (h *State) SetHealthy() {
 	h.healthy.Store(true)
 }
-
-func (h *State) SetUnhealthy() {
-	h.healthy.Store(false)
-}

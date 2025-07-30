@@ -27,7 +27,7 @@ func toolsCommand(docker docker.Client) *cobra.Command {
 	cmd.AddCommand(&cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
-		Short:   "list tools",
+		Short:   "List tools",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "list", "", format)
@@ -36,7 +36,7 @@ func toolsCommand(docker docker.Client) *cobra.Command {
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "count",
-		Short: "count tools",
+		Short: "Count tools",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "count", "", format)
@@ -45,7 +45,7 @@ func toolsCommand(docker docker.Client) *cobra.Command {
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "inspect",
-		Short: "inspect a tool",
+		Short: "Inspect a tool",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return tools.List(cmd.Context(), version, gatewayArgs, verbose, "inspect", args[0], format)
@@ -53,7 +53,7 @@ func toolsCommand(docker docker.Client) *cobra.Command {
 	})
 	cmd.AddCommand(&cobra.Command{
 		Use:   "call",
-		Short: "call a tool",
+		Short: "Call a tool",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return tools.Call(cmd.Context(), version, gatewayArgs, verbose, args)
 		},

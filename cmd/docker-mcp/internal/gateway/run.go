@@ -2,14 +2,13 @@ package gateway
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
@@ -37,6 +36,7 @@ func NewGateway(config Config, docker docker.Client) *Gateway {
 			SecretsPath:  config.SecretsPath,
 			ToolsPath:    config.ToolsPath,
 			Watch:        config.Watch,
+			Central:      config.Central,
 			docker:       docker,
 		},
 		clientPool: newClientPool(config.Options, docker),
@@ -61,6 +61,29 @@ func (g *Gateway) Run(ctx context.Context) error {
 		}
 	}
 
+	// Build a list of interceptors.
+	customInterceptors, err := interceptors.Parse(g.Interceptors)
+	if err != nil {
+		return fmt.Errorf("parsing interceptors: %w", err)
+	}
+	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
+
+	// Create the MCP server.
+	newMCPServer := func() *server.MCPServer {
+		return server.NewMCPServer(
+			"Docker AI MCP Gateway",
+			"2.0.1",
+			server.WithToolHandlerMiddleware(toolCallbacks),
+			server.WithHooks(&server.Hooks{
+				OnBeforeInitialize: []server.OnBeforeInitializeFunc{
+					func(_ context.Context, id any, _ *mcp.InitializeRequest) {
+						log("> Initializing MCP server with ID:", id)
+					},
+				},
+			}),
+		)
+	}
+
 	// Read the configuration.
 	configuration, configurationUpdates, stopConfigWatcher, err := g.configurator.Read(ctx)
 	if err != nil {
@@ -68,13 +91,18 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 	defer func() { _ = stopConfigWatcher() }()
 
-	// Which servers are enabled in the registry.yaml?
-	serverNames := configuration.ServerNames()
-	if len(serverNames) == 0 {
-		log("- No server is enabled")
-	} else {
-		log("- Those servers are enabled:", strings.Join(serverNames, ", "))
+	// Central mode.
+	if g.Central {
+		log("> Initialized (in central mode) in", time.Since(start))
+		if g.DryRun {
+			log("Dry run mode enabled, not starting the server.")
+			return nil
+		}
+
+		log("> Start streaming server on port", g.Port)
+		return g.startCentralStreamingServer(ctx, newMCPServer, ln, configuration)
 	}
+	mcpServer := newMCPServer()
 
 	// Which docker images are used?
 	// Pull them and verify them if possible.
@@ -93,57 +121,8 @@ func (g *Gateway) Run(ctx context.Context) error {
 		}
 	}
 
-	// List all the available tools.
-	startList := time.Now()
-	log("- Listing MCP tools...")
-	capabilities, err := g.listCapabilities(ctx, configuration, serverNames)
-	if err != nil {
-		return fmt.Errorf("listing resources: %w", err)
-	}
-	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
-
-	// Build a list of interceptors.
-	customInterceptors, err := interceptors.Parse(g.Interceptors)
-	if err != nil {
-		return fmt.Errorf("parsing interceptors: %w", err)
-	}
-	toolCallbacks := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, customInterceptors)
-
-	// TODO: cleanup stopped servers. That happens in stdio over TCP mode.
-	var (
-		lock            sync.Mutex
-		changeListeners []func(*Capabilities)
-	)
-
-	newMCPServer := func() *server.MCPServer {
-		mcpServer := server.NewMCPServer(
-			"Docker AI MCP Gateway",
-			"2.0.1",
-			server.WithToolHandlerMiddleware(toolCallbacks),
-		)
-
-		current := capabilities
-		mcpServer.AddTools(current.Tools...)
-		mcpServer.AddPrompts(current.Prompts...)
-		mcpServer.AddResources(current.Resources...)
-		for _, v := range current.ResourceTemplates {
-			mcpServer.AddResourceTemplate(v.ResourceTemplate, v.Handler)
-		}
-
-		lock.Lock()
-		changeListeners = append(changeListeners, func(newConfig *Capabilities) {
-			mcpServer.DeleteTools(current.ToolNames()...)
-			mcpServer.DeletePrompts(current.PromptNames()...)
-			mcpServer.AddTools(newConfig.Tools...)
-			mcpServer.AddPrompts(newConfig.Prompts...)
-
-			// TODO: sync other things than tools
-
-			current = newConfig
-		})
-		lock.Unlock()
-
-		return mcpServer
+	if err := g.reloadConfiguration(ctx, mcpServer, configuration, nil); err != nil {
+		return fmt.Errorf("loading configuration: %w", err)
 	}
 
 	// Optionally watch for configuration updates.
@@ -163,19 +142,10 @@ func (g *Gateway) Run(ctx context.Context) error {
 						continue
 					}
 
-					capabilities, err := g.listCapabilities(ctx, configuration, configuration.ServerNames())
-					if err != nil {
+					if err := g.reloadConfiguration(ctx, mcpServer, configuration, nil); err != nil {
 						logf("> Unable to list capabilities: %s", err)
 						continue
 					}
-
-					g.health.SetUnhealthy()
-					lock.Lock()
-					for _, listener := range changeListeners {
-						listener(capabilities)
-					}
-					lock.Unlock()
-					g.health.SetHealthy()
 				}
 			}
 		}()
@@ -188,34 +158,51 @@ func (g *Gateway) Run(ctx context.Context) error {
 	}
 
 	// Start the server
-	g.health.SetHealthy()
 	switch strings.ToLower(g.Transport) {
 	case "stdio":
-		if g.Port == 0 {
-			log("> Start stdio server")
-			return g.startStdioServer(ctx, newMCPServer, os.Stdin, os.Stdout)
-		}
-
-		log("> Start stdio over TCP server on port", g.Port)
-		return g.startStdioOverTCPServer(ctx, newMCPServer, ln)
+		log("> Start stdio server")
+		return g.startStdioServer(ctx, mcpServer, os.Stdin, os.Stdout)
 
 	case "sse":
-		if g.Port == 0 {
-			return errors.New("missing 'port' for 'sse' server")
-		}
-
 		log("> Start sse server on port", g.Port)
-		return g.startSseServer(ctx, newMCPServer, ln)
+		return g.startSseServer(ctx, mcpServer, ln)
 
-	case "streaming":
-		if g.Port == 0 {
-			return errors.New("missing 'port' for streaming server")
-		}
-
+	case "http", "streamable", "streaming", "streamable-http":
 		log("> Start streaming server on port", g.Port)
-		return g.startStreamingServer(ctx, newMCPServer, ln)
+		return g.startStreamingServer(ctx, mcpServer, ln)
 
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio', 'sse' or 'streaming", g.Transport)
 	}
+}
+
+func (g *Gateway) reloadConfiguration(ctx context.Context, mcpServer *server.MCPServer, configuration Configuration, serverNames []string) error {
+	// Which servers are enabled in the registry.yaml?
+	if len(serverNames) == 0 {
+		serverNames = configuration.ServerNames()
+	}
+	if len(serverNames) == 0 {
+		log("- No server is enabled")
+	} else {
+		log("- Those servers are enabled:", strings.Join(serverNames, ", "))
+	}
+
+	// List all the available tools.
+	startList := time.Now()
+	log("- Listing MCP tools...")
+	capabilities, err := g.listCapabilities(ctx, configuration, serverNames)
+	if err != nil {
+		return fmt.Errorf("listing resources: %w", err)
+	}
+	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
+
+	// Update the server's capabilities.
+	mcpServer.SetTools(capabilities.Tools...)
+	mcpServer.SetPrompts(capabilities.Prompts...)
+	mcpServer.SetResources(capabilities.Resources...)
+	mcpServer.RemoveAllResourceTemplates()
+	mcpServer.AddResourceTemplates(capabilities.ResourceTemplates...)
+	g.health.SetHealthy()
+
+	return nil
 }

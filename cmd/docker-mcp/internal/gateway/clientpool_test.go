@@ -30,7 +30,7 @@ grafana:
 		"grafana.api_key": "API_KEY",
 	}
 
-	args, env := argsAndEnv(t, "grafana", catalogYAML, configYAML, secrets)
+	args, env := argsAndEnv(t, "grafana", catalogYAML, configYAML, secrets, nil)
 
 	assert.Equal(t, []string{
 		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
@@ -50,7 +50,7 @@ secrets:
 		"mongodb.connection_string": "HOST:PORT",
 	}
 
-	args, env := argsAndEnv(t, "mongodb", catalogYAML, "", secrets)
+	args, env := argsAndEnv(t, "mongodb", catalogYAML, "", secrets, nil)
 
 	assert.Equal(t, []string{
 		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
@@ -74,7 +74,7 @@ env:
 		"notion.internal_integration_token": "ntn_DUMMY",
 	}
 
-	args, env := argsAndEnv(t, "notion", catalogYAML, "", secrets)
+	args, env := argsAndEnv(t, "notion", catalogYAML, "", secrets, nil)
 
 	assert.Equal(t, []string{
 		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
@@ -94,7 +94,7 @@ hub:
   log_path: /local/logs
 `
 
-	args, env := argsAndEnv(t, "hub", catalogYAML, configYAML, nil)
+	args, env := argsAndEnv(t, "hub", catalogYAML, configYAML, nil, nil)
 
 	assert.Equal(t, []string{
 		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
@@ -110,7 +110,7 @@ volumes:
   - '{{hub.log_path|mount_as:/logs:ro}}'
   `
 
-	args, env := argsAndEnv(t, "hub", catalogYAML, "", nil)
+	args, env := argsAndEnv(t, "hub", catalogYAML, "", nil, nil)
 
 	assert.Equal(t, []string{
 		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
@@ -119,7 +119,27 @@ volumes:
 	assert.Empty(t, env)
 }
 
-func argsAndEnv(t *testing.T, name, catalogYAML, configYAML string, secrets map[string]string) ([]string, []string) {
+func TestApplyConfigMountAsReadOnly(t *testing.T) {
+	catalogYAML := `
+volumes:
+  - '{{hub.log_path|mount_as:/logs:ro}}'
+  `
+	configYAML := `
+hub:
+  log_path: /local/logs
+`
+
+	args, env := argsAndEnv(t, "hub", catalogYAML, configYAML, nil, readOnly())
+
+	assert.Equal(t, []string{
+		"run", "--rm", "-i", "--init", "--security-opt", "no-new-privileges", "--cpus", "1", "--memory", "2Gb", "--pull", "never",
+		"-l", "docker-mcp=true", "-l", "docker-mcp-tool-type=mcp", "-l", "docker-mcp-name=hub", "-l", "docker-mcp-transport=stdio",
+		"-v", "/local/logs:/logs:ro",
+	}, args)
+	assert.Empty(t, env)
+}
+
+func argsAndEnv(t *testing.T, name, catalogYAML, configYAML string, secrets map[string]string, readOnly *bool) ([]string, []string) {
 	t.Helper()
 
 	clientPool := &clientPool{
@@ -128,12 +148,12 @@ func argsAndEnv(t *testing.T, name, catalogYAML, configYAML string, secrets map[
 			Memory: "2Gb",
 		},
 	}
-	return clientPool.argsAndEnv(ServerConfig{
+	return clientPool.argsAndEnv(catalog.ServerConfig{
 		Name:    name,
 		Spec:    parseSpec(t, catalogYAML),
 		Config:  parseConfig(t, configYAML),
 		Secrets: secrets,
-	}, nil, proxies.TargetConfig{})
+	}, readOnly, proxies.TargetConfig{})
 }
 
 func parseSpec(t *testing.T, contentYAML string) catalog.Server {
@@ -150,4 +170,12 @@ func parseConfig(t *testing.T, contentYAML string) map[string]any {
 	err := yaml.Unmarshal([]byte(contentYAML), &config)
 	require.NoError(t, err)
 	return config
+}
+
+func readOnly() *bool {
+	return boolPtr(true)
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
