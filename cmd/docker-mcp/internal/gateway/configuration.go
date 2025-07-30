@@ -311,12 +311,12 @@ func (c *FileBasedConfiguration) readToolsConfig(ctx context.Context) (config.To
 	log("  - Reading tools from", c.ToolsPath)
 	yaml, err := config.ReadConfigFile(ctx, c.docker, c.ToolsPath)
 	if err != nil {
-		return config.ToolsConfig{}, fmt.Errorf("reading tools.yaml: %w", err)
+		return config.ToolsConfig{}, fmt.Errorf("reading %s: %w", c.ToolsPath, err)
 	}
 
 	cfg, err := config.ParseToolsConfig(yaml)
 	if err != nil {
-		return config.ToolsConfig{}, fmt.Errorf("parsing tools.yaml: %w", err)
+		return config.ToolsConfig{}, fmt.Errorf("parsing %s: %w", c.ToolsPath, err)
 	}
 
 	return cfg, nil
