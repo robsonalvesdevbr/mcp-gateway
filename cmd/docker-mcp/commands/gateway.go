@@ -22,6 +22,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	var additionalCatalogs []string
 	var additionalRegistries []string
 	var additionalConfigs []string
+	var additionalToolsConfig []string
 	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
 		// In-container.
 		options = gateway.Config{
@@ -82,6 +83,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 			options.CatalogPath = append(options.CatalogPath, additionalCatalogs...)
 			options.RegistryPath = append(options.RegistryPath, additionalRegistries...)
 			options.ConfigPath = append(options.ConfigPath, additionalConfigs...)
+			options.ToolsPath = append(options.ToolsPath, additionalToolsConfig...)
 
 			return gateway.NewGateway(options, docker).Run(cmd.Context())
 		},

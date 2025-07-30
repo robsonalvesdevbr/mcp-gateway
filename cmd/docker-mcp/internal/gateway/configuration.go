@@ -359,7 +359,9 @@ func (c *FileBasedConfiguration) readToolsConfig(ctx context.Context) (config.To
 		return config.ToolsConfig{}, nil
 	}
 
-	mergedToolsConfig := config.ToolsConfig{}
+	mergedToolsConfig := config.ToolsConfig{
+		ServerTools: make(map[string][]string),
+	}
 
 	for _, toolsPath := range c.ToolsPath {
 		if toolsPath == "" {
