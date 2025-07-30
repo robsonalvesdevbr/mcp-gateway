@@ -14,7 +14,7 @@ Manage MCP servers and clients
 | [`policy`](mcp_policy.md)   | Manage secret policies        |
 | [`secret`](mcp_secret.md)   | Manage secrets                |
 | [`server`](mcp_server.md)   | Manage servers                |
-| [`tools`](mcp_tools.md)     | List/count/call MCP tools     |
+| [`tools`](mcp_tools.md)     | Manage tools                  |
 | [`version`](mcp_version.md) | Show the version information  |
 
 

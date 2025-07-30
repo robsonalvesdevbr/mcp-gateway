@@ -1,23 +1,21 @@
-command: docker mcp tools
-short: Manage tools
-long: Manage tools
-pname: docker mcp
-plink: docker_mcp.yaml
-cname:
-    - docker mcp tools call
-    - docker mcp tools count
-    - docker mcp tools disable
-    - docker mcp tools enable
-    - docker mcp tools inspect
-    - docker mcp tools list
-clink:
-    - docker_mcp_tools_call.yaml
-    - docker_mcp_tools_count.yaml
-    - docker_mcp_tools_disable.yaml
-    - docker_mcp_tools_enable.yaml
-    - docker_mcp_tools_inspect.yaml
-    - docker_mcp_tools_list.yaml
+command: docker mcp tools disable
+short: disable one or more tools
+long: disable one or more tools
+usage: docker mcp tools disable [tool1] [tool2] ...
+pname: docker mcp tools
+plink: docker_mcp_tools.yaml
 options:
+    - option: server
+      value_type: string
+      description: |
+        Specify which server provides the tools (optional, will auto-discover if not provided)
+      deprecated: false
+      hidden: false
+      experimental: false
+      experimentalcli: false
+      kubernetes: false
+      swarm: false
+inherited_options:
     - option: format
       value_type: string
       default_value: list

@@ -22,6 +22,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	var additionalCatalogs []string
 	var additionalRegistries []string
 	var additionalConfigs []string
+	var additionalToolsConfig []string
 	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
 		// In-container.
 		options = gateway.Config{
@@ -43,6 +44,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 			CatalogPath:  []string{"docker-mcp.yaml"},
 			RegistryPath: []string{"registry.yaml"},
 			ConfigPath:   []string{"config.yaml"},
+			ToolsPath:    []string{"tools.yaml"},
 			SecretsPath:  "docker-desktop",
 			Options: gateway.Options{
 				Cpus:         1,
@@ -81,6 +83,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 			options.CatalogPath = append(options.CatalogPath, additionalCatalogs...)
 			options.RegistryPath = append(options.RegistryPath, additionalRegistries...)
 			options.ConfigPath = append(options.ConfigPath, additionalConfigs...)
+			options.ToolsPath = append(options.ToolsPath, additionalToolsConfig...)
 
 			return gateway.NewGateway(options, docker).Run(cmd.Context())
 		},
@@ -93,6 +96,8 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	runCmd.Flags().StringSliceVar(&additionalRegistries, "additional-registry", nil, "Additional registry paths to merge with the default registry.yaml")
 	runCmd.Flags().StringSliceVar(&options.ConfigPath, "config", options.ConfigPath, "Paths to the config files (absolute or relative to ~/.docker/mcp/)")
 	runCmd.Flags().StringSliceVar(&additionalConfigs, "additional-config", nil, "Additional config paths to merge with the default config.yaml")
+	runCmd.Flags().StringSliceVar(&options.ToolsPath, "tools-config", options.ToolsPath, "Paths to the tools files (absolute or relative to ~/.docker/mcp/)")
+	runCmd.Flags().StringSliceVar(&additionalToolsConfig, "additional-tools-config", nil, "Additional tools paths to merge with the default tools.yaml")
 	runCmd.Flags().StringVar(&options.SecretsPath, "secrets", options.SecretsPath, "Colon separated paths to search for secrets. Can be `docker-desktop` or a path to a .env file (default to using Docker Desktop's secrets API)")
 	runCmd.Flags().StringSliceVar(&options.ToolNames, "tools", options.ToolNames, "List of tools to enable")
 	runCmd.Flags().StringArrayVar(&options.Interceptors, "interceptor", options.Interceptors, "List of interceptors to use (format: when:type:path, e.g. 'before:exec:/bin/path')")

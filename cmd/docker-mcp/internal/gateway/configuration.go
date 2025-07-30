@@ -25,6 +25,7 @@ type Configuration struct {
 	serverNames []string
 	servers     map[string]catalog.Server
 	config      map[string]map[string]any
+	tools       config.ToolsConfig
 	secrets     map[string]string
 }
 
@@ -92,6 +93,7 @@ type FileBasedConfiguration struct {
 	ServerNames  []string // Takes precedence over the RegistryPath
 	RegistryPath []string
 	ConfigPath   []string
+	ToolsPath    []string
 	SecretsPath  string // Optional, if not set, use Docker Desktop's secrets API
 	Watch        bool
 	Central      bool
@@ -129,6 +131,17 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 				return Configuration{}, nil, nil, err
 			}
 			configPaths = append(configPaths, configPath)
+		}
+	}
+
+	var toolsPaths []string
+	for _, path := range c.ToolsPath {
+		if path != "" {
+			toolsPath, err := config.FilePath(path)
+			if err != nil {
+				return Configuration{}, nil, nil, err
+			}
+			toolsPaths = append(toolsPaths, toolsPath)
 		}
 	}
 
@@ -184,6 +197,13 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 		}
 	}
 
+	// Add all tools paths to watcher
+	for _, path := range toolsPaths {
+		if err := watcher.Add(path); err != nil && !os.IsNotExist(err) {
+			return Configuration{}, nil, nil, err
+		}
+	}
+
 	return configuration, updates, watcher.Close, nil
 }
 
@@ -217,6 +237,11 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 		return Configuration{}, fmt.Errorf("reading config: %w", err)
 	}
 
+	serverToolsConfig, err := c.readToolsConfig(ctx)
+	if err != nil {
+		return Configuration{}, fmt.Errorf("reading tools: %w", err)
+	}
+
 	// TODO(dga): How do we know which secrets to read, in Central mode?
 	var secrets map[string]string
 	if c.SecretsPath == "docker-desktop" {
@@ -247,6 +272,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 		serverNames: serverNames,
 		servers:     servers,
 		config:      serversConfig,
+		tools:       serverToolsConfig,
 		secrets:     secrets,
 	}, nil
 }
@@ -326,6 +352,43 @@ func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map
 	}
 
 	return mergedConfig, nil
+}
+
+func (c *FileBasedConfiguration) readToolsConfig(ctx context.Context) (config.ToolsConfig, error) {
+	if len(c.ToolsPath) == 0 {
+		return config.ToolsConfig{}, nil
+	}
+
+	mergedToolsConfig := config.ToolsConfig{
+		ServerTools: make(map[string][]string),
+	}
+
+	for _, toolsPath := range c.ToolsPath {
+		if toolsPath == "" {
+			continue
+		}
+
+		log("  - Reading tools from", toolsPath)
+		yaml, err := config.ReadConfigFile(ctx, c.docker, toolsPath)
+		if err != nil {
+			return config.ToolsConfig{}, fmt.Errorf("reading tools file %s: %w", toolsPath, err)
+		}
+
+		toolsConfig, err := config.ParseToolsConfig(yaml)
+		if err != nil {
+			return config.ToolsConfig{}, fmt.Errorf("parsing tools file %s: %w", toolsPath, err)
+		}
+
+		// Merge tools into the combined tools, checking for overlaps
+		for serverName, serverTools := range toolsConfig.ServerTools {
+			if _, exists := mergedToolsConfig.ServerTools[serverName]; exists {
+				log(fmt.Sprintf("Warning: overlapping server tools '%s' found in tools file '%s', overwriting previous value", serverName, toolsPath))
+			}
+			mergedToolsConfig.ServerTools[serverName] = serverTools
+		}
+	}
+
+	return mergedToolsConfig, nil
 }
 
 func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, servers map[string]catalog.Server, serverNames []string) (map[string]string, error) {

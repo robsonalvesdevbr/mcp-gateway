@@ -34,6 +34,7 @@ func NewGateway(config Config, docker docker.Client) *Gateway {
 			RegistryPath: config.RegistryPath,
 			ConfigPath:   config.ConfigPath,
 			SecretsPath:  config.SecretsPath,
+			ToolsPath:    config.ToolsPath,
 			Watch:        config.Watch,
 			Central:      config.Central,
 			docker:       docker,
