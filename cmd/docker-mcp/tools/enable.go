@@ -57,10 +57,6 @@ func update(ctx context.Context, docker docker.Client, add []string, remove []st
 		return fmt.Errorf("parsing tools: %w", err)
 	}
 
-	if toolsConfig.ServerTools == nil {
-		toolsConfig.ServerTools = make(map[string][]string)
-	}
-
 	mcpCatalog, err := catalog.Get(ctx)
 	if err != nil {
 		return fmt.Errorf("reading catalog: %w", err)

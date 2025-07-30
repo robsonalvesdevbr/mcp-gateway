@@ -9,10 +9,14 @@ type ToolsConfig struct {
 }
 
 func ParseToolsConfig(toolsYaml []byte) (ToolsConfig, error) {
-	var serverTools ToolsConfig
-	if err := yaml.Unmarshal(toolsYaml, &serverTools); err != nil {
+	var toolsConfig ToolsConfig
+	if err := yaml.Unmarshal(toolsYaml, &toolsConfig); err != nil {
 		return ToolsConfig{}, err
 	}
 
-	return serverTools, nil
+	if toolsConfig.ServerTools == nil {
+		toolsConfig.ServerTools = make(map[string][]string)
+	}
+
+	return toolsConfig, nil
 }
