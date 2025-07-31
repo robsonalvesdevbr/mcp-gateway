@@ -166,3 +166,5 @@ require (
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/client-go v0.33.1 // indirect
 )
+
+replace github.com/modelcontextprotocol/go-sdk => github.com/slimslenderslacks/go-sdk v0.0.0-20250731002857-c781e1b26d39

@@ -8,6 +8,10 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
 )
 
+func getClientConfig(readOnlyHint *bool, ss *mcp.ServerSession) *clientConfig {
+	return &clientConfig{readOnly: readOnlyHint, serverSession: ss}
+}
+
 func (g *Gateway) mcpToolHandler(tool catalog.Tool) mcp.ToolHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[map[string]any]) (*mcp.CallToolResultFor[any], error) {
 		// Convert to the generic version for our internal methods
@@ -34,7 +38,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annota
 			Arguments: params.Arguments,
 		}
 		
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, readOnlyHint)
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig( readOnlyHint, ss))
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +50,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annota
 
 func (g *Gateway) mcpServerPromptHandler(serverConfig catalog.ServerConfig) mcp.PromptHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.GetPromptParams) (*mcp.GetPromptResult, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss))
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +62,7 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig catalog.ServerConfig) mcp.
 
 func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig) mcp.ResourceHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss))
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +74,7 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig) mc
 
 func (g *Gateway) mcpServerResourceTemplateHandler(serverConfig catalog.ServerConfig) mcp.ResourceHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, nil)
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss))
 		if err != nil {
 			return nil, err
 		}

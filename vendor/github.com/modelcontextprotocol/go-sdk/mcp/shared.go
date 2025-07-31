@@ -44,7 +44,7 @@ type MethodHandler[S Session] func(ctx context.Context, _ S, method string, para
 // the compiler would complain.
 type methodHandler any // MethodHandler[*ClientSession] | MethodHandler[*ServerSession]
 
-// A Session is either a ClientSession or a ServerSession.
+// A Session is either a [ClientSession] or a [ServerSession].
 type Session interface {
 	*ClientSession | *ServerSession
 	// ID returns the session ID, or the empty string if there is none.
@@ -57,7 +57,7 @@ type Session interface {
 	getConn() *jsonrpc2.Connection
 }
 
-// Middleware is a function from MethodHandlers to MethodHandlers.
+// Middleware is a function from [MethodHandler] to [MethodHandler].
 type Middleware[S Session] func(MethodHandler[S]) MethodHandler[S]
 
 // addMiddleware wraps the handler in the middleware functions.
@@ -95,7 +95,7 @@ func orZero[T any, P *U, U any](p P) T {
 	return any(p).(T)
 }
 
-func handleNotify[S Session](ctx context.Context, session S, method string, params Params) error {
+func HandleNotify[S Session](ctx context.Context, session S, method string, params Params) error {
 	mh := session.sendingMethodHandler().(MethodHandler[S])
 	_, err := mh(ctx, session, method, params)
 	return err
@@ -203,7 +203,7 @@ func serverMethod[P Params, R Result](
 	}
 }
 
-// clientMethod is glue for creating a typedMethodHandler from a method on Server.
+// clientMethod is glue for creating a typedMethodHandler from a method on Client.
 func clientMethod[P Params, R Result](
 	f func(*Client, context.Context, *ClientSession, P) (R, error),
 ) typedMethodHandler[*ClientSession, P, R] {
@@ -235,7 +235,7 @@ func callNotificationHandler[S Session, P any](ctx context.Context, h func(conte
 
 // notifySessions calls Notify on all the sessions.
 // Should be called on a copy of the peer sessions.
-func notifySessions[S Session](sessions []S, method string, params Params) {
+func NotifySessions[S Session](sessions []S, method string, params Params) {
 	if sessions == nil {
 		return
 	}
@@ -243,7 +243,7 @@ func notifySessions[S Session](sessions []S, method string, params Params) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	for _, s := range sessions {
-		if err := handleNotify(ctx, s, method, params); err != nil {
+		if err := HandleNotify(ctx, s, method, params); err != nil {
 			// TODO(jba): surface this error better
 			log.Printf("calling %s: %v", method, err)
 		}

@@ -31,7 +31,7 @@ func NewStdioCmdClient(name string, command string, env []string, args ...string
 	}
 }
 
-func (c *stdioMCPClient) Initialize(ctx context.Context, params *mcp.InitializeParams, debug bool) (*mcp.InitializeResult, error) {
+func (c *stdioMCPClient) Initialize(ctx context.Context, params *mcp.InitializeParams, debug bool, s *mcp.ServerSession) (*mcp.InitializeResult, error) {
 	if c.initialized.Load() {
 		return nil, fmt.Errorf("client already initialized")
 	}
@@ -47,7 +47,7 @@ func (c *stdioMCPClient) Initialize(ctx context.Context, params *mcp.InitializeP
 	c.client = mcp.NewClient(&mcp.Implementation{
 		Name:    "docker-mcp-gateway",
 		Version: "1.0.0",
-	}, nil)
+	}, stdioNotifications(s))
 
 	session, err := c.client.Connect(ctx, transport)
 	if err != nil {

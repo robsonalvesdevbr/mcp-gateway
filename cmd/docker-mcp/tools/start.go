@@ -32,7 +32,7 @@ func start(ctx context.Context, version string, gatewayArgs []string, debug bool
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
-	if _, err := c.Initialize(ctx, initParams, debug); err != nil {
+	if _, err := c.Initialize(ctx, initParams, debug, nil); err != nil {
 		return nil, fmt.Errorf("initializing: %w", err)
 	}
 

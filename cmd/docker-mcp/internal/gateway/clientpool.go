@@ -31,6 +31,11 @@ type clientPool struct {
 	docker      docker.Client
 }
 
+type clientConfig struct {
+	readOnly *bool
+	serverSession *mcp.ServerSession
+}
+
 func newClientPool(options Options, docker docker.Client) *clientPool {
 	return &clientPool{
 		Options:     options,
@@ -39,7 +44,7 @@ func newClientPool(options Options, docker docker.Client) *clientPool {
 	}
 }
 
-func (cp *clientPool) AcquireClient(ctx context.Context, serverConfig catalog.ServerConfig, readOnly *bool) (mcpclient.Client, error) {
+func (cp *clientPool) AcquireClient(ctx context.Context, serverConfig catalog.ServerConfig, config *clientConfig) (mcpclient.Client, error) {
 	var getter *clientGetter
 
 	// Check if client is kept, can be returned immediately
@@ -54,7 +59,7 @@ func (cp *clientPool) AcquireClient(ctx context.Context, serverConfig catalog.Se
 
 	// No client found, create a new one
 	if getter == nil {
-		getter = newClientGetter(serverConfig, cp, readOnly)
+		getter = newClientGetter(serverConfig, cp, config)
 
 		// If the client is long running, save it for later
 		if serverConfig.Spec.LongLived || cp.LongLived {
@@ -304,14 +309,15 @@ type clientGetter struct {
 
 	serverConfig catalog.ServerConfig
 	cp           *clientPool
-	readOnly     *bool
+
+	clientConfig *clientConfig
 }
 
-func newClientGetter(serverConfig catalog.ServerConfig, cp *clientPool, readOnly *bool) *clientGetter {
+func newClientGetter(serverConfig catalog.ServerConfig, cp *clientPool, config *clientConfig) *clientGetter {
 	return &clientGetter{
 		serverConfig: serverConfig,
 		cp:           cp,
-		readOnly:     readOnly,
+		clientConfig: config,
 	}
 }
 
@@ -343,7 +349,9 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 				}
 
 				image := cg.serverConfig.Spec.Image
-				args, env := cg.cp.argsAndEnv(cg.serverConfig, cg.readOnly, targetConfig)
+				var readOnly *bool
+                                if cg.clientConfig != nil { readOnly = cg.clientConfig.readOnly} else { readOnly = nil }
+				args, env := cg.cp.argsAndEnv(cg.serverConfig, readOnly, targetConfig)
 
 				command := expandEnvList(eval.EvaluateList(cg.serverConfig.Spec.Command, cg.serverConfig.Config), env)
 				if len(command) == 0 {
@@ -370,7 +378,9 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 
 			// Use the original context instead of creating a timeout context
 			// to avoid cancellation issues
-			if _, err := client.Initialize(ctx, initParams, cg.cp.Verbose); err != nil {
+			var ss *mcp.ServerSession
+                        if cg.clientConfig != nil { ss = cg.clientConfig.serverSession} else { ss = nil }
+			if _, err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss); err != nil {
 				return nil, err
 			}
 

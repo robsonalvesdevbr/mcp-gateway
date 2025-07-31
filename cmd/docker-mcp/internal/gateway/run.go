@@ -82,7 +82,16 @@ func (g *Gateway) Run(ctx context.Context) error {
 	g.mcpServer = mcp.NewServer(&mcp.Implementation{
 		Name:    "Docker AI MCP Gateway",
 		Version: "2.0.1",
-	}, nil)
+	}, &mcp.ServerOptions{
+		SubscribeHandler: nil,
+		UnsubscribeHandler: nil,
+		RootsListChangedHandler: nil,
+		CompletionHandler: nil,
+		InitializedHandler: nil,
+		HasPrompts: true,
+		HasResources: true,
+		HasTools: true,
+	})
 
 	// Add interceptor middleware to the server
 	middlewares := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, parsedInterceptors)
@@ -194,10 +203,12 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 	}
 	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
 
+	// Update capabilities
 	// Clear existing capabilities and register new ones
 	// Note: The new SDK doesn't have bulk set methods, so we register individually
+	
 	for _, tool := range capabilities.Tools {
-		mcp.AddTool(g.mcpServer, tool.Tool, tool.Handler)
+		g.mcpServer.AddTool(tool.Tool, tool.Handler)
 	}
 	
 	for _, prompt := range capabilities.Prompts {

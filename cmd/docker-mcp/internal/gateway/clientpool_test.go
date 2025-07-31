@@ -216,7 +216,7 @@ func TestStdioClientInitialization(t *testing.T) {
 	defer cancel()
 
 	// Test client acquisition and initialization
-	client, err := clientPool.AcquireClient(ctx, serverConfig, boolPtr(false))
+	client, err := clientPool.AcquireClient(ctx, serverConfig, &clientConfig{readOnly: boolPtr(false)})
 	if err != nil {
 		t.Fatalf("Failed to acquire client: %v", err)
 	}
