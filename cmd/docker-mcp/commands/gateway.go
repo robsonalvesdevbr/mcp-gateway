@@ -86,8 +86,28 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 				options.Port = 8811
 			}
 
-			// Append additional catalogs to the main catalog path
-			options.CatalogPath = append(options.CatalogPath, additionalCatalogs...)
+			// Build catalog path list with proper precedence order
+			catalogPaths := options.CatalogPath // Start with existing catalog paths (includes docker-mcp.yaml default)
+			
+			// Add configured catalogs if requested
+			if useConfiguredCatalogs {
+				configuredPaths, err := getConfiguredCatalogPaths()
+				if err != nil {
+					return fmt.Errorf("failed to load configured catalog paths: %w", err)
+				}
+				// Insert configured catalogs after docker-mcp.yaml but before CLI-specified catalogs
+				if len(catalogPaths) > 0 {
+					// Insert after the first element (docker-mcp.yaml)
+					catalogPaths = append(catalogPaths[:1], append(configuredPaths, catalogPaths[1:]...)...)
+				} else {
+					catalogPaths = append(catalogPaths, configuredPaths...)
+				}
+			}
+			
+			// Append additional catalogs (CLI-specified have highest precedence)
+			catalogPaths = append(catalogPaths, additionalCatalogs...)
+			options.CatalogPath = catalogPaths
+			
 			options.RegistryPath = append(options.RegistryPath, additionalRegistries...)
 			options.ConfigPath = append(options.ConfigPath, additionalConfigs...)
 			options.ToolsPath = append(options.ToolsPath, additionalToolsConfig...)
@@ -170,4 +190,24 @@ To enable this experimental feature, run:
 
 This feature allows the gateway to automatically include user-managed catalogs
 alongside the default Docker catalog.`)
+}
+
+// getConfiguredCatalogPaths returns the file paths of all configured catalogs
+func getConfiguredCatalogPaths() ([]string, error) {
+	cfg, err := catalog.ReadConfig()
+	if err != nil {
+		// If config doesn't exist or can't be read, return empty list
+		// This is not an error condition - user just hasn't configured any catalogs yet
+		return []string{}, nil
+	}
+	
+	var catalogPaths []string
+	for catalogName := range cfg.Catalogs {
+		// Skip the Docker catalog as it's handled separately
+		if catalogName != catalog.DockerCatalogName {
+			catalogPaths = append(catalogPaths, catalogName+".yaml")
+		}
+	}
+	
+	return catalogPaths, nil
 }
