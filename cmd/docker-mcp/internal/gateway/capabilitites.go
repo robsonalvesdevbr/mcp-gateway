@@ -107,7 +107,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 					for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
 						capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ResourceTemplateRegistration{
 							ResourceTemplate: *resourceTemplate,
-							Handler:          g.mcpServerResourceTemplateHandler(*serverConfig),
+							Handler:          g.mcpServerResourceHandler(*serverConfig),
 						})
 					}
 				}

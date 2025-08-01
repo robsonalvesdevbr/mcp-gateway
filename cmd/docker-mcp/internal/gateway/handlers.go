@@ -72,14 +72,3 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig) mc
 	}
 }
 
-func (g *Gateway) mcpServerResourceTemplateHandler(serverConfig catalog.ServerConfig) mcp.ResourceHandler {
-	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss))
-		if err != nil {
-			return nil, err
-		}
-		defer g.clientPool.ReleaseClient(client)
-
-		return client.Session().ReadResource(ctx, params)
-	}
-}
