@@ -37,7 +37,7 @@ func TestGatewayUseConfiguredCatalogsDisabled(t *testing.T) {
 
 	// Test validation fails when feature disabled
 	err := validateConfiguredCatalogsFeature(configFile, true)
-	assert.Error(t, err, "should reject --use-configured-catalogs when feature disabled")
+	require.Error(t, err, "should reject --use-configured-catalogs when feature disabled")
 	assert.Contains(t, err.Error(), "configured catalogs feature is not enabled")
 }
 

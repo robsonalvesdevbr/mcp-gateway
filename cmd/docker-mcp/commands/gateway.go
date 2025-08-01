@@ -64,7 +64,7 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 		Use:   "run",
 		Short: "Run the gateway",
 		Args:  cobra.NoArgs,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			// Validate configured catalogs feature flag
 			return validateConfiguredCatalogsFeatureForCli(dockerCli, useConfiguredCatalogs)
 		},
@@ -88,13 +88,10 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 
 			// Build catalog path list with proper precedence order
 			catalogPaths := options.CatalogPath // Start with existing catalog paths (includes docker-mcp.yaml default)
-			
+
 			// Add configured catalogs if requested
 			if useConfiguredCatalogs {
-				configuredPaths, err := getConfiguredCatalogPaths()
-				if err != nil {
-					return fmt.Errorf("failed to load configured catalog paths: %w", err)
-				}
+				configuredPaths := getConfiguredCatalogPaths()
 				// Insert configured catalogs after docker-mcp.yaml but before CLI-specified catalogs
 				if len(catalogPaths) > 0 {
 					// Insert after the first element (docker-mcp.yaml)
@@ -103,11 +100,11 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 					catalogPaths = append(catalogPaths, configuredPaths...)
 				}
 			}
-			
+
 			// Append additional catalogs (CLI-specified have highest precedence)
 			catalogPaths = append(catalogPaths, additionalCatalogs...)
 			options.CatalogPath = catalogPaths
-			
+
 			options.RegistryPath = append(options.RegistryPath, additionalRegistries...)
 			options.ConfigPath = append(options.ConfigPath, additionalConfigs...)
 			options.ToolsPath = append(options.ToolsPath, additionalToolsConfig...)
@@ -164,7 +161,7 @@ func validateConfiguredCatalogsFeatureForCli(dockerCli command.Cli, useConfigure
 	// Check if config is accessible (container mode check)
 	configFile := dockerCli.ConfigFile()
 	if configFile == nil {
-		return fmt.Errorf(`Docker configuration not accessible.
+		return fmt.Errorf(`docker configuration not accessible.
 
 If running in container, mount Docker config:
   -v ~/.docker:/root/.docker
@@ -183,24 +180,24 @@ Or mount just the config file:
 	}
 
 	// Feature not enabled
-	return fmt.Errorf(`configured catalogs feature is not enabled.
+	return fmt.Errorf(`configured catalogs feature is not enabled
 
 To enable this experimental feature, run:
   docker mcp feature enable configured-catalogs
 
 This feature allows the gateway to automatically include user-managed catalogs
-alongside the default Docker catalog.`)
+alongside the default Docker catalog`)
 }
 
 // getConfiguredCatalogPaths returns the file paths of all configured catalogs
-func getConfiguredCatalogPaths() ([]string, error) {
+func getConfiguredCatalogPaths() []string {
 	cfg, err := catalog.ReadConfig()
 	if err != nil {
 		// If config doesn't exist or can't be read, return empty list
 		// This is not an error condition - user just hasn't configured any catalogs yet
-		return []string{}, nil
+		return []string{}
 	}
-	
+
 	var catalogPaths []string
 	for catalogName := range cfg.Catalogs {
 		// Skip the Docker catalog as it's handled separately
@@ -208,6 +205,6 @@ func getConfiguredCatalogPaths() ([]string, error) {
 			catalogPaths = append(catalogPaths, catalogName+".yaml")
 		}
 	}
-	
-	return catalogPaths, nil
+
+	return catalogPaths
 }

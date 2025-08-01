@@ -9,22 +9,19 @@ func Fork(src, dst string) error {
 	if dst == DockerCatalogName {
 		return fmt.Errorf("cannot create catalog '%s' as it is reserved for Docker's official catalog", dst)
 	}
-	
+
 	cfg, err := ReadConfig()
 	if err != nil {
 		return err
 	}
-	
+
 	// Special handling for Docker catalog - it exists but not in cfg.Catalogs
-	if src == DockerCatalogName {
-		// Allow forking from Docker catalog, but it won't be in cfg.Catalogs
-		// We'll read it directly from the DockerCatalogName
-	} else {
+	if src != DockerCatalogName {
 		if _, ok := cfg.Catalogs[src]; !ok {
 			return fmt.Errorf("catalog %q not found", src)
 		}
 	}
-	
+
 	if _, ok := cfg.Catalogs[dst]; ok {
 		return fmt.Errorf("catalog %q already exists", dst)
 	}

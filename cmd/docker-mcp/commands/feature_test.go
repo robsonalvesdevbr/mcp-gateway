@@ -32,7 +32,7 @@ func TestIsFeatureEnabledTrue(t *testing.T) {
 	configFile2 := &configfile.ConfigFile{
 		Filename: configFile,
 	}
-	err = configFile2.LoadFromReader(os.Stdin) // This will load from the filename
+	_ = configFile2.LoadFromReader(os.Stdin) // This will load from the filename
 
 	// Test directly with Features map
 	configFile2.Features = map[string]string{
@@ -142,7 +142,7 @@ func TestInvalidFeature(t *testing.T) {
 
 	// Test enabling invalid feature
 	err := enableFeature(configFile, "invalid-feature")
-	assert.Error(t, err, "should reject invalid feature names")
+	require.Error(t, err, "should reject invalid feature names")
 	assert.Contains(t, err.Error(), "unknown feature")
 }
 
@@ -192,12 +192,12 @@ func listFeatures(configFile *configfile.ConfigFile) map[string]string {
 	return result
 }
 
-func isFeatureEnabled(configFile *configfile.ConfigFile, feature string) bool {
+func isFeatureEnabled(configFile *configfile.ConfigFile, _ string) bool {
 	if configFile.Features == nil {
 		return false
 	}
 
-	value, exists := configFile.Features[feature]
+	value, exists := configFile.Features["configured-catalogs"]
 	if !exists {
 		return false
 	}

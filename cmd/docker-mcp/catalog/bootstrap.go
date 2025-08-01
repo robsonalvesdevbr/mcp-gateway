@@ -37,12 +37,12 @@ func Bootstrap(ctx context.Context, outputPath string) error {
 	// Extract registry section
 	registryInterface, ok := dockerCatalog["registry"]
 	if !ok {
-		return fmt.Errorf("Docker catalog missing 'registry' section")
+		return fmt.Errorf("docker catalog missing 'registry' section")
 	}
 
 	registry, ok := registryInterface.(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("Docker catalog 'registry' section is not a map")
+		return fmt.Errorf("docker catalog 'registry' section is not a map")
 	}
 
 	// Extract Docker and Docker Hub servers
@@ -50,10 +50,10 @@ func Bootstrap(ctx context.Context, outputPath string) error {
 	dockerCLIServer, hasDockerCLI := registry[DockerCLIServerName]
 
 	if !hasDockerHub {
-		return fmt.Errorf("Docker catalog missing '%s' server", DockerHubServerName)
+		return fmt.Errorf("docker catalog missing '%s' server", DockerHubServerName)
 	}
 	if !hasDockerCLI {
-		return fmt.Errorf("Docker catalog missing '%s' server", DockerCLIServerName)
+		return fmt.Errorf("docker catalog missing '%s' server", DockerCLIServerName)
 	}
 
 	// Create bootstrap catalog with just the Docker servers
@@ -72,12 +72,12 @@ func Bootstrap(ctx context.Context, outputPath string) error {
 
 	// Create output directory if it doesn't exist
 	outputDir := filepath.Dir(outputPath)
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
 	// Write the bootstrap catalog file
-	if err := os.WriteFile(outputPath, bootstrapData, 0644); err != nil {
+	if err := os.WriteFile(outputPath, bootstrapData, 0o644); err != nil {
 		return fmt.Errorf("failed to write bootstrap catalog file: %w", err)
 	}
 

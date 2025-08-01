@@ -12,7 +12,7 @@ const (
 	DockerCatalogName     = "docker-mcp"
 	DockerCatalogURL      = "https://desktop.docker.com/mcp/catalog/v2/catalog.yaml"
 	DockerCatalogFilename = "docker-mcp.yaml"
-	
+
 	// Docker server names for bootstrap command
 	DockerHubServerName = "dockerhub"
 	DockerCLIServerName = "docker"

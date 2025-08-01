@@ -113,7 +113,7 @@ func TestGetConfiguredCatalogsCorrupt(t *testing.T) {
 	catalogFiles, err := getConfiguredCatalogs()
 
 	// Should return error for corrupted JSON
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, catalogFiles)
 }
 

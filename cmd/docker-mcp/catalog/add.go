@@ -27,7 +27,7 @@ func ValidateArgs(args ParsedAddArgs) error {
 	if args.Dst == DockerCatalogName {
 		return fmt.Errorf("cannot add servers to catalog '%s' as it is managed by Docker", args.Dst)
 	}
-	
+
 	cfg, err := ReadConfig()
 	if err != nil {
 		return err

@@ -39,7 +39,7 @@ func featureEnableCommand(dockerCli command.Cli) *cobra.Command {
 Available features:
   configured-catalogs    Allow gateway to use user-managed catalogs alongside Docker catalog`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			featureName := args[0]
 
 			// Validate feature name
@@ -82,7 +82,7 @@ func featureDisableCommand(dockerCli command.Cli) *cobra.Command {
 		Short: "Disable an experimental feature",
 		Long:  "Disable an experimental feature that was previously enabled.",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			featureName := args[0]
 
 			// Validate feature name
@@ -114,7 +114,7 @@ func featureListCommand(dockerCli command.Cli) *cobra.Command {
 		Use:   "list",
 		Short: "List all available features and their status",
 		Long:  "List all available experimental features and show whether they are enabled or disabled.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			configFile := dockerCli.ConfigFile()
 
 			fmt.Println("Available experimental features:")
@@ -131,8 +131,7 @@ func featureListCommand(dockerCli command.Cli) *cobra.Command {
 				fmt.Printf("  %-20s %s\n", feature, status)
 
 				// Add description for each feature
-				switch feature {
-				case "configured-catalogs":
+				if feature == "configured-catalogs" {
 					fmt.Printf("  %-20s %s\n", "", "Allow gateway to use user-managed catalogs alongside Docker catalog")
 				}
 				fmt.Println()
