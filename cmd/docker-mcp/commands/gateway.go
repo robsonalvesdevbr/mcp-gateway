@@ -2,8 +2,10 @@ package commands
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
+	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
@@ -11,7 +13,7 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/gateway"
 )
 
-func gatewayCommand(docker docker.Client) *cobra.Command {
+func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gateway",
 		Short: "Manage the MCP Server gateway",
@@ -23,6 +25,7 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	var additionalRegistries []string
 	var additionalConfigs []string
 	var additionalToolsConfig []string
+	var useConfiguredCatalogs bool
 	if os.Getenv("DOCKER_MCP_IN_CONTAINER") == "1" {
 		// In-container.
 		options = gateway.Config{
@@ -61,6 +64,10 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 		Use:   "run",
 		Short: "Run the gateway",
 		Args:  cobra.NoArgs,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Validate configured catalogs feature flag
+			return validateConfiguredCatalogsFeatureForCli(dockerCli, useConfiguredCatalogs)
+		},
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if options.Static {
 				options.Watch = false
@@ -116,6 +123,9 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	runCmd.Flags().StringVar(&options.Memory, "memory", options.Memory, "Memory allocated to each MCP Server (default is 2Gb)")
 	runCmd.Flags().BoolVar(&options.Static, "static", options.Static, "Enable static mode (aka pre-started servers)")
 
+	// Configured catalogs feature
+	runCmd.Flags().BoolVar(&useConfiguredCatalogs, "use-configured-catalogs", false, "Include user-managed catalogs (requires 'configured-catalogs' feature to be enabled)")
+
 	// Very experimental features
 	runCmd.Flags().BoolVar(&options.Central, "central", options.Central, "In central mode, clients tell us which servers to enable")
 	_ = runCmd.Flags().MarkHidden("central")
@@ -123,4 +133,41 @@ func gatewayCommand(docker docker.Client) *cobra.Command {
 	cmd.AddCommand(runCmd)
 
 	return cmd
+}
+
+// validateConfiguredCatalogsFeatureForCli validates that the configured-catalogs feature is enabled when requested
+func validateConfiguredCatalogsFeatureForCli(dockerCli command.Cli, useConfigured bool) error {
+	if !useConfigured {
+		return nil // No validation needed when feature not requested
+	}
+
+	// Check if config is accessible (container mode check)
+	configFile := dockerCli.ConfigFile()
+	if configFile == nil {
+		return fmt.Errorf(`Docker configuration not accessible.
+
+If running in container, mount Docker config:
+  -v ~/.docker:/root/.docker
+
+Or mount just the config file:  
+  -v ~/.docker/config.json:/root/.docker/config.json`)
+	}
+
+	// Check if feature is enabled
+	if configFile.Features != nil {
+		if value, exists := configFile.Features["configured-catalogs"]; exists {
+			if value == "enabled" {
+				return nil // Feature is enabled
+			}
+		}
+	}
+
+	// Feature not enabled
+	return fmt.Errorf(`configured catalogs feature is not enabled.
+
+To enable this experimental feature, run:
+  docker mcp feature enable configured-catalogs
+
+This feature allows the gateway to automatically include user-managed catalogs
+alongside the default Docker catalog.`)
 }
