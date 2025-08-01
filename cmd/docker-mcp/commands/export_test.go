@@ -103,7 +103,7 @@ func TestExportInvalidOutputPath(t *testing.T) {
 	// Test exporting to a path where we can't write (use a file as directory path)
 	// Create a file that will conflict with the directory creation
 	conflictFile := filepath.Join(tempHome, "conflict-file")
-	err := os.WriteFile(conflictFile, []byte("test"), 0644)
+	err := os.WriteFile(conflictFile, []byte("test"), 0o644)
 	require.NoError(t, err)
 
 	// Try to export to a path that treats the file as a directory
@@ -125,7 +125,7 @@ func setupTestCatalogRegistry(t *testing.T, homeDir string) {
 	// Create .docker/mcp directory structure
 	mcpDir := filepath.Join(homeDir, ".docker", "mcp")
 	catalogsDir := filepath.Join(mcpDir, "catalogs")
-	err := os.MkdirAll(catalogsDir, 0755)
+	err := os.MkdirAll(catalogsDir, 0o755)
 	require.NoError(t, err)
 
 	// Create catalog.json registry
@@ -138,7 +138,7 @@ func setupTestCatalogRegistry(t *testing.T, homeDir string) {
     }
   }
 }`
-	err = os.WriteFile(filepath.Join(mcpDir, "catalog.json"), []byte(catalogRegistry), 0644)
+	err = os.WriteFile(filepath.Join(mcpDir, "catalog.json"), []byte(catalogRegistry), 0o644)
 	require.NoError(t, err)
 
 	// Create my-catalog.yaml (configured catalog)
@@ -151,6 +151,6 @@ func setupTestCatalogRegistry(t *testing.T, homeDir string) {
         container:
           image: custom/test-server
           command: []`
-	err = os.WriteFile(filepath.Join(catalogsDir, "my-catalog.yaml"), []byte(customCatalog), 0644)
+	err = os.WriteFile(filepath.Join(catalogsDir, "my-catalog.yaml"), []byte(customCatalog), 0o644)
 	require.NoError(t, err)
 }

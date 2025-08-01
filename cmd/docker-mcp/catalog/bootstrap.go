@@ -29,7 +29,7 @@ func Bootstrap(ctx context.Context, outputPath string) error {
 	}
 
 	// Parse the Docker catalog to extract server entries
-	var dockerCatalog map[string]interface{}
+	var dockerCatalog map[string]any
 	if err := yaml.Unmarshal(dockerCatalogData, &dockerCatalog); err != nil {
 		return fmt.Errorf("failed to parse Docker catalog: %w", err)
 	}
@@ -40,7 +40,7 @@ func Bootstrap(ctx context.Context, outputPath string) error {
 		return fmt.Errorf("docker catalog missing 'registry' section")
 	}
 
-	registry, ok := registryInterface.(map[string]interface{})
+	registry, ok := registryInterface.(map[string]any)
 	if !ok {
 		return fmt.Errorf("docker catalog 'registry' section is not a map")
 	}
@@ -57,8 +57,8 @@ func Bootstrap(ctx context.Context, outputPath string) error {
 	}
 
 	// Create bootstrap catalog with just the Docker servers
-	bootstrapCatalog := map[string]interface{}{
-		"registry": map[string]interface{}{
+	bootstrapCatalog := map[string]any{
+		"registry": map[string]any{
 			DockerHubServerName: dockerHubServer,
 			DockerCLIServerName: dockerCLIServer,
 		},

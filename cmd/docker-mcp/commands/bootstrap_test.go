@@ -50,12 +50,12 @@ func TestBootstrapCatalogCommand(t *testing.T) {
 	assert.Contains(t, bootstrapContent, catalog.DockerCLIServerName, "bootstrap catalog should contain docker server")
 
 	// Parse the YAML to ensure it's valid
-	var registry map[string]interface{}
+	var registry map[string]any
 	err = yaml.Unmarshal(content, &registry)
 	require.NoError(t, err, "bootstrap catalog should be valid YAML")
 
 	// Verify structure
-	registryMap, ok := registry["registry"].(map[string]interface{})
+	registryMap, ok := registry["registry"].(map[string]any)
 	require.True(t, ok, "bootstrap catalog should have registry map")
 
 	// Check that we have exactly the Docker servers
@@ -109,7 +109,7 @@ func TestBootstrapInvalidPath(t *testing.T) {
 	// Test bootstrapping to invalid path (use a file as directory path)
 	// Create a file that will conflict with the directory creation
 	conflictFile := filepath.Join(tempHome, "conflict-file")
-	err := os.WriteFile(conflictFile, []byte("test"), 0644)
+	err := os.WriteFile(conflictFile, []byte("test"), 0o644)
 	require.NoError(t, err)
 
 	// Try to bootstrap to a path that treats the file as a directory
@@ -172,7 +172,7 @@ func setupTestDockerCatalog(t *testing.T, homeDir string) {
 	// Create .docker/mcp directory structure
 	mcpDir := filepath.Join(homeDir, ".docker", "mcp")
 	catalogsDir := filepath.Join(mcpDir, "catalogs")
-	err := os.MkdirAll(catalogsDir, 0755)
+	err := os.MkdirAll(catalogsDir, 0o755)
 	require.NoError(t, err)
 
 	// Create catalog.json registry
@@ -185,7 +185,7 @@ func setupTestDockerCatalog(t *testing.T, homeDir string) {
     }
   }
 }`
-	err = os.WriteFile(filepath.Join(mcpDir, "catalog.json"), []byte(catalogRegistry), 0644)
+	err = os.WriteFile(filepath.Join(mcpDir, "catalog.json"), []byte(catalogRegistry), 0o644)
 	require.NoError(t, err)
 
 	// Create minimal docker-mcp.yaml catalog with dockerhub and docker servers
@@ -204,7 +204,7 @@ func setupTestDockerCatalog(t *testing.T, homeDir string) {
     image: "docker@sha256:test456"
     tools:
       - name: "docker"`
-	err = os.WriteFile(filepath.Join(catalogsDir, "docker-mcp.yaml"), []byte(dockerCatalog), 0644)
+	err = os.WriteFile(filepath.Join(catalogsDir, "docker-mcp.yaml"), []byte(dockerCatalog), 0o644)
 	require.NoError(t, err)
 }
 
@@ -215,7 +215,7 @@ func setupDetailedTestDockerCatalog(t *testing.T, homeDir string) {
 	// Create .docker/mcp directory structure
 	mcpDir := filepath.Join(homeDir, ".docker", "mcp")
 	catalogsDir := filepath.Join(mcpDir, "catalogs")
-	err := os.MkdirAll(catalogsDir, 0755)
+	err := os.MkdirAll(catalogsDir, 0o755)
 	require.NoError(t, err)
 
 	// Create catalog.json registry
@@ -228,7 +228,7 @@ func setupDetailedTestDockerCatalog(t *testing.T, homeDir string) {
     }
   }
 }`
-	err = os.WriteFile(filepath.Join(mcpDir, "catalog.json"), []byte(catalogRegistry), 0644)
+	err = os.WriteFile(filepath.Join(mcpDir, "catalog.json"), []byte(catalogRegistry), 0o644)
 	require.NoError(t, err)
 
 	// Create more detailed docker-mcp.yaml catalog with multiple servers
@@ -291,6 +291,6 @@ func setupDetailedTestDockerCatalog(t *testing.T, homeDir string) {
     image: "mcp/elasticsearch@sha256:testxyz"
     tools:
       - name: "search"`
-	err = os.WriteFile(filepath.Join(catalogsDir, "docker-mcp.yaml"), []byte(dockerCatalog), 0644)
+	err = os.WriteFile(filepath.Join(catalogsDir, "docker-mcp.yaml"), []byte(dockerCatalog), 0o644)
 	require.NoError(t, err)
 }

@@ -29,7 +29,7 @@ func TestDockerCatalogProtection(t *testing.T) {
 	// Create the MCP directory structure
 	mcpDir := filepath.Join(tempHome, ".docker", "mcp")
 	catalogsDir := filepath.Join(mcpDir, "catalogs")
-	require.NoError(t, os.MkdirAll(catalogsDir, 0755))
+	require.NoError(t, os.MkdirAll(catalogsDir, 0o755))
 
 	// Initialize the catalog system
 	ctx := context.Background()
@@ -66,7 +66,7 @@ registry:
     image: "test/server:latest"
 `
 		dockerCatalogPath := filepath.Join(catalogsDir, "docker-mcp.yaml")
-		require.NoError(t, os.WriteFile(dockerCatalogPath, []byte(dockerCatalog), 0644))
+		require.NoError(t, os.WriteFile(dockerCatalogPath, []byte(dockerCatalog), 0o644))
 
 		// Forking FROM Docker catalog should work
 		err := catalog.Fork(catalog.DockerCatalogName, "my-docker-fork")
@@ -89,7 +89,7 @@ registry:
     image: "source/server:latest"
 `
 		sourcePath := filepath.Join(catalogsDir, "source.yaml")
-		require.NoError(t, os.WriteFile(sourcePath, []byte(sourceCatalog), 0644))
+		require.NoError(t, os.WriteFile(sourcePath, []byte(sourceCatalog), 0o644))
 
 		// Try to add to Docker catalog
 		args := catalog.ParseAddArgs(catalog.DockerCatalogName, "test-server", sourcePath)
@@ -136,7 +136,7 @@ registry:
     image: "normal/server:latest"
 `
 		sourcePath := filepath.Join(catalogsDir, "normal-source.yaml")
-		require.NoError(t, os.WriteFile(sourcePath, []byte(sourceCatalog), 0644))
+		require.NoError(t, os.WriteFile(sourcePath, []byte(sourceCatalog), 0o644))
 
 		args := catalog.ParseAddArgs("normal-catalog", "normal-server", sourcePath)
 		err = catalog.ValidateArgs(*args)

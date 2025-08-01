@@ -18,7 +18,7 @@ func TestIsFeatureEnabledTrue(t *testing.T) {
 	configFile := filepath.Join(tempDir, "config.json")
 
 	// Create config with enabled feature
-	config := map[string]interface{}{
+	config := map[string]any{
 		"features": map[string]string{
 			"configured-catalogs": "enabled",
 		},
