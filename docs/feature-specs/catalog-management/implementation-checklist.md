@@ -6,6 +6,177 @@
 **Feature Spec**: [feature-spec.md](./feature-spec.md)  
 **Investigation Notes**: `/Users/masegraye/dev/docker/id-writing/scratch/mcp-gateway-investigation.md`
 
+## Development Workflow & TDD Instructions
+
+### Essential Commands for Development
+
+All commands should be run from `/Users/masegraye/dev/docker/workspaces/catalog-management/mcp-gateway/`:
+
+```bash
+# Scoped Test-Driven Development Cycle
+go test ./cmd/docker-mcp/commands           # Test specific package (fastest)
+go test ./cmd/docker-mcp/...               # Test cmd tree (medium scope)
+make test                                   # Test entire system (broadest scope)
+make docker-mcp                            # Build and install binary (only after tests pass)
+make lint-darwin                           # Run linting (only when implementation complete)
+
+# Manual testing commands
+./dist/docker-mcp --help                    # Verify binary works
+./dist/docker-mcp catalog --help           # Check catalog commands
+./dist/docker-mcp gateway run --help       # Check gateway flags
+```
+
+### TDD Development Process
+
+**CRITICAL**: Follow this exact workflow with progressively broader scope:
+
+#### 1. Red Phase - Write Failing Tests First
+```bash
+# Test just the specific package you're working on
+go test ./cmd/docker-mcp/commands    # Example: testing feature commands
+# Should show failing tests for new functionality
+```
+
+#### 2. Green Phase - Make Tests Pass
+```bash
+# Write minimal implementation to make tests pass
+go test ./cmd/docker-mcp/commands    # Test same package again
+# Should show all tests passing in that package
+```
+
+#### 3. Package Integration Test
+```bash
+# Test all related packages together
+go test ./cmd/docker-mcp/...         # Test entire cmd tree
+# Should show all tests passing across packages
+```
+
+#### 4. Full System Test
+```bash
+# Test the entire system
+make test
+# Should show all tests passing system-wide
+```
+
+#### 5. Build Phase - Verify Compilation
+```bash
+# Only build after all tests pass
+make docker-mcp
+# Should build successfully and install to ~/.docker/cli-plugins/docker-mcp
+```
+
+#### 6. Manual Verification
+```bash
+# Test the actual CLI functionality
+./dist/docker-mcp [your-new-command] --help
+# Verify your changes work as expected
+```
+
+#### 7. Refactor Phase (Optional)
+```bash
+# Improve code while keeping tests green
+go test ./path/to/package    # Test specific package after changes
+```
+
+#### 8. Lint Phase (End of Implementation Only)
+```bash
+# Only run linting when feature is complete
+make lint-darwin
+# Should show 0 issues
+```
+
+### Test Categories & Strategy
+
+#### Unit Tests (Primary Focus)
+- **Location**: Tests should be in `*_test.go` files alongside implementation
+- **Speed**: Fast (< 1 second per test file)
+- **Focus**: Individual function/method behavior
+- **Run Command**: `make test`
+
+#### Integration Tests (Secondary)
+- **Location**: `cmd/docker-mcp/integration_test.go` and similar
+- **Speed**: Slower (requires Docker daemon)
+- **Focus**: End-to-end command workflows
+- **Note**: Some are skipped in normal `make test` runs
+
+#### Manual Tests (Verification)
+- **Purpose**: Verify CLI behavior matches expectations
+- **When**: After successful build, before marking tasks complete
+- **Focus**: User experience and error messages
+
+### Implementation Guidelines
+
+1. **Test First**: Always write tests before implementation
+2. **Small Steps**: Implement one small piece at a time
+3. **Green Tests**: Never commit with failing tests
+4. **Build Validation**: Only build after tests pass
+5. **Manual Check**: Always verify CLI behavior manually
+6. **Lint Last**: Only run linting when implementation is complete
+
+### Error Handling Strategy
+
+#### Test Failures
+```bash
+make test
+# If tests fail, fix the code, don't skip tests
+```
+
+#### Build Failures
+```bash
+make docker-mcp
+# If build fails, check compilation errors and fix
+# Don't proceed to manual testing until build succeeds
+```
+
+#### Lint Failures (End of Development)
+```bash
+make lint-darwin
+# Fix all linting issues before marking feature complete
+```
+
+### Baseline Verification ✅
+
+The following baseline tests have been verified to work:
+- `make docker-mcp` - Builds successfully 
+- `make test` - All existing tests pass
+- `make lint-darwin` - 0 linting issues
+- CLI functionality verified working
+
+**Ready to begin TDD implementation following the above workflow.**
+
+## 🧪 Test Strategy Overview
+
+### Required Test Files for TDD Implementation
+
+Each implementation section below specifies **TEST FIRST** requirements. These test files must be created with failing tests before writing implementation code:
+
+| Component | Test File | Purpose |
+|-----------|-----------|---------|
+| Feature Management | `cmd/docker-mcp/commands/feature_test.go` | Test feature enable/disable/list commands |
+| Gateway Enhancement | `cmd/docker-mcp/commands/gateway_test.go` | Test --use-configured-catalogs flag validation |
+| Catalog Loading | `cmd/docker-mcp/internal/catalog/catalog_test.go` | Test catalog precedence and loading logic |
+| Export Command | `cmd/docker-mcp/catalog/export_test.go` | Test export functionality and protection |
+| Command Visibility | `cmd/docker-mcp/catalog/*_test.go` | Test unhidden commands appear in help |
+
+### Test-First Workflow Reminder
+
+```bash
+# 1. Write failing tests first
+go test ./cmd/docker-mcp/commands -v  # Should show failing tests
+
+# 2. Write minimal implementation  
+go test ./cmd/docker-mcp/commands -v  # Should show passing tests
+
+# 3. Test broader scope
+go test ./cmd/docker-mcp/... -v      # Should show all integration tests pass
+
+# 4. Test full system
+make test                            # Should show all system tests pass
+
+# 5. Build and verify
+make docker-mcp                      # Should build successfully
+```
+
 ## Quick Context for Claude Code Sessions
 
 ### What This Feature Does
@@ -26,10 +197,31 @@ Enable users to create and manage custom MCP server catalogs that automatically 
 ### Phase 1: Core Implementation
 
 #### 1.1 Feature Management System
+
+**🧪 TEST FIRST**: `cmd/docker-mcp/commands/feature_test.go`
+- [ ] **Write tests for feature command structure**
+  ```go
+  // Test cases needed:
+  func TestFeatureEnableCommand(t *testing.T)     // Test enabling configured-catalogs
+  func TestFeatureDisableCommand(t *testing.T)    // Test disabling configured-catalogs  
+  func TestFeatureListCommand(t *testing.T)       // Test listing all features and status
+  func TestFeatureInvalidFeature(t *testing.T)    // Test error for unknown feature names
+  ```
+
 - [ ] **Create feature command structure**
   - [ ] File: `cmd/docker-mcp/commands/feature.go`
   - [ ] Commands: `enable <feature>`, `disable <feature>`, `list`
   - [ ] Target: `~/.docker/config.json` → `features.configured-catalogs`
+
+**🧪 TEST FIRST**: `cmd/docker-mcp/commands/feature_test.go` (validation utilities)
+- [ ] **Write tests for feature validation utilities**
+  ```go
+  // Test cases needed:
+  func TestIsFeatureEnabledTrue(t *testing.T)       // Test when feature is enabled
+  func TestIsFeatureEnabledFalse(t *testing.T)      // Test when feature is disabled
+  func TestIsFeatureEnabledMissing(t *testing.T)    // Test when config missing
+  func TestIsFeatureEnabledCorrupt(t *testing.T)    // Test when config corrupted
+  ```
 
 - [ ] **Feature validation utilities**
   - [ ] Function: `isFeatureEnabled(dockerCli command.Cli, feature string) bool`
@@ -41,6 +233,16 @@ Enable users to create and manage custom MCP server catalogs that automatically 
   - [ ] Ensure proper dockerCli context passing
 
 #### 1.2 Gateway Command Enhancement  
+
+**🧪 TEST FIRST**: `cmd/docker-mcp/commands/gateway_test.go`
+- [ ] **Write tests for gateway flag validation**
+  ```go
+  // Test cases needed:
+  func TestGatewayUseConfiguredCatalogsEnabled(t *testing.T)   // Test flag works when feature enabled
+  func TestGatewayUseConfiguredCatalogsDisabled(t *testing.T)  // Test flag fails when feature disabled
+  func TestGatewayFeatureFlagErrorMessage(t *testing.T)        // Test error message clarity
+  func TestGatewayContainerModeDetection(t *testing.T)         // Test container mode handling
+  ```
 
 - [ ] **Add --use-configured-catalogs flag**
   - [ ] File: `cmd/docker-mcp/commands/gateway.go`
@@ -58,8 +260,20 @@ Enable users to create and manage custom MCP server catalogs that automatically 
 
 #### 1.3 Catalog Loading Enhancement
 
+**🧪 TEST FIRST**: `cmd/docker-mcp/internal/catalog/catalog_test.go`
+- [ ] **Write tests for catalog loading logic**
+  ```go
+  // Test cases needed:
+  func TestCatalogGetWithConfigured(t *testing.T)         // Test loading configured catalogs
+  func TestCatalogGetWithoutConfigured(t *testing.T)      // Test default behavior unchanged
+  func TestGetConfiguredCatalogsSuccess(t *testing.T)     // Test reading catalog.json
+  func TestGetConfiguredCatalogsMissing(t *testing.T)     // Test missing catalog.json
+  func TestGetConfiguredCatalogsCorrupt(t *testing.T)     // Test corrupted catalog.json
+  func TestCatalogPrecedenceOrder(t *testing.T)           // Test Docker → Configured → CLI order
+  ```
+
 - [ ] **Update catalog.Get() signature**  
-  - [ ] File: `cmd/docker-mcp/catalog/catalog.go`
+  - [ ] File: `cmd/docker-mcp/internal/catalog/catalog.go`
   - [ ] New signature: `Get(ctx context.Context, useConfigured bool, additionalCatalogs []string) (Catalog, error)`
   - [ ] Backward compatibility: Keep current `Get()` for existing callers
 
@@ -75,8 +289,18 @@ Enable users to create and manage custom MCP server catalogs that automatically 
 
 #### 1.4 Enhanced Conflict Resolution & Logging
 
+**🧪 TEST FIRST**: `cmd/docker-mcp/internal/catalog/catalog_test.go` (conflict resolution)
+- [ ] **Write tests for conflict resolution**
+  ```go
+  // Test cases needed:
+  func TestReadFromConflictResolution(t *testing.T)     // Test server name conflicts
+  func TestReadFromLogging(t *testing.T)               // Test logging output
+  func TestReadFromSourceTracking(t *testing.T)        // Test server source tracking
+  func TestReadFromLastWinsPrecedence(t *testing.T)    // Test "last wins" behavior
+  ```
+
 - [ ] **Update ReadFrom() logging**  
-  - [ ] File: `cmd/docker-mcp/catalog/catalog.go`
+  - [ ] File: `cmd/docker-mcp/internal/catalog/catalog.go`
   - [ ] Log catalog loading progress
   - [ ] Log server additions and conflicts
   - [ ] Log final catalog statistics
@@ -87,6 +311,18 @@ Enable users to create and manage custom MCP server catalogs that automatically 
   - [ ] Maintain "last wins" precedence behavior
 
 #### 1.5 Export Command Implementation
+
+**🧪 TEST FIRST**: `cmd/docker-mcp/catalog/export_test.go`
+- [ ] **Write tests for export command**
+  ```go
+  // Test cases needed:
+  func TestExportCommandSuccess(t *testing.T)           // Test successful export
+  func TestExportCommandDefaultFilename(t *testing.T)   // Test default filename generation
+  func TestExportCommandCustomFilename(t *testing.T)    // Test custom output file
+  func TestExportCommandDockerCatalogBlocked(t *testing.T) // Test docker-mcp protection
+  func TestExportCommandCatalogNotFound(t *testing.T)   // Test missing catalog error
+  func TestExportCommandPermissionError(t *testing.T)   // Test file permission errors
+  ```
 
 - [ ] **Create export command**
   - [ ] File: `cmd/docker-mcp/catalog/export.go` (new)
@@ -105,6 +341,18 @@ Enable users to create and manage custom MCP server catalogs that automatically 
   - [ ] File system permission error handling
 
 #### 1.6 Command Visibility Updates
+
+**🧪 TEST FIRST**: `cmd/docker-mcp/catalog/*_test.go` (existing command tests)
+- [ ] **Write tests for command visibility**
+  ```go
+  // Test cases needed (add to existing test files):
+  func TestImportCommandVisible(t *testing.T)         // Test import command shows in help
+  func TestExportCommandVisible(t *testing.T)         // Test export command shows in help  
+  func TestCreateCommandVisible(t *testing.T)         // Test create command shows in help
+  func TestAddCommandVisible(t *testing.T)            // Test add command shows in help
+  func TestForkCommandVisible(t *testing.T)           // Test fork command shows in help
+  func TestRmCommandVisible(t *testing.T)             // Test rm command shows in help
+  ```
 
 - [ ] **Unhide catalog CRUD commands**
   - [ ] Files: `cmd/docker-mcp/catalog/{import,export,create,add,fork,rm}.go`  
