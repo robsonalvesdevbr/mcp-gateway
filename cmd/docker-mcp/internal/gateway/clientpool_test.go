@@ -194,9 +194,9 @@ func TestStdioClientInitialization(t *testing.T) {
 	serverConfig := catalog.ServerConfig{
 		Name: "test-server",
 		Spec: catalog.Server{
-			Image: "mcp/brave-search@sha256:e13f4693a3421e2b316c8b6196c5c543c77281f9d8938850681e3613bba95115", // User should provide their image
+			Image:   "mcp/brave-search@sha256:e13f4693a3421e2b316c8b6196c5c543c77281f9d8938850681e3613bba95115", // User should provide their image
 			Command: []string{},
-			Env: []catalog.Env{{Name: "BRAVE_API_KEY", Value: "test_key"}},
+			Env:     []catalog.Env{{Name: "BRAVE_API_KEY", Value: "test_key"}},
 		},
 		Config:  map[string]any{},
 		Secrets: map[string]string{},
@@ -205,7 +205,7 @@ func TestStdioClientInitialization(t *testing.T) {
 	// Create a real Docker CLI client
 	dockerCli, err := command.NewDockerCli()
 	require.NoError(t, err)
-	
+
 	dockerClient := docker.NewClient(dockerCli)
 	clientPool := newClientPool(Options{
 		Cpus:   1,
@@ -231,6 +231,6 @@ func TestStdioClientInitialization(t *testing.T) {
 	// Basic assertions - user can customize based on expected behavior
 	assert.NotNil(t, tools)
 	assert.NotNil(t, tools.Tools)
-	
+
 	t.Logf("Successfully initialized stdio client and retrieved %d tools", len(tools.Tools))
 }

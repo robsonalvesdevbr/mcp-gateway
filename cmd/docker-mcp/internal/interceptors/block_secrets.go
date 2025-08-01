@@ -51,7 +51,7 @@ func BlockSecretsMiddleware() mcp.Middleware[*mcp.ServerSession] {
 				logf("  - Scanning tool call response for secrets...\n")
 
 				var contents string
-				
+
 				// Try to extract content from JSON result
 				if jsonData, err := json.Marshal(result); err == nil {
 					var callResult mcp.CallToolResult

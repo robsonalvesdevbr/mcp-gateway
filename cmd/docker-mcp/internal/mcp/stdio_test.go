@@ -48,7 +48,7 @@ func TestStdioClientInitializeAndListTools(t *testing.T) {
 	assert.Equal(t, "2024-11-05", result.ProtocolVersion)
 	assert.NotNil(t, result.ServerInfo)
 
-	t.Logf("Initialized client with server: %s v%s", 
+	t.Logf("Initialized client with server: %s v%s",
 		result.ServerInfo.Name, result.ServerInfo.Version)
 
 	// Test ListTools
@@ -73,4 +73,3 @@ func TestStdioClientInitializeAndListTools(t *testing.T) {
 	err = client.Close()
 	assert.NoError(t, err, "Failed to close client")
 }
-

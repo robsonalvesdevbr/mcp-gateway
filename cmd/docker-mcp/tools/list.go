@@ -64,7 +64,7 @@ func List(ctx context.Context, version string, gatewayArgs []string, debug bool,
 		} else {
 			fmt.Println("Name:", found.Name)
 			fmt.Println("Description:", found.Description)
-			
+
 			// TODO: Need to properly handle the new jsonschema.Schema format
 			if found.InputSchema != nil {
 				fmt.Println("Input schema: Complex schema (detailed inspection not yet implemented)")

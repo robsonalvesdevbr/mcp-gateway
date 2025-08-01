@@ -32,7 +32,7 @@ type clientPool struct {
 }
 
 type clientConfig struct {
-	readOnly *bool
+	readOnly      *bool
 	serverSession *mcp.ServerSession
 }
 
@@ -350,7 +350,11 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 
 				image := cg.serverConfig.Spec.Image
 				var readOnly *bool
-                                if cg.clientConfig != nil { readOnly = cg.clientConfig.readOnly} else { readOnly = nil }
+				if cg.clientConfig != nil {
+					readOnly = cg.clientConfig.readOnly
+				} else {
+					readOnly = nil
+				}
 				args, env := cg.cp.argsAndEnv(cg.serverConfig, readOnly, targetConfig)
 
 				command := expandEnvList(eval.EvaluateList(cg.serverConfig.Spec.Command, cg.serverConfig.Config), env)
@@ -379,7 +383,11 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 			// Use the original context instead of creating a timeout context
 			// to avoid cancellation issues
 			var ss *mcp.ServerSession
-                        if cg.clientConfig != nil { ss = cg.clientConfig.serverSession} else { ss = nil }
+			if cg.clientConfig != nil {
+				ss = cg.clientConfig.serverSession
+			} else {
+				ss = nil
+			}
 			if _, err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss); err != nil {
 				return nil, err
 			}

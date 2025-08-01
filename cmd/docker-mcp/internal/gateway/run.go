@@ -83,14 +83,14 @@ func (g *Gateway) Run(ctx context.Context) error {
 		Name:    "Docker AI MCP Gateway",
 		Version: "2.0.1",
 	}, &mcp.ServerOptions{
-		SubscribeHandler: nil,
-		UnsubscribeHandler: nil,
+		SubscribeHandler:        nil,
+		UnsubscribeHandler:      nil,
 		RootsListChangedHandler: nil,
-		CompletionHandler: nil,
-		InitializedHandler: nil,
-		HasPrompts: true,
-		HasResources: true,
-		HasTools: true,
+		CompletionHandler:       nil,
+		InitializedHandler:      nil,
+		HasPrompts:              true,
+		HasResources:            true,
+		HasTools:                true,
 	})
 
 	// Add interceptor middleware to the server
@@ -103,7 +103,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		return fmt.Errorf("loading configuration: %w", err)
 	}
 
-        // Central mode.
+	// Central mode.
 	if g.Central {
 		log("> Initialized (in central mode) in", time.Since(start))
 		if g.DryRun {
@@ -206,19 +206,19 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 	// Update capabilities
 	// Clear existing capabilities and register new ones
 	// Note: The new SDK doesn't have bulk set methods, so we register individually
-	
+
 	for _, tool := range capabilities.Tools {
 		g.mcpServer.AddTool(tool.Tool, tool.Handler)
 	}
-	
+
 	for _, prompt := range capabilities.Prompts {
 		g.mcpServer.AddPrompt(prompt.Prompt, prompt.Handler)
 	}
-	
+
 	for _, resource := range capabilities.Resources {
 		g.mcpServer.AddResource(resource.Resource, resource.Handler)
 	}
-	
+
 	// Resource templates are handled as regular resources in the new SDK
 	for _, template := range capabilities.ResourceTemplates {
 		// Convert ResourceTemplate to Resource
@@ -230,7 +230,7 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 		}
 		g.mcpServer.AddResource(resource, template.Handler)
 	}
-	
+
 	g.health.SetHealthy()
 
 	return nil

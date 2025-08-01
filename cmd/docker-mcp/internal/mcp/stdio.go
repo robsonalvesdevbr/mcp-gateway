@@ -56,7 +56,7 @@ func (c *stdioMCPClient) Initialize(ctx context.Context, params *mcp.InitializeP
 
 	c.session = session
 	c.initialized.Store(true)
-	
+
 	// The Connect method handles initialization automatically in the new SDK
 	// We just return a basic result structure
 	return &mcp.InitializeResult{
@@ -124,4 +124,3 @@ func (c *stdioMCPClient) Close() error {
 	}
 	return nil
 }
-

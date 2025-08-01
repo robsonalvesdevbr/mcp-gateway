@@ -91,10 +91,10 @@ func TestIntegrationShortLivedContainerCloses(t *testing.T) {
 	c := newTestGatewayClient(t, args)
 
 	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
-			Name: "get_current_time",
-			Arguments: map[string]any{
-				"timezone": "UTC",
-			},
+		Name: "get_current_time",
+		Arguments: map[string]any{
+			"timezone": "UTC",
+		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)
@@ -127,10 +127,10 @@ func TestIntegrationLongLivedServerStaysRunning(t *testing.T) {
 	c := newTestGatewayClient(t, args)
 
 	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
-			Name: "get_current_time",
-			Arguments: map[string]any{
-				"timezone": "UTC",
-			},
+		Name: "get_current_time",
+		Arguments: map[string]any{
+			"timezone": "UTC",
+		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)
@@ -162,10 +162,10 @@ func TestIntegrationLongLivedServerWithFlagStaysRunning(t *testing.T) {
 	c := newTestGatewayClient(t, args)
 
 	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
-			Name: "get_current_time",
-			Arguments: map[string]any{
-				"timezone": "UTC",
-			},
+		Name: "get_current_time",
+		Arguments: map[string]any{
+			"timezone": "UTC",
+		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)
@@ -197,10 +197,10 @@ func TestIntegrationLongLivedShouldCleanupContainerBeforeShutdown(t *testing.T) 
 	c := newTestGatewayClient(t, args)
 
 	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
-			Name: "get_current_time",
-			Arguments: map[string]any{
-				"timezone": "UTC",
-			},
+		Name: "get_current_time",
+		Arguments: map[string]any{
+			"timezone": "UTC",
+		},
 	})
 	require.NoError(t, err)
 	require.False(t, response.IsError)

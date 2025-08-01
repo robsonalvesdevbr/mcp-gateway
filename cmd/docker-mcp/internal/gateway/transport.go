@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/health"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func (g *Gateway) startStdioServer(ctx context.Context, stdin io.Reader, stdout io.Writer) error {

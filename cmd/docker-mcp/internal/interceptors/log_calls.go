@@ -21,7 +21,7 @@ func LogCallsMiddleware() mcp.Middleware[*mcp.ServerSession] {
 			// Extract tool name from params by marshaling/unmarshaling
 			var toolName string
 			var arguments any
-			
+
 			// Try to extract from JSON
 			if jsonData, err := json.Marshal(params); err == nil {
 				var callParams mcp.CallToolParams
@@ -30,7 +30,7 @@ func LogCallsMiddleware() mcp.Middleware[*mcp.ServerSession] {
 					arguments = callParams.Arguments
 				}
 			}
-			
+
 			if toolName != "" {
 				logf("  - Calling tool %s with arguments: %s\n", toolName, argumentsToString(arguments))
 			} else {

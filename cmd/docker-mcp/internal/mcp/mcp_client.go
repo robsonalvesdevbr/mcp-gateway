@@ -48,9 +48,8 @@ func stdioNotifications(serverSession *mcp.ServerSession) *mcp.ClientOptions {
 		},
 		LoggingMessageHandler: func(ctx context.Context, session *mcp.ClientSession, params *mcp.LoggingMessageParams) {
 			if serverSession != nil {
-			 	serverSession.Log(ctx, params)
+				serverSession.Log(ctx, params)
 			}
 		},
 	}
 }
-

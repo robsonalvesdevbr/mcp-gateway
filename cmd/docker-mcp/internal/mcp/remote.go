@@ -82,7 +82,7 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, params *mcp.Initialize
 
 	c.session = session
 	c.initialized.Store(true)
-	
+
 	// The Connect method handles initialization automatically in the new SDK
 	return &mcp.InitializeResult{
 		ProtocolVersion: "2024-11-05",
@@ -117,7 +117,7 @@ func (c *remoteMCPClient) ListResources(ctx context.Context, params *mcp.ListRes
 
 func (c *remoteMCPClient) ListResourceTemplates(ctx context.Context, params *mcp.ListResourceTemplatesParams) (*mcp.ListResourceTemplatesResult, error) {
 	if !c.initialized.Load() {
-		return nil, fmt.Errorf("client not initialized")  
+		return nil, fmt.Errorf("client not initialized")
 	}
 	return c.session.ListResourceTemplates(ctx, params)
 }

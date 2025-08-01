@@ -30,15 +30,15 @@ func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annota
 		if annotations != nil && annotations.ReadOnlyHint {
 			readOnlyHint = &annotations.ReadOnlyHint
 		}
-		
+
 		// Convert to the generic version for our internal methods
 		genericParams := &mcp.CallToolParams{
 			Meta:      params.Meta,
 			Name:      params.Name,
 			Arguments: params.Arguments,
 		}
-		
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig( readOnlyHint, ss))
+
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(readOnlyHint, ss))
 		if err != nil {
 			return nil, err
 		}

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/modelcontextprotocol/go-sdk/jsonschema"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -156,7 +156,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 					mcpTool.InputSchema.Type = "object"
 				} else {
 					mcpTool.InputSchema.Type = tool.Parameters.Type
-					// Note: tool.Parameters.Properties.ToMap() returns map[string]any 
+					// Note: tool.Parameters.Properties.ToMap() returns map[string]any
 					// but we need map[string]*jsonschema.Schema
 					// This is a complex conversion that needs proper implementation
 				}
