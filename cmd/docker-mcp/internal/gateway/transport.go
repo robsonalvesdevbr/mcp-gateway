@@ -15,10 +15,6 @@ import (
 
 func (g *Gateway) startStdioServer(ctx context.Context, _ io.Reader, _ io.Writer) error {
 	transport := mcp.NewStdioTransport()
-	_, err := g.mcpServer.Connect(ctx, transport)
-	if err != nil {
-		return err
-	}
 	return g.mcpServer.Run(ctx, transport)
 }
 

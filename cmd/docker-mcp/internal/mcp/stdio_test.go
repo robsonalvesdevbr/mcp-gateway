@@ -40,22 +40,14 @@ func TestStdioClientInitializeAndListTools(t *testing.T) {
 		},
 	}
 
-	result, err := client.Initialize(ctx, initParams, true, nil) // verbose = true for debugging
+	err := client.Initialize(ctx, initParams, true, nil) // verbose = true for debugging
 	require.NoError(t, err, "Failed to initialize stdio client")
-	require.NotNil(t, result, "Initialize result should not be nil")
-
-	// Verify initialization result
-	assert.Equal(t, "2024-11-05", result.ProtocolVersion)
-	assert.NotNil(t, result.ServerInfo)
-
-	t.Logf("Initialized client with server: %s v%s",
-		result.ServerInfo.Name, result.ServerInfo.Version)
 
 	// Test ListTools
 	toolsCtx, toolsCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer toolsCancel()
 
-	tools, err := client.ListTools(toolsCtx, &mcp.ListToolsParams{})
+	tools, err := client.Session().ListTools(toolsCtx, &mcp.ListToolsParams{})
 	require.NoError(t, err, "Failed to list tools")
 	require.NotNil(t, tools, "Tools result should not be nil")
 	require.NotNil(t, tools.Tools, "Tools array should not be nil")
@@ -70,6 +62,6 @@ func TestStdioClientInitializeAndListTools(t *testing.T) {
 	}
 
 	// Clean up
-	err = client.Close()
+	err = client.Session().Close()
 	assert.NoError(t, err, "Failed to close client")
 }

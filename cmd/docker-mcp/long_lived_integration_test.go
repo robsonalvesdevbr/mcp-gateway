@@ -56,7 +56,7 @@ func newTestGatewayClient(t *testing.T, args []string) mcpclient.Client {
 
 	c := mcpclient.NewStdioCmdClient("mcp-test", "docker", os.Environ(), args...)
 	t.Cleanup(func() {
-		c.Close()
+		c.Session().Close()
 	})
 
 	initParams := &mcp.InitializeParams{
@@ -67,7 +67,7 @@ func newTestGatewayClient(t *testing.T, args []string) mcpclient.Client {
 		},
 	}
 
-	_, err := c.Initialize(t.Context(), initParams, false, nil)
+	err := c.Initialize(t.Context(), initParams, false, nil)
 	require.NoError(t, err)
 
 	return c
@@ -90,7 +90,7 @@ func TestIntegrationShortLivedContainerCloses(t *testing.T) {
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
+	response, err := c.Session().CallTool(t.Context(), &mcp.CallToolParams{
 		Name: "get_current_time",
 		Arguments: map[string]any{
 			"timezone": "UTC",
@@ -126,7 +126,7 @@ func TestIntegrationLongLivedServerStaysRunning(t *testing.T) {
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
+	response, err := c.Session().CallTool(t.Context(), &mcp.CallToolParams{
 		Name: "get_current_time",
 		Arguments: map[string]any{
 			"timezone": "UTC",
@@ -161,7 +161,7 @@ func TestIntegrationLongLivedServerWithFlagStaysRunning(t *testing.T) {
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
+	response, err := c.Session().CallTool(t.Context(), &mcp.CallToolParams{
 		Name: "get_current_time",
 		Arguments: map[string]any{
 			"timezone": "UTC",
@@ -196,7 +196,7 @@ func TestIntegrationLongLivedShouldCleanupContainerBeforeShutdown(t *testing.T) 
 
 	c := newTestGatewayClient(t, args)
 
-	response, err := c.CallTool(t.Context(), &mcp.CallToolParams{
+	response, err := c.Session().CallTool(t.Context(), &mcp.CallToolParams{
 		Name: "get_current_time",
 		Arguments: map[string]any{
 			"timezone": "UTC",
@@ -206,7 +206,7 @@ func TestIntegrationLongLivedShouldCleanupContainerBeforeShutdown(t *testing.T) 
 	require.False(t, response.IsError)
 
 	// Shutdown
-	err = c.Close()
+	err = c.Session().Close()
 	require.NoError(t, err)
 
 	waitForCondition(t, func() bool {

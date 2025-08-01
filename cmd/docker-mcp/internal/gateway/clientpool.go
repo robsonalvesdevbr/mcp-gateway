@@ -107,7 +107,7 @@ func (cp *clientPool) ReleaseClient(client mcpclient.Client) {
 
 	// Client was not kept, close it
 	if !foundKept {
-		client.Close()
+		client.Session().Close()
 		return
 	}
 
@@ -124,7 +124,7 @@ func (cp *clientPool) Close() {
 	for _, keptClient := range existingMap {
 		client, err := keptClient.Getter.GetClient(context.TODO()) // should be cached
 		if err == nil {
-			client.Close()
+			client.Session().Close()
 		}
 	}
 }
@@ -388,7 +388,7 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 			} else {
 				ss = nil
 			}
-			if _, err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss); err != nil {
+			if err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss); err != nil {
 				return nil, err
 			}
 

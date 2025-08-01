@@ -222,13 +222,13 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 	// Resource templates are handled as regular resources in the new SDK
 	for _, template := range capabilities.ResourceTemplates {
 		// Convert ResourceTemplate to Resource
-		resource := &mcp.Resource{
-			URI:         template.ResourceTemplate.URITemplate,
+		resource := &mcp.ResourceTemplate{
+			URITemplate: template.ResourceTemplate.URITemplate,
 			Name:        template.ResourceTemplate.Name,
 			Description: template.ResourceTemplate.Description,
 			MIMEType:    template.ResourceTemplate.MIMEType,
 		}
-		g.mcpServer.AddResource(resource, template.Handler)
+		g.mcpServer.AddResourceTemplate(resource, template.Handler)
 	}
 
 	g.health.SetHealthy()

@@ -44,7 +44,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annota
 		}
 		defer g.clientPool.ReleaseClient(client)
 
-		return client.CallTool(ctx, genericParams)
+		return client.Session().CallTool(ctx, genericParams)
 	}
 }
 
@@ -56,7 +56,7 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig catalog.ServerConfig) mcp.
 		}
 		defer g.clientPool.ReleaseClient(client)
 
-		return client.GetPrompt(ctx, params)
+		return client.Session().GetPrompt(ctx, params)
 	}
 }
 
@@ -68,7 +68,7 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig) mc
 		}
 		defer g.clientPool.ReleaseClient(client)
 
-		return client.ReadResource(ctx, params)
+		return client.Session().ReadResource(ctx, params)
 	}
 }
 
@@ -80,6 +80,6 @@ func (g *Gateway) mcpServerResourceTemplateHandler(serverConfig catalog.ServerCo
 		}
 		defer g.clientPool.ReleaseClient(client)
 
-		return client.ReadResource(ctx, params)
+		return client.Session().ReadResource(ctx, params)
 	}
 }

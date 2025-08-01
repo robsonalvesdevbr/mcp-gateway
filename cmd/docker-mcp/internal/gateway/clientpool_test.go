@@ -223,7 +223,7 @@ func TestStdioClientInitialization(t *testing.T) {
 	defer clientPool.ReleaseClient(client)
 
 	// Test ListTools to verify the client is working
-	tools, err := client.ListTools(ctx, &mcp.ListToolsParams{})
+	tools, err := client.Session().ListTools(ctx, &mcp.ListToolsParams{})
 	if err != nil {
 		t.Fatalf("Failed to list tools: %v", err)
 	}

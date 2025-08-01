@@ -67,7 +67,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 
 				var capabilities Capabilities
 
-				tools, err := client.ListTools(ctx, &mcp.ListToolsParams{})
+				tools, err := client.Session().ListTools(ctx, &mcp.ListToolsParams{})
 				if err != nil {
 					logf("  > Can't list tools %s: %s", serverConfig.Name, err)
 				} else {
@@ -82,7 +82,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 					}
 				}
 
-				prompts, err := client.ListPrompts(ctx, &mcp.ListPromptsParams{})
+				prompts, err := client.Session().ListPrompts(ctx, &mcp.ListPromptsParams{})
 				if err == nil {
 					for _, prompt := range prompts.Prompts {
 						capabilities.Prompts = append(capabilities.Prompts, PromptRegistration{
@@ -92,7 +92,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 					}
 				}
 
-				resources, err := client.ListResources(ctx, &mcp.ListResourcesParams{})
+				resources, err := client.Session().ListResources(ctx, &mcp.ListResourcesParams{})
 				if err == nil {
 					for _, resource := range resources.Resources {
 						capabilities.Resources = append(capabilities.Resources, ResourceRegistration{
@@ -102,7 +102,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 					}
 				}
 
-				resourceTemplates, err := client.ListResourceTemplates(ctx, &mcp.ListResourceTemplatesParams{})
+				resourceTemplates, err := client.Session().ListResourceTemplates(ctx, &mcp.ListResourceTemplatesParams{})
 				if err == nil {
 					for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
 						capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ResourceTemplateRegistration{
