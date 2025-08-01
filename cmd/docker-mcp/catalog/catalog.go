@@ -11,6 +11,10 @@ import (
 const (
 	DockerCatalogName = "docker-mcp"
 	DockerCatalogURL  = "https://desktop.docker.com/mcp/catalog/v2/catalog.yaml"
+	
+	// Docker server names for bootstrap command
+	DockerHubServerName = "dockerhub"
+	DockerCLIServerName = "docker"
 )
 
 var aliasToURL = map[string]string{

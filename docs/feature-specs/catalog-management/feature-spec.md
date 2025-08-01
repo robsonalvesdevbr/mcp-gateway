@@ -86,7 +86,23 @@ docker mcp catalog export docker-mcp ./backup.yaml
 # Error: Cannot export official Docker catalog 'docker-mcp'
 ```
 
-### US5: Docker Desktop Compatibility
+### US5: Quick Start with Examples
+**As a new user**, I want to easily understand the catalog format and get started with custom catalogs by having examples based on Docker's official servers.
+
+```bash
+# Create a starter catalog file with Docker Hub and Docker CLI as examples
+docker mcp catalog bootstrap ./my-starter-catalog.yaml
+
+# File contains properly formatted Docker and DockerHub entries as reference
+# User can modify file to add their own servers
+# Then import or use as source for other commands
+
+docker mcp catalog import ./my-starter-catalog.yaml
+# OR
+docker mcp catalog add existing-catalog my-server ./my-starter-catalog.yaml
+```
+
+### US6: Docker Desktop Compatibility
 **As a Docker Desktop user**, I want the existing catalog functionality to continue working without any changes to my workflow.
 
 ```bash
@@ -188,7 +204,60 @@ docker mcp feature list                         # Show all feature flags and sta
 
 **Implementation**: New `cmd/docker-mcp/commands/feature.go`
 
-#### 2. Gateway Command Enhancement
+#### 2. Bootstrap Command (New)
+
+**New Command**: `docker mcp catalog bootstrap <output-file-path>`
+
+**Purpose**: Create a starter catalog file with Docker and Docker Hub server entries as examples, making it easy for users to understand the catalog format and quickly get started with custom catalogs.
+
+**Behavior**:
+- Extracts `dockerhub` and `docker` server entries from live Docker catalog
+- Creates a properly formatted YAML catalog file at specified path
+- File is standalone (not automatically imported) - ready for user modification
+- Provides real working examples of catalog server definitions
+
+**Usage Examples**:
+```bash
+# Create starter catalog with Docker examples
+docker mcp catalog bootstrap ./my-starter-catalog.yaml
+
+# Output file contains:
+# registry:
+#   dockerhub:
+#     description: "Docker Hub official MCP server."
+#     title: "Docker Hub"
+#     image: "mcp/dockerhub@sha256:..."
+#     tools: [...]
+#     # ... complete server definition
+#   docker:
+#     description: "Use the Docker CLI."
+#     title: "Docker"  
+#     type: "poci"
+#     # ... complete server definition
+
+# User can then modify and import
+docker mcp catalog import ./my-starter-catalog.yaml
+
+# Or use as source for copying specific servers
+docker mcp catalog add my-catalog docker-hub ./my-starter-catalog.yaml
+```
+
+**Implementation Strategy**:
+1. **Config Loading**: Call `ReadConfigWithDefaultCatalog(ctx)` to load Docker catalog config
+2. **YAML Reading**: Call `ReadCatalogFile("docker-mcp")` to get raw catalog YAML
+3. **Struct Parsing**: Unmarshal YAML to `Registry` struct for Go data access
+4. **Server Extraction**: Extract `registry.Registry["dockerhub"]` and `registry.Registry["docker"]` entries
+5. **Bootstrap Generation**: Create new `Registry` struct with only extracted servers
+6. **YAML Output**: Marshal to YAML and write standalone catalog file
+
+**Error Handling**:
+- Validate output path is writable
+- Handle Docker catalog access failures gracefully
+- Provide overwrite protection/confirmation for existing files
+
+**Implementation**: New `cmd/docker-mcp/commands/bootstrap.go` and `cmd/docker-mcp/catalog/bootstrap.go`
+
+#### 3. Gateway Command Enhancement
 
 **Modified Command**: `docker mcp gateway run`
 

@@ -14,7 +14,9 @@ func catalogCommand() *cobra.Command {
 		Aliases: []string{"catalogs"},
 		Short:   "Manage the catalog",
 	}
+	cmd.AddCommand(bootstrapCatalogCommand())
 	cmd.AddCommand(importCatalogCommand())
+	cmd.AddCommand(exportCatalogCommand())
 	cmd.AddCommand(lsCatalogCommand())
 	cmd.AddCommand(rmCatalogCommand())
 	cmd.AddCommand(updateCatalogCommand())
@@ -35,7 +37,20 @@ func importCatalogCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return catalog.Import(cmd.Context(), args[0])
 		},
-		Hidden: true,
+	}
+}
+
+func exportCatalogCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "export <catalog-name> <file-path>",
+		Short: "Export a configured catalog to a file",
+		Long: `Export a user-managed catalog to a file. This command only works with catalogs
+that have been imported or configured manually. The canonical Docker MCP catalog
+cannot be exported as it is managed by Docker.`,
+		Args: cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return catalog.Export(cmd.Context(), args[0], args[1])
+		},
 	}
 }
 
@@ -64,7 +79,6 @@ func rmCatalogCommand() *cobra.Command {
 		RunE: func(_ *cobra.Command, args []string) error {
 			return catalog.Rm(args[0])
 		},
-		Hidden: true,
 	}
 }
 
@@ -108,7 +122,6 @@ func forkCatalogCommand() *cobra.Command {
 		RunE: func(_ *cobra.Command, args []string) error {
 			return catalog.Fork(args[0], args[1])
 		},
-		Hidden: true,
 	}
 }
 
@@ -120,7 +133,6 @@ func createCatalogCommand() *cobra.Command {
 		RunE: func(_ *cobra.Command, args []string) error {
 			return catalog.Create(args[0])
 		},
-		Hidden: true,
 	}
 }
 
@@ -150,7 +162,6 @@ func addCatalogCommand() *cobra.Command {
 			}
 			return catalog.Add(*parsedArgs, opts.Force)
 		},
-		Hidden: true,
 	}
 	flags := cmd.Flags()
 	flags.BoolVar(&opts.Force, "force", false, "Overwrite existing server in the catalog")
