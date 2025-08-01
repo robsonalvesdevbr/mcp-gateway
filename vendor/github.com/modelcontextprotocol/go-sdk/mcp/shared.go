@@ -123,13 +123,13 @@ func defaultReceivingMethodHandler[S Session](ctx context.Context, session S, me
 }
 
 func handleReceive[S Session](ctx context.Context, session S, req *jsonrpc.Request) (Result, error) {
-	info, ok := session.receivingMethodInfos()[req.Method]
-	if !ok {
-		return nil, jsonrpc2.ErrNotHandled
+	info, err := checkRequest(req, session.receivingMethodInfos())
+	if err != nil {
+		return nil, err
 	}
 	params, err := info.unmarshalParams(req.Params)
 	if err != nil {
-		return nil, fmt.Errorf("handleRequest %q: %w", req.Method, err)
+		return nil, fmt.Errorf("handling '%s': %w", req.Method, err)
 	}
 
 	mh := session.receivingMethodHandler().(MethodHandler[S])
@@ -141,8 +141,41 @@ func handleReceive[S Session](ctx context.Context, session S, req *jsonrpc.Reque
 	return res, nil
 }
 
+// checkRequest checks the given request against the provided method info, to
+// ensure it is a valid MCP request.
+//
+// If valid, the relevant method info is returned. Otherwise, a non-nil error
+// is returned describing why the request is invalid.
+//
+// This is extracted from request handling so that it can be called in the
+// transport layer to preemptively reject bad requests.
+func checkRequest(req *jsonrpc.Request, infos map[string]methodInfo) (methodInfo, error) {
+	info, ok := infos[req.Method]
+	if !ok {
+		return methodInfo{}, fmt.Errorf("%w: %q unsupported", jsonrpc2.ErrNotHandled, req.Method)
+	}
+	if info.flags&notification != 0 && req.ID.IsValid() {
+		return methodInfo{}, fmt.Errorf("%w: unexpected id for %q", jsonrpc2.ErrInvalidRequest, req.Method)
+	}
+	if info.flags&notification == 0 && !req.ID.IsValid() {
+		return methodInfo{}, fmt.Errorf("%w: missing id for %q", jsonrpc2.ErrInvalidRequest, req.Method)
+	}
+	// missingParamsOK is checked here to catch the common case where "params" is
+	// missing entirely.
+	//
+	// However, it's checked again after unmarshalling to catch the rare but
+	// possible case where "params" is JSON null (see https://go.dev/issue/33835).
+	if info.flags&missingParamsOK == 0 && len(req.Params) == 0 {
+		return methodInfo{}, fmt.Errorf("%w: missing required \"params\"", jsonrpc2.ErrInvalidRequest)
+	}
+	return info, nil
+}
+
 // methodInfo is information about sending and receiving a method.
 type methodInfo struct {
+	// flags is a collection of flags controlling how the JSONRPC method is
+	// handled. See individual flag values for documentation.
+	flags methodFlags
 	// Unmarshal params from the wire into a Params struct.
 	// Used on the receive side.
 	unmarshalParams func(json.RawMessage) (Params, error)
@@ -168,15 +201,36 @@ type paramsPtr[T any] interface {
 	Params
 }
 
+type methodFlags int
+
+const (
+	notification    methodFlags = 1 << iota // method is a notification, not request
+	missingParamsOK                         // params may be missing or null
+)
+
 // newMethodInfo creates a methodInfo from a typedMethodHandler.
-func newMethodInfo[S Session, P paramsPtr[T], R Result, T any](d typedMethodHandler[S, P, R]) methodInfo {
+//
+// If isRequest is set, the method is treated as a request rather than a
+// notification.
+func newMethodInfo[S Session, P paramsPtr[T], R Result, T any](d typedMethodHandler[S, P, R], flags methodFlags) methodInfo {
 	return methodInfo{
+		flags: flags,
 		unmarshalParams: func(m json.RawMessage) (Params, error) {
 			var p P
 			if m != nil {
 				if err := json.Unmarshal(m, &p); err != nil {
 					return nil, fmt.Errorf("unmarshaling %q into a %T: %w", m, p, err)
 				}
+			}
+			// We must check missingParamsOK here, in addition to checkRequest, to
+			// catch the edge cases where "params" is set to JSON null.
+			// See also https://go.dev/issue/33835.
+			//
+			// We need to ensure that p is non-null to guard against crashes, as our
+			// internal code or externally provided handlers may assume that params
+			// is non-null.
+			if flags&missingParamsOK == 0 && p == nil {
+				return nil, fmt.Errorf("%w: missing required \"params\"", jsonrpc2.ErrInvalidRequest)
 			}
 			return orZero[Params](p), nil
 		},

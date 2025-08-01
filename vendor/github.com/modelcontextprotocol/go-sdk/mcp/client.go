@@ -286,17 +286,21 @@ func (c *Client) AddReceivingMiddleware(middleware ...Middleware[*ClientSession]
 }
 
 // clientMethodInfos maps from the RPC method name to serverMethodInfos.
+//
+// The 'allowMissingParams' values are extracted from the protocol schema.
+// TODO(rfindley): actually load and validate the protocol schema, rather than
+// curating these method flags.
 var clientMethodInfos = map[string]methodInfo{
-	methodComplete:                  newMethodInfo(sessionMethod((*ClientSession).Complete)),
-	methodPing:                      newMethodInfo(sessionMethod((*ClientSession).ping)),
-	methodListRoots:                 newMethodInfo(clientMethod((*Client).listRoots)),
-	methodCreateMessage:             newMethodInfo(clientMethod((*Client).createMessage)),
-	notificationToolListChanged:     newMethodInfo(clientMethod((*Client).callToolChangedHandler)),
-	notificationPromptListChanged:   newMethodInfo(clientMethod((*Client).callPromptChangedHandler)),
-	notificationResourceListChanged: newMethodInfo(clientMethod((*Client).callResourceChangedHandler)),
-	notificationResourceUpdated:     newMethodInfo(clientMethod((*Client).callResourceUpdatedHandler)),
-	notificationLoggingMessage:      newMethodInfo(clientMethod((*Client).callLoggingHandler)),
-	notificationProgress:            newMethodInfo(sessionMethod((*ClientSession).callProgressNotificationHandler)),
+	methodComplete:                  newMethodInfo(sessionMethod((*ClientSession).Complete), 0),
+	methodPing:                      newMethodInfo(sessionMethod((*ClientSession).ping), missingParamsOK),
+	methodListRoots:                 newMethodInfo(clientMethod((*Client).listRoots), missingParamsOK),
+	methodCreateMessage:             newMethodInfo(clientMethod((*Client).createMessage), 0),
+	notificationToolListChanged:     newMethodInfo(clientMethod((*Client).callToolChangedHandler), notification|missingParamsOK),
+	notificationPromptListChanged:   newMethodInfo(clientMethod((*Client).callPromptChangedHandler), notification|missingParamsOK),
+	notificationResourceListChanged: newMethodInfo(clientMethod((*Client).callResourceChangedHandler), notification|missingParamsOK),
+	notificationResourceUpdated:     newMethodInfo(clientMethod((*Client).callResourceUpdatedHandler), notification|missingParamsOK),
+	notificationLoggingMessage:      newMethodInfo(clientMethod((*Client).callLoggingHandler), notification),
+	notificationProgress:            newMethodInfo(sessionMethod((*ClientSession).callProgressNotificationHandler), notification),
 }
 
 func (cs *ClientSession) sendingMethodInfos() map[string]methodInfo {
@@ -323,7 +327,7 @@ func (cs *ClientSession) receivingMethodHandler() methodHandler {
 	return cs.client.receivingMethodHandler_
 }
 
-// getConn implements [session.getConn].
+// getConn implements [Session.getConn].
 func (cs *ClientSession) getConn() *jsonrpc2.Connection { return cs.conn }
 
 func (*ClientSession) ping(context.Context, *PingParams) (*emptyResult, error) {

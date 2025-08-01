@@ -14,6 +14,7 @@ import (
 	"iter"
 	"maps"
 	"net/url"
+	"os"
 	"path/filepath"
 	"slices"
 	"sync"
@@ -198,10 +199,13 @@ func (s *Server) AddResource(r *Resource, h ResourceHandler) {
 		func() bool {
 			u, err := url.Parse(r.URI)
 			if err != nil {
-				panic(err) // url.Parse includes the URI in the error
-			}
-			if !u.IsAbs() {
-				panic(fmt.Errorf("URI %s needs a scheme", r.URI))
+				//panic(err) // url.Parse includes the URI in the error
+				fmt.Fprintf(os.Stderr, "invalid resource URI %q: %v\n", r.URI, err)
+			} else {
+				if !u.IsAbs() {
+					//panic(fmt.Errorf("URI %s needs a scheme", r.URI))
+					fmt.Fprintf(os.Stderr, "invalid resource URI %q: %v\n", r.URI, err)
+				}
 			}
 			s.resources.add(&serverResource{r, h})
 			return true
@@ -423,10 +427,6 @@ func (s *Server) lookupResourceHandler(uri string) (ResourceHandler, string, boo
 // Lexical path traversal attacks, where the path has ".." elements that escape dir,
 // are always caught. Go 1.24 and above also protects against symlink-based attacks,
 // where symlinks under dir lead out of the tree.
-func (s *Server) fileResourceHandler(dir string) ResourceHandler {
-	return fileResourceHandler(dir)
-}
-
 func fileResourceHandler(dir string) ResourceHandler {
 	// Convert dir to an absolute path.
 	dirFilepath, err := filepath.Abs(dir)
@@ -687,23 +687,27 @@ func (s *Server) AddReceivingMiddleware(middleware ...Middleware[*ServerSession]
 }
 
 // serverMethodInfos maps from the RPC method name to serverMethodInfos.
+//
+// The 'allowMissingParams' values are extracted from the protocol schema.
+// TODO(rfindley): actually load and validate the protocol schema, rather than
+// curating these method flags.
 var serverMethodInfos = map[string]methodInfo{
-	methodComplete:               newMethodInfo(serverMethod((*Server).complete)),
-	methodInitialize:             newMethodInfo(sessionMethod((*ServerSession).initialize)),
-	methodPing:                   newMethodInfo(sessionMethod((*ServerSession).ping)),
-	methodListPrompts:            newMethodInfo(serverMethod((*Server).listPrompts)),
-	methodGetPrompt:              newMethodInfo(serverMethod((*Server).getPrompt)),
-	methodListTools:              newMethodInfo(serverMethod((*Server).listTools)),
-	methodCallTool:               newMethodInfo(serverMethod((*Server).callTool)),
-	methodListResources:          newMethodInfo(serverMethod((*Server).listResources)),
-	methodListResourceTemplates:  newMethodInfo(serverMethod((*Server).listResourceTemplates)),
-	methodReadResource:           newMethodInfo(serverMethod((*Server).readResource)),
-	methodSetLevel:               newMethodInfo(sessionMethod((*ServerSession).setLevel)),
-	methodSubscribe:              newMethodInfo(serverMethod((*Server).subscribe)),
-	methodUnsubscribe:            newMethodInfo(serverMethod((*Server).unsubscribe)),
-	notificationInitialized:      newMethodInfo(serverMethod((*Server).callInitializedHandler)),
-	notificationRootsListChanged: newMethodInfo(serverMethod((*Server).callRootsListChangedHandler)),
-	notificationProgress:         newMethodInfo(sessionMethod((*ServerSession).callProgressNotificationHandler)),
+	methodComplete:               newMethodInfo(serverMethod((*Server).complete), 0),
+	methodInitialize:             newMethodInfo(sessionMethod((*ServerSession).initialize), 0),
+	methodPing:                   newMethodInfo(sessionMethod((*ServerSession).ping), missingParamsOK),
+	methodListPrompts:            newMethodInfo(serverMethod((*Server).listPrompts), missingParamsOK),
+	methodGetPrompt:              newMethodInfo(serverMethod((*Server).getPrompt), 0),
+	methodListTools:              newMethodInfo(serverMethod((*Server).listTools), missingParamsOK),
+	methodCallTool:               newMethodInfo(serverMethod((*Server).callTool), 0),
+	methodListResources:          newMethodInfo(serverMethod((*Server).listResources), missingParamsOK),
+	methodListResourceTemplates:  newMethodInfo(serverMethod((*Server).listResourceTemplates), missingParamsOK),
+	methodReadResource:           newMethodInfo(serverMethod((*Server).readResource), 0),
+	methodSetLevel:               newMethodInfo(sessionMethod((*ServerSession).setLevel), 0),
+	methodSubscribe:              newMethodInfo(serverMethod((*Server).subscribe), 0),
+	methodUnsubscribe:            newMethodInfo(serverMethod((*Server).unsubscribe), 0),
+	notificationInitialized:      newMethodInfo(serverMethod((*Server).callInitializedHandler), notification|missingParamsOK),
+	notificationRootsListChanged: newMethodInfo(serverMethod((*Server).callRootsListChangedHandler), notification|missingParamsOK),
+	notificationProgress:         newMethodInfo(sessionMethod((*ServerSession).callProgressNotificationHandler), notification),
 }
 
 func (ss *ServerSession) sendingMethodInfos() map[string]methodInfo { return clientMethodInfos }
@@ -748,6 +752,9 @@ func (ss *ServerSession) handle(ctx context.Context, req *jsonrpc.Request) (any,
 }
 
 func (ss *ServerSession) initialize(ctx context.Context, params *InitializeParams) (*InitializeResult, error) {
+	if params == nil {
+		return nil, fmt.Errorf("%w: \"params\" must be be provided", jsonrpc2.ErrInvalidParams)
+	}
 	ss.mu.Lock()
 	ss.initializeParams = params
 	ss.mu.Unlock()
