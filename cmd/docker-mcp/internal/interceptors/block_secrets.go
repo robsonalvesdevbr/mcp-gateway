@@ -57,8 +57,7 @@ func BlockSecretsMiddleware() mcp.Middleware[*mcp.ServerSession] {
 					var callResult mcp.CallToolResult
 					if err := json.Unmarshal(jsonData, &callResult); err == nil {
 						for _, content := range callResult.Content {
-							switch c := content.(type) {
-							case *mcp.TextContent:
+							if c, ok := content.(*mcp.TextContent); ok {
 								contents += c.Text
 							}
 						}

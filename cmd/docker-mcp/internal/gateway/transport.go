@@ -8,11 +8,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/health"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/health"
 )
 
-func (g *Gateway) startStdioServer(ctx context.Context, stdin io.Reader, stdout io.Writer) error {
+func (g *Gateway) startStdioServer(ctx context.Context, _ io.Reader, _ io.Writer) error {
 	transport := mcp.NewStdioTransport()
 	_, err := g.mcpServer.Connect(ctx, transport)
 	if err != nil {
@@ -25,7 +26,7 @@ func (g *Gateway) startSseServer(ctx context.Context, ln net.Listener) error {
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthHandler(&g.health))
 	mux.Handle("/", redirectHandler("/sse"))
-	sseHandler := mcp.NewSSEHandler(func(request *http.Request) *mcp.Server {
+	sseHandler := mcp.NewSSEHandler(func(_ *http.Request) *mcp.Server {
 		return g.mcpServer
 	})
 	mux.Handle("/sse", sseHandler)
@@ -43,7 +44,7 @@ func (g *Gateway) startStreamingServer(ctx context.Context, ln net.Listener) err
 	mux := http.NewServeMux()
 	mux.Handle("/health", healthHandler(&g.health))
 	mux.Handle("/", redirectHandler("/mcp"))
-	streamHandler := mcp.NewStreamableHTTPHandler(func(request *http.Request) *mcp.Server {
+	streamHandler := mcp.NewStreamableHTTPHandler(func(_ *http.Request) *mcp.Server {
 		return g.mcpServer
 	}, nil)
 	mux.Handle("/mcp", streamHandler)
@@ -83,7 +84,7 @@ func (g *Gateway) startCentralStreamingServer(ctx context.Context, ln net.Listen
 				_, _ = io.WriteString(w, "Failed to reload configuration")
 				return
 			}
-			handler = mcp.NewStreamableHTTPHandler(func(request *http.Request) *mcp.Server {
+			handler = mcp.NewStreamableHTTPHandler(func(_ *http.Request) *mcp.Server {
 				return g.mcpServer
 			}, nil)
 			handlersPerSelectionOfServers[serverNames] = handler

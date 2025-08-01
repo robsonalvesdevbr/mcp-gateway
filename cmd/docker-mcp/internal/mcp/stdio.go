@@ -31,7 +31,7 @@ func NewStdioCmdClient(name string, command string, env []string, args ...string
 	}
 }
 
-func (c *stdioMCPClient) Initialize(ctx context.Context, params *mcp.InitializeParams, debug bool, s *mcp.ServerSession) (*mcp.InitializeResult, error) {
+func (c *stdioMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParams, debug bool, s *mcp.ServerSession) (*mcp.InitializeResult, error) {
 	if c.initialized.Load() {
 		return nil, fmt.Errorf("client already initialized")
 	}

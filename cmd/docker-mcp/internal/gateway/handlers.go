@@ -13,7 +13,7 @@ func getClientConfig(readOnlyHint *bool, ss *mcp.ServerSession) *clientConfig {
 }
 
 func (g *Gateway) mcpToolHandler(tool catalog.Tool) mcp.ToolHandler {
-	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[map[string]any]) (*mcp.CallToolResultFor[any], error) {
+	return func(ctx context.Context, _ *mcp.ServerSession, params *mcp.CallToolParamsFor[map[string]any]) (*mcp.CallToolResultFor[any], error) {
 		// Convert to the generic version for our internal methods
 		genericParams := &mcp.CallToolParams{
 			Meta:      params.Meta,

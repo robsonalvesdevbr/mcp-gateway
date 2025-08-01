@@ -22,33 +22,33 @@ type Client interface {
 
 func stdioNotifications(serverSession *mcp.ServerSession) *mcp.ClientOptions {
 	return &mcp.ClientOptions{
-		CreateMessageHandler: func(ctx context.Context, session *mcp.ClientSession, params *mcp.CreateMessageParams) (*mcp.CreateMessageResult, error) {
+		CreateMessageHandler: func(_ context.Context, _ *mcp.ClientSession, _ *mcp.CreateMessageParams) (*mcp.CreateMessageResult, error) {
 			// Handle create messages if needed
 			return nil, fmt.Errorf("create messages not supported")
 		},
-		ToolListChangedHandler: func(ctx context.Context, session *mcp.ClientSession, params *mcp.ToolListChangedParams) {
+		ToolListChangedHandler: func(ctx context.Context, _ *mcp.ClientSession, params *mcp.ToolListChangedParams) {
 			if serverSession != nil {
-				mcp.HandleNotify(ctx, serverSession, "notifications/tools/list_changed", params)
+				_ = mcp.HandleNotify(ctx, serverSession, "notifications/tools/list_changed", params)
 			}
 		},
-		ResourceListChangedHandler: func(ctx context.Context, session *mcp.ClientSession, params *mcp.ResourceListChangedParams) {
+		ResourceListChangedHandler: func(ctx context.Context, _ *mcp.ClientSession, params *mcp.ResourceListChangedParams) {
 			if serverSession != nil {
-				mcp.HandleNotify(ctx, serverSession, "notifications/resources/list_changed", params)
+				_ = mcp.HandleNotify(ctx, serverSession, "notifications/resources/list_changed", params)
 			}
 		},
-		PromptListChangedHandler: func(ctx context.Context, session *mcp.ClientSession, params *mcp.PromptListChangedParams) {
+		PromptListChangedHandler: func(ctx context.Context, _ *mcp.ClientSession, params *mcp.PromptListChangedParams) {
 			if serverSession != nil {
-				mcp.HandleNotify(ctx, serverSession, "notifications/prompts/list_changed", params)
+				_ = mcp.HandleNotify(ctx, serverSession, "notifications/prompts/list_changed", params)
 			}
 		},
-		ProgressNotificationHandler: func(ctx context.Context, session *mcp.ClientSession, params *mcp.ProgressNotificationParams) {
+		ProgressNotificationHandler: func(ctx context.Context, _ *mcp.ClientSession, params *mcp.ProgressNotificationParams) {
 			if serverSession != nil {
-				serverSession.NotifyProgress(ctx, params)
+				_ = serverSession.NotifyProgress(ctx, params)
 			}
 		},
-		LoggingMessageHandler: func(ctx context.Context, session *mcp.ClientSession, params *mcp.LoggingMessageParams) {
+		LoggingMessageHandler: func(ctx context.Context, _ *mcp.ClientSession, params *mcp.LoggingMessageParams) {
 			if serverSession != nil {
-				serverSession.Log(ctx, params)
+				_ = serverSession.Log(ctx, params)
 			}
 		},
 	}
