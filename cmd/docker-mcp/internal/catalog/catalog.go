@@ -16,8 +16,12 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/user"
 )
 
+const (
+	DockerCatalogFilename = "docker-mcp.yaml"
+)
+
 func Get(ctx context.Context) (Catalog, error) {
-	return ReadFrom(ctx, []string{"docker-mcp.yaml"})
+	return ReadFrom(ctx, []string{DockerCatalogFilename})
 }
 
 func ReadFrom(ctx context.Context, fileOrURLs []string) (Catalog, error) {
@@ -115,7 +119,7 @@ func isURL(fileOrURL string) bool {
 
 // GetWithOptions loads catalogs with enhanced options for configured catalogs and additional catalogs
 func GetWithOptions(ctx context.Context, useConfigured bool, additionalCatalogs []string) (Catalog, error) {
-	catalogPaths := []string{"docker-mcp.yaml"}
+	catalogPaths := []string{DockerCatalogFilename}
 
 	// Add configured catalogs if enabled
 	if useConfigured {

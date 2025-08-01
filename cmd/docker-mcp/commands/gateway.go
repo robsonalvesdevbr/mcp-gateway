@@ -44,7 +44,7 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 	} else {
 		// On-host.
 		options = gateway.Config{
-			CatalogPath:  []string{"docker-mcp.yaml"},
+			CatalogPath:  []string{catalog.DockerCatalogFilename},
 			RegistryPath: []string{"registry.yaml"},
 			ConfigPath:   []string{"config.yaml"},
 			ToolsPath:    []string{"tools.yaml"},

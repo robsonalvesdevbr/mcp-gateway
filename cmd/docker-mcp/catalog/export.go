@@ -17,7 +17,7 @@ import (
 // This function only allows exporting user-managed catalogs, not the Docker catalog
 func Export(ctx context.Context, catalogName, outputPath string) error {
 	// Validate that we're not trying to export the Docker catalog
-	if catalogName == "docker-mcp" || catalogName == "docker-mcp.yaml" {
+	if catalogName == DockerCatalogName || catalogName == DockerCatalogFilename {
 		return fmt.Errorf("cannot export the Docker MCP catalog as it is managed by Docker")
 	}
 	
