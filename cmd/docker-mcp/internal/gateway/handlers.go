@@ -71,4 +71,3 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig) mc
 		return client.Session().ReadResource(ctx, params)
 	}
 }
-
