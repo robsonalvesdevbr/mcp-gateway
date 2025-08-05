@@ -44,6 +44,12 @@ type Gateway struct {
 
 	sessionCacheMu sync.RWMutex
 	sessionCache   map[*mcp.ServerSession]*ServerSessionCache
+
+	// Track registered capabilities for cleanup during reload
+	registeredToolNames            []string
+	registeredPromptNames          []string
+	registeredResourceURIs         []string
+	registeredResourceTemplateURIs []string
 }
 
 func NewGateway(config Config, docker docker.Client) *Gateway {
@@ -135,7 +141,6 @@ func (g *Gateway) Run(ctx context.Context) error {
 			log("- Client initialized: ", ss.ID())
 			g.ListRoots(ctx, ss)
 		},
-		PageSize:     100,
 		HasPrompts:   true,
 		HasResources: true,
 		HasTools:     true,
@@ -255,16 +260,40 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 	// Clear existing capabilities and register new ones
 	// Note: The new SDK doesn't have bulk set methods, so we register individually
 
+	// Clear all existing capabilities by tracking them in the Gateway struct
+	if g.registeredToolNames != nil {
+		g.mcpServer.RemoveTools(g.registeredToolNames...)
+	}
+	if g.registeredPromptNames != nil {
+		g.mcpServer.RemovePrompts(g.registeredPromptNames...)
+	}
+	if g.registeredResourceURIs != nil {
+		g.mcpServer.RemoveResources(g.registeredResourceURIs...)
+	}
+	if g.registeredResourceTemplateURIs != nil {
+		g.mcpServer.RemoveResourceTemplates(g.registeredResourceTemplateURIs...)
+	}
+
+	// Reset tracking slices
+	g.registeredToolNames = nil
+	g.registeredPromptNames = nil
+	g.registeredResourceURIs = nil
+	g.registeredResourceTemplateURIs = nil
+
+	// Add new capabilities and track them
 	for _, tool := range capabilities.Tools {
 		g.mcpServer.AddTool(tool.Tool, tool.Handler)
+		g.registeredToolNames = append(g.registeredToolNames, tool.Tool.Name)
 	}
 
 	for _, prompt := range capabilities.Prompts {
 		g.mcpServer.AddPrompt(prompt.Prompt, prompt.Handler)
+		g.registeredPromptNames = append(g.registeredPromptNames, prompt.Prompt.Name)
 	}
 
 	for _, resource := range capabilities.Resources {
 		g.mcpServer.AddResource(resource.Resource, resource.Handler)
+		g.registeredResourceURIs = append(g.registeredResourceURIs, resource.Resource.URI)
 	}
 
 	// Resource templates are handled as regular resources in the new SDK
@@ -277,6 +306,7 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 			MIMEType:    template.ResourceTemplate.MIMEType,
 		}
 		g.mcpServer.AddResourceTemplate(resource, template.Handler)
+		g.registeredResourceTemplateURIs = append(g.registeredResourceTemplateURIs, resource.URITemplate)
 	}
 
 	g.health.SetHealthy()
