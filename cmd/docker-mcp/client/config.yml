@@ -112,10 +112,13 @@ system:
     paths:
       linux: 
         - $HOME/.lmstudio/mcp.json
+        - $HOME/.cache/lm-studio/mcp.json
       darwin: 
         - $HOME/.lmstudio/mcp.json
+        - $HOME/.cache/lm-studio/mcp.json
       windows: 
         - $USERPROFILE\.lmstudio\mcp.json
+        - $USERPROFILE\.cache\lm-studio\mcp.json
     yq:
       list: '.mcpServers | to_entries | map(.value + {"name": .key})'
       set: .mcpServers[$NAME] = $JSON
