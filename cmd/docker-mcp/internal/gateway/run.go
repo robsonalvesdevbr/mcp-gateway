@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -15,6 +16,23 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/interceptors"
 )
 
+type ServerSessionCache struct {
+	Roots          []*mcp.Root
+}
+
+type SubsAction int
+
+const (
+	subscribe SubsAction = 0
+	unsubscribe SubsAction = 1
+)
+
+type SubsMessage struct {
+	uri string
+	action SubsAction
+	ss *mcp.ServerSession
+}
+
 type Gateway struct {
 	Options
 	docker       docker.Client
@@ -22,6 +40,10 @@ type Gateway struct {
 	clientPool   *clientPool
 	mcpServer    *mcp.Server
 	health       health.State
+	subsChannel  chan SubsMessage
+
+	sessionCacheMu sync.RWMutex
+	sessionCache   map[*mcp.ServerSession]*ServerSessionCache
 }
 
 func NewGateway(config Config, docker docker.Client) *Gateway {
@@ -39,12 +61,20 @@ func NewGateway(config Config, docker docker.Client) *Gateway {
 			Central:      config.Central,
 			docker:       docker,
 		},
-		clientPool: newClientPool(config.Options, docker),
+		clientPool:   newClientPool(config.Options, docker),
+		sessionCache: make(map[*mcp.ServerSession]*ServerSessionCache),
+		subsChannel:  make(chan SubsMessage, 10),
 	}
 }
 
 func (g *Gateway) Run(ctx context.Context) error {
 	defer g.clientPool.Close()
+	defer func() {
+		// Clean up all session cache entries
+		g.sessionCacheMu.Lock()
+		g.sessionCache = make(map[*mcp.ServerSession]*ServerSessionCache)
+		g.sessionCacheMu.Unlock()
+	}()
 
 	start := time.Now()
 
@@ -83,14 +113,33 @@ func (g *Gateway) Run(ctx context.Context) error {
 		Name:    "Docker AI MCP Gateway",
 		Version: "2.0.1",
 	}, &mcp.ServerOptions{
-		SubscribeHandler:        nil,
-		UnsubscribeHandler:      nil,
-		RootsListChangedHandler: nil,
-		CompletionHandler:       nil,
-		InitializedHandler:      nil,
-		HasPrompts:              true,
-		HasResources:            true,
-		HasTools:                true,
+		SubscribeHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.SubscribeParams) error {
+			log("- Client subscribed to URI:", params.URI)
+			// The MCP SDK doesn't provide ServerSession in SubscribeHandler because it already
+			// keeps track of the mapping between ServerSession and subscribed resources in the Server
+			// g.subsChannel <- SubsMessage{uri: params.URI, action: subscribe , ss: ss}
+			return nil
+		},
+		UnsubscribeHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.UnsubscribeParams) error {
+			log("- Client unsubscribed from URI:", params.URI)
+			// The MCP SDK doesn't provide ServerSession in UnsubscribeHandler because it already
+			// keeps track of the mapping ServerSession and subscribed resources in the Server
+			// g.subsChannel <- SubsMessage{uri: params.URI, action: unsubscribe , ss: ss}
+			return nil
+		},
+		RootsListChangedHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.RootsListChangedParams) {
+			log("- Client roots list changed: ", ss.ID())
+			g.ListRoots(ctx, ss)
+		},
+		CompletionHandler: nil,
+		InitializedHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.InitializedParams) {
+			log("- Client initialized: ", ss.ID())
+			g.ListRoots(ctx, ss)
+		},
+		PageSize:     100,
+		HasPrompts:   true,
+		HasResources: true,
+		HasTools:     true,
 	})
 
 	// Add interceptor middleware to the server
@@ -234,4 +283,45 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 	g.health.SetHealthy()
 
 	return nil
+}
+
+// GetSessionCache returns the cached information for a server session
+func (g *Gateway) GetSessionCache(ss *mcp.ServerSession) *ServerSessionCache {
+	g.sessionCacheMu.RLock()
+	defer g.sessionCacheMu.RUnlock()
+	return g.sessionCache[ss]
+}
+
+// RemoveSessionCache removes the cached information for a server session
+func (g *Gateway) RemoveSessionCache(ss *mcp.ServerSession) {
+	g.sessionCacheMu.Lock()
+	defer g.sessionCacheMu.Unlock()
+	delete(g.sessionCache, ss)
+}
+
+// ListRoots checks if client supports Roots, gets them, and caches the result
+func (g *Gateway) ListRoots(ctx context.Context, ss *mcp.ServerSession) {
+	// Check if client supports Roots and get them if available
+	rootsResult, err := ss.ListRoots(ctx, nil)
+
+	g.sessionCacheMu.Lock()
+	defer g.sessionCacheMu.Unlock()
+
+	// Get existing cache or create new one
+	cache, exists := g.sessionCache[ss]
+	if !exists {
+		cache = &ServerSessionCache{}
+		g.sessionCache[ss] = cache
+	}
+
+	if err != nil {
+		log("- Client does not support roots or error listing roots:", err)
+		cache.Roots = nil
+	} else {
+		log("- Client supports roots, found", len(rootsResult.Roots), "roots")
+		for _, root := range rootsResult.Roots {
+			log("  - Root:", root.URI)
+		}
+		cache.Roots = rootsResult.Roots
+	}
 }

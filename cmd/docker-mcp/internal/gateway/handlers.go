@@ -8,8 +8,8 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
 )
 
-func getClientConfig(readOnlyHint *bool, ss *mcp.ServerSession) *clientConfig {
-	return &clientConfig{readOnly: readOnlyHint, serverSession: ss}
+func getClientConfig(readOnlyHint *bool, ss *mcp.ServerSession, server *mcp.Server) *clientConfig {
+	return &clientConfig{readOnly: readOnlyHint, serverSession: ss, server: server}
 }
 
 func (g *Gateway) mcpToolHandler(tool catalog.Tool) mcp.ToolHandler {
@@ -24,7 +24,7 @@ func (g *Gateway) mcpToolHandler(tool catalog.Tool) mcp.ToolHandler {
 	}
 }
 
-func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annotations *mcp.ToolAnnotations) mcp.ToolHandler {
+func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, server *mcp.Server, annotations *mcp.ToolAnnotations) mcp.ToolHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.CallToolParamsFor[map[string]any]) (*mcp.CallToolResultFor[any], error) {
 		var readOnlyHint *bool
 		if annotations != nil && annotations.ReadOnlyHint {
@@ -38,7 +38,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annota
 			Arguments: params.Arguments,
 		}
 
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(readOnlyHint, ss))
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(readOnlyHint, ss, server))
 		if err != nil {
 			return nil, err
 		}
@@ -48,9 +48,9 @@ func (g *Gateway) mcpServerToolHandler(serverConfig catalog.ServerConfig, annota
 	}
 }
 
-func (g *Gateway) mcpServerPromptHandler(serverConfig catalog.ServerConfig) mcp.PromptHandler {
+func (g *Gateway) mcpServerPromptHandler(serverConfig catalog.ServerConfig, server *mcp.Server) mcp.PromptHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.GetPromptParams) (*mcp.GetPromptResult, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss))
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss, server))
 		if err != nil {
 			return nil, err
 		}
@@ -60,9 +60,9 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig catalog.ServerConfig) mcp.
 	}
 }
 
-func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig) mcp.ResourceHandler {
+func (g *Gateway) mcpServerResourceHandler(serverConfig catalog.ServerConfig, server *mcp.Server) mcp.ResourceHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
-		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss))
+		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss, server))
 		if err != nil {
 			return nil, err
 		}

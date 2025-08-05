@@ -170,4 +170,4 @@ require (
 	k8s.io/client-go v0.33.1 // indirect
 )
 
-replace github.com/modelcontextprotocol/go-sdk => github.com/slimslenderslacks/go-sdk v0.0.0-20250801003645-bd8989837cf8
+replace github.com/modelcontextprotocol/go-sdk => github.com/slimslenderslacks/go-sdk v0.0.0-20250804162642-09744b9c1601

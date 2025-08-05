@@ -34,6 +34,7 @@ type clientPool struct {
 type clientConfig struct {
 	readOnly      *bool
 	serverSession *mcp.ServerSession
+	server        *mcp.Server
 }
 
 func newClientPool(options Options, docker docker.Client) *clientPool {
@@ -383,12 +384,14 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 			// Use the original context instead of creating a timeout context
 			// to avoid cancellation issues
 			var ss *mcp.ServerSession
+			var server *mcp.Server
 			if cg.clientConfig != nil {
 				ss = cg.clientConfig.serverSession
+				server = cg.clientConfig.server
 			} else {
 				ss = nil
 			}
-			if err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss); err != nil {
+			if err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss, server); err != nil {
 				return nil, err
 			}
 

@@ -67,9 +67,9 @@ type ServerOptions struct {
 	// the session is automatically closed.
 	KeepAlive time.Duration
 	// Function called when a client session subscribes to a resource.
-	SubscribeHandler func(context.Context, *SubscribeParams) error
+	SubscribeHandler func(context.Context, *ServerSession, *SubscribeParams) error
 	// Function called when a client session unsubscribes from a resource.
-	UnsubscribeHandler func(context.Context, *UnsubscribeParams) error
+	UnsubscribeHandler func(context.Context, *ServerSession, *UnsubscribeParams) error
 	// If true, advertises the prompts capability during initialization,
 	// even if no prompts have been registered.
 	HasPrompts bool
@@ -219,7 +219,7 @@ func (s *Server) RemoveResources(uris ...string) {
 		func() bool { return s.resources.remove(uris...) })
 }
 
-// AddResourceTemplate adds a [ResourceTemplate] to the server, or replaces on with the same URI.
+// AddResourceTemplate adds a [ResourceTemplate] to the server, or replaces one with the same URI.
 // AddResourceTemplate panics if a URI template is invalid or not absolute (has an empty scheme).
 func (s *Server) AddResourceTemplate(t *ResourceTemplate, h ResourceHandler) {
 	s.changeAndNotify(notificationResourceListChanged, &ResourceListChangedParams{},
@@ -242,9 +242,7 @@ func (s *Server) capabilities() *serverCapabilities {
 	defer s.mu.Unlock()
 
 	caps := &serverCapabilities{
-		// TODO(samthanawalla): check for completionHandler before advertising capability.
-		Completions: &completionCapabilities{},
-		Logging:     &loggingCapabilities{},
+		Logging: &loggingCapabilities{},
 	}
 	if s.opts.HasTools || s.tools.len() > 0 {
 		caps.Tools = &toolCapabilities{ListChanged: true}
@@ -257,6 +255,9 @@ func (s *Server) capabilities() *serverCapabilities {
 		if s.opts.SubscribeHandler != nil {
 			caps.Resources.Subscribe = true
 		}
+	}
+	if s.opts.CompletionHandler != nil {
+		caps.Completions = &completionCapabilities{}
 	}
 	return caps
 }
@@ -472,7 +473,7 @@ func (s *Server) subscribe(ctx context.Context, ss *ServerSession, params *Subsc
 	if s.opts.SubscribeHandler == nil {
 		return nil, fmt.Errorf("%w: server does not support resource subscriptions", jsonrpc2.ErrMethodNotFound)
 	}
-	if err := s.opts.SubscribeHandler(ctx, params); err != nil {
+	if err := s.opts.SubscribeHandler(ctx, ss, params); err != nil {
 		return nil, err
 	}
 
@@ -491,7 +492,7 @@ func (s *Server) unsubscribe(ctx context.Context, ss *ServerSession, params *Uns
 		return nil, jsonrpc2.ErrMethodNotFound
 	}
 
-	if err := s.opts.UnsubscribeHandler(ctx, params); err != nil {
+	if err := s.opts.UnsubscribeHandler(ctx, ss, params); err != nil {
 		return nil, err
 	}
 

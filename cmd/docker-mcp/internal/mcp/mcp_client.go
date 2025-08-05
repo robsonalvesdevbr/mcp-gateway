@@ -9,12 +9,17 @@ import (
 
 // Client interface wraps the official MCP SDK client with our legacy interface
 type Client interface {
-	Initialize(ctx context.Context, params *mcp.InitializeParams, debug bool, serverSession *mcp.ServerSession) error
+	Initialize(ctx context.Context, params *mcp.InitializeParams, debug bool, serverSession *mcp.ServerSession, server *mcp.Server) error
 	Session() *mcp.ClientSession
 }
 
-func stdioNotifications(serverSession *mcp.ServerSession) *mcp.ClientOptions {
+func notifications(serverSession *mcp.ServerSession, server *mcp.Server) *mcp.ClientOptions {
 	return &mcp.ClientOptions{
+		ResourceUpdatedHandler: func(ctx context.Context, _ *mcp.ClientSession, params *mcp.ResourceUpdatedNotificationParams) {
+			if server != nil {
+				_ = server.ResourceUpdated(ctx, params)
+			}
+		},
 		CreateMessageHandler: func(_ context.Context, _ *mcp.ClientSession, _ *mcp.CreateMessageParams) (*mcp.CreateMessageResult, error) {
 			// Handle create messages if needed
 			return nil, fmt.Errorf("create messages not supported")

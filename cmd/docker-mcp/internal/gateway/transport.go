@@ -8,13 +8,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/health"
 )
 
 func (g *Gateway) startStdioServer(ctx context.Context, _ io.Reader, _ io.Writer) error {
-	transport := mcp.NewStdioTransport()
+	transport := newContextAwareStdioTransport(ctx)
 	return g.mcpServer.Run(ctx, transport)
 }
 
@@ -128,4 +129,82 @@ func healthHandler(state *health.State) http.HandlerFunc {
 			w.WriteHeader(http.StatusServiceUnavailable)
 		}
 	}
+}
+
+// contextAwareStdioTransport is a custom stdio transport that handles context cancellation properly
+type contextAwareStdioTransport struct {
+	ctx context.Context
+}
+
+func newContextAwareStdioTransport(ctx context.Context) *contextAwareStdioTransport {
+	return &contextAwareStdioTransport{ctx: ctx}
+}
+
+func (t *contextAwareStdioTransport) Connect(ctx context.Context) (mcp.Connection, error) {
+	// Create the original connection once
+	transport := mcp.NewStdioTransport()
+	originalConn, err := transport.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	return newContextAwareStdioConn(t.ctx, originalConn), nil
+}
+
+// contextAwareStdioConn wraps the original connection with context-aware reading
+type contextAwareStdioConn struct {
+	ctx          context.Context
+	originalConn mcp.Connection
+}
+
+func newContextAwareStdioConn(ctx context.Context, originalConn mcp.Connection) *contextAwareStdioConn {
+	return &contextAwareStdioConn{
+		ctx:          ctx,
+		originalConn: originalConn,
+	}
+}
+
+func (c *contextAwareStdioConn) SessionID() string {
+	return c.originalConn.SessionID()
+}
+
+func (c *contextAwareStdioConn) Read(ctx context.Context) (jsonrpc.Message, error) {
+	// Create a channel to read from the original connection in a separate goroutine
+	type result struct {
+		msg jsonrpc.Message
+		err error
+	}
+	
+	ch := make(chan result, 1)
+	go func() {
+		msg, err := c.originalConn.Read(context.Background())
+		ch <- result{msg, err}
+	}()
+
+	// Wait for either context cancellation or read completion
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case <-c.ctx.Done():
+		return nil, c.ctx.Err()
+	case res := <-ch:
+		return res.msg, res.err
+	}
+}
+
+func (c *contextAwareStdioConn) Write(ctx context.Context, msg jsonrpc.Message) error {
+	// Check context first
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-c.ctx.Done():
+		return c.ctx.Err()
+	default:
+	}
+
+	return c.originalConn.Write(ctx, msg)
+}
+
+func (c *contextAwareStdioConn) Close() error {
+	return c.originalConn.Close()
 }
