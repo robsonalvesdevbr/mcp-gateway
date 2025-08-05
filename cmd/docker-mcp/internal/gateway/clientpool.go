@@ -385,6 +385,9 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 				ss = cg.clientConfig.serverSession
 				server = cg.clientConfig.server
 			}
+			// ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+			// defer cancel()
+
 			if err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss, server); err != nil {
 				return nil, err
 			}
