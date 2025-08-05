@@ -17,21 +17,21 @@ import (
 )
 
 type ServerSessionCache struct {
-	Roots          []*mcp.Root
+	Roots []*mcp.Root
 }
 
-type SubsAction int
+// type SubsAction int
 
-const (
-	subscribe SubsAction = 0
-	unsubscribe SubsAction = 1
-)
+// const (
+// subscribe   SubsAction = 0
+// unsubscribe SubsAction = 1
+// )
 
-type SubsMessage struct {
-	uri string
-	action SubsAction
-	ss *mcp.ServerSession
-}
+// type SubsMessage struct {
+// uri    string
+// action SubsAction
+// ss     *mcp.ServerSession
+// }
 
 type Gateway struct {
 	Options
@@ -40,7 +40,7 @@ type Gateway struct {
 	clientPool   *clientPool
 	mcpServer    *mcp.Server
 	health       health.State
-	subsChannel  chan SubsMessage
+	// subsChannel  chan SubsMessage
 
 	sessionCacheMu sync.RWMutex
 	sessionCache   map[*mcp.ServerSession]*ServerSessionCache
@@ -63,7 +63,6 @@ func NewGateway(config Config, docker docker.Client) *Gateway {
 		},
 		clientPool:   newClientPool(config.Options, docker),
 		sessionCache: make(map[*mcp.ServerSession]*ServerSessionCache),
-		subsChannel:  make(chan SubsMessage, 10),
 	}
 }
 
@@ -113,26 +112,26 @@ func (g *Gateway) Run(ctx context.Context) error {
 		Name:    "Docker AI MCP Gateway",
 		Version: "2.0.1",
 	}, &mcp.ServerOptions{
-		SubscribeHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.SubscribeParams) error {
+		SubscribeHandler: func(_ context.Context, _ *mcp.ServerSession, params *mcp.SubscribeParams) error {
 			log("- Client subscribed to URI:", params.URI)
 			// The MCP SDK doesn't provide ServerSession in SubscribeHandler because it already
 			// keeps track of the mapping between ServerSession and subscribed resources in the Server
 			// g.subsChannel <- SubsMessage{uri: params.URI, action: subscribe , ss: ss}
 			return nil
 		},
-		UnsubscribeHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.UnsubscribeParams) error {
+		UnsubscribeHandler: func(_ context.Context, _ *mcp.ServerSession, params *mcp.UnsubscribeParams) error {
 			log("- Client unsubscribed from URI:", params.URI)
 			// The MCP SDK doesn't provide ServerSession in UnsubscribeHandler because it already
 			// keeps track of the mapping ServerSession and subscribed resources in the Server
 			// g.subsChannel <- SubsMessage{uri: params.URI, action: unsubscribe , ss: ss}
 			return nil
 		},
-		RootsListChangedHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.RootsListChangedParams) {
+		RootsListChangedHandler: func(ctx context.Context, ss *mcp.ServerSession, _ *mcp.RootsListChangedParams) {
 			log("- Client roots list changed: ", ss.ID())
 			g.ListRoots(ctx, ss)
 		},
 		CompletionHandler: nil,
-		InitializedHandler: func(ctx context.Context, ss *mcp.ServerSession, params *mcp.InitializedParams) {
+		InitializedHandler: func(ctx context.Context, ss *mcp.ServerSession, _ *mcp.InitializedParams) {
 			log("- Client initialized: ", ss.ID())
 			g.ListRoots(ctx, ss)
 		},

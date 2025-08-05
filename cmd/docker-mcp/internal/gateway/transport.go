@@ -147,7 +147,7 @@ func (t *contextAwareStdioTransport) Connect(ctx context.Context) (mcp.Connectio
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return newContextAwareStdioConn(t.ctx, originalConn), nil
 }
 
@@ -174,7 +174,7 @@ func (c *contextAwareStdioConn) Read(ctx context.Context) (jsonrpc.Message, erro
 		msg jsonrpc.Message
 		err error
 	}
-	
+
 	ch := make(chan result, 1)
 	go func() {
 		msg, err := c.originalConn.Read(context.Background())

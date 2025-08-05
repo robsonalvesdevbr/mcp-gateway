@@ -353,8 +353,6 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 				var readOnly *bool
 				if cg.clientConfig != nil {
 					readOnly = cg.clientConfig.readOnly
-				} else {
-					readOnly = nil
 				}
 				args, env := cg.cp.argsAndEnv(cg.serverConfig, readOnly, targetConfig)
 
@@ -381,15 +379,11 @@ func (cg *clientGetter) GetClient(ctx context.Context) (mcpclient.Client, error)
 				},
 			}
 
-			// Use the original context instead of creating a timeout context
-			// to avoid cancellation issues
 			var ss *mcp.ServerSession
 			var server *mcp.Server
 			if cg.clientConfig != nil {
 				ss = cg.clientConfig.serverSession
 				server = cg.clientConfig.server
-			} else {
-				ss = nil
 			}
 			if err := client.Initialize(ctx, initParams, cg.cp.Verbose, ss, server); err != nil {
 				return nil, err
