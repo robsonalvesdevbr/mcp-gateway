@@ -47,7 +47,7 @@ func authorizeOauthCommand() *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVar(&opts.Scopes, "scopes", "", "OAuth scopes to request (comma-separated)")
+	flags.StringVar(&opts.Scopes, "scopes", "", "OAuth scopes to request (space-separated)")
 	return cmd
 }
 
