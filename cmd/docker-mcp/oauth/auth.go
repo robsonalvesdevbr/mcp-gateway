@@ -7,10 +7,10 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
 )
 
-func Authorize(ctx context.Context, app string) error {
+func Authorize(ctx context.Context, app string, scopes string) error {
 	client := desktop.NewAuthClient()
 
-	authResponse, err := client.PostOAuthApp(ctx, app, "")
+	authResponse, err := client.PostOAuthApp(ctx, app, scopes)
 	if err != nil {
 		return err
 	}
