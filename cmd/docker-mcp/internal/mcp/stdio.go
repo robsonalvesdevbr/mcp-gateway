@@ -19,6 +19,7 @@ type stdioMCPClient struct {
 	args        []string
 	client      *mcp.Client
 	session     *mcp.ClientSession
+	roots       []*mcp.Root
 	initialized atomic.Bool
 }
 
@@ -49,6 +50,8 @@ func (c *stdioMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParams
 		Version: "1.0.0",
 	}, notifications(ss, server))
 
+	c.client.AddRoots(c.roots...)
+
 	session, err := c.client.Connect(ctx, transport)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %w", err)
@@ -60,9 +63,23 @@ func (c *stdioMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParams
 	return nil
 }
 
+func (c *stdioMCPClient) AddRoots(roots []*mcp.Root) {
+	if c.initialized.Load() {
+		c.client.AddRoots(roots...)
+	}
+	c.roots = roots
+}
+
 func (c *stdioMCPClient) Session() *mcp.ClientSession {
 	if !c.initialized.Load() {
 		panic("client not initialize")
 	}
 	return c.session
+}
+
+func (c *stdioMCPClient) GetClient() *mcp.Client {
+	if !c.initialized.Load() {
+		panic("client not initialize")
+	}
+	return c.client
 }

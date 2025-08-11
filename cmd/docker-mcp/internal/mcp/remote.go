@@ -13,13 +13,14 @@ import (
 )
 
 type remoteMCPClient struct {
-	config      catalog.ServerConfig
+	config      *catalog.ServerConfig
 	client      *mcp.Client
 	session     *mcp.ClientSession
+	roots       []*mcp.Root
 	initialized atomic.Bool
 }
 
-func NewRemoteMCPClient(config catalog.ServerConfig) Client {
+func NewRemoteMCPClient(config *catalog.ServerConfig) Client {
 	return &remoteMCPClient{
 		config: config,
 	}
@@ -73,6 +74,8 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParam
 		Version: "1.0.0",
 	}, nil)
 
+	c.client.AddRoots(c.roots...)
+
 	session, err := c.client.Connect(ctx, mcpTransport)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %w", err)
@@ -85,6 +88,14 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParam
 }
 
 func (c *remoteMCPClient) Session() *mcp.ClientSession { return c.session }
+func (c *remoteMCPClient) GetClient() *mcp.Client      { return c.client }
+
+func (c *remoteMCPClient) AddRoots(roots []*mcp.Root) {
+	if c.initialized.Load() {
+		c.client.AddRoots(roots...)
+	}
+	c.roots = roots
+}
 
 func expandEnv(value string, secrets map[string]string) string {
 	return os.Expand(value, func(name string) string {
