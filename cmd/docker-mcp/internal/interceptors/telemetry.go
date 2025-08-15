@@ -38,6 +38,10 @@ func TelemetryMiddleware() mcp.Middleware[*mcp.ServerSession] {
 				ctx, span = telemetry.StartListSpan(ctx, "resources")
 				telemetry.RecordListResources(ctx)
 				tracked = true
+			case "resourceTemplates/list":
+				ctx, span = telemetry.StartListSpan(ctx, "resourceTemplates")
+				telemetry.RecordListResourceTemplates(ctx)
+				tracked = true
 			}
 			
 			// Call the next handler

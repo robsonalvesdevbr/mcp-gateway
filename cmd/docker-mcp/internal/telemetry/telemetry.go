@@ -59,8 +59,19 @@ var (
 	PromptsDiscovered   metric.Int64Gauge
 	ListPromptsCounter  metric.Int64Counter
 	
-	// Resource operation metrics (placeholder for Phase 2.2)
-	ListResourcesCounter metric.Int64Counter
+	// Resource operation metrics
+	ResourceReadCounter       metric.Int64Counter
+	ResourceDuration         metric.Float64Histogram
+	ResourceErrorCounter     metric.Int64Counter
+	ResourcesDiscovered      metric.Int64Gauge
+	ListResourcesCounter     metric.Int64Counter
+	
+	// Resource template operation metrics
+	ResourceTemplateReadCounter  metric.Int64Counter
+	ResourceTemplateDuration     metric.Float64Histogram
+	ResourceTemplateErrorCounter metric.Int64Counter
+	ResourceTemplatesDiscovered  metric.Int64Gauge
+	ListResourceTemplatesCounter metric.Int64Counter
 )
 
 // Init initializes the telemetry package with global providers
@@ -224,7 +235,47 @@ func Init() {
 		}
 	}
 	
-	// Initialize resource metrics (placeholder for Phase 2.2)
+	// Initialize resource metrics
+	ResourceReadCounter, err = meter.Int64Counter("mcp.resource.reads",
+		metric.WithDescription("Number of resource read operations"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resource read counter: %v\n", err)
+		}
+	}
+	
+	ResourceDuration, err = meter.Float64Histogram("mcp.resource.duration",
+		metric.WithDescription("Duration of resource operations"),
+		metric.WithUnit("ms"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resource duration histogram: %v\n", err)
+		}
+	}
+	
+	ResourceErrorCounter, err = meter.Int64Counter("mcp.resource.errors",
+		metric.WithDescription("Number of resource operation errors"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resource error counter: %v\n", err)
+		}
+	}
+	
+	ResourcesDiscovered, err = meter.Int64Gauge("mcp.resources.discovered",
+		metric.WithDescription("Number of resources discovered from servers"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resources discovered gauge: %v\n", err)
+		}
+	}
+	
 	ListResourcesCounter, err = meter.Int64Counter("mcp.list.resources",
 		metric.WithDescription("Number of list resources calls"),
 		metric.WithUnit("1"))
@@ -232,6 +283,57 @@ func Init() {
 		// Log error but don't fail
 		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating list resources counter: %v\n", err)
+		}
+	}
+	
+	// Initialize resource template metrics
+	ResourceTemplateReadCounter, err = meter.Int64Counter("mcp.resource_template.reads",
+		metric.WithDescription("Number of resource template read operations"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resource template read counter: %v\n", err)
+		}
+	}
+	
+	ResourceTemplateDuration, err = meter.Float64Histogram("mcp.resource_template.duration",
+		metric.WithDescription("Duration of resource template operations"),
+		metric.WithUnit("ms"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resource template duration histogram: %v\n", err)
+		}
+	}
+	
+	ResourceTemplateErrorCounter, err = meter.Int64Counter("mcp.resource_template.errors",
+		metric.WithDescription("Number of resource template operation errors"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resource template error counter: %v\n", err)
+		}
+	}
+	
+	ResourceTemplatesDiscovered, err = meter.Int64Gauge("mcp.resource_templates.discovered",
+		metric.WithDescription("Number of resource templates discovered from servers"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating resource templates discovered gauge: %v\n", err)
+		}
+	}
+	
+	ListResourceTemplatesCounter, err = meter.Int64Counter("mcp.list.resource_templates",
+		metric.WithDescription("Number of list resource templates calls"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating list resource templates counter: %v\n", err)
 		}
 	}
 	
@@ -319,6 +421,17 @@ func StartResourceSpan(ctx context.Context, resourceURI string, attrs ...attribu
 	}, attrs...)
 	
 	return tracer.Start(ctx, "mcp.resource.read",
+		trace.WithAttributes(allAttrs...),
+		trace.WithSpanKind(trace.SpanKindClient))
+}
+
+// StartResourceTemplateSpan starts a new span for a resource template operation
+func StartResourceTemplateSpan(ctx context.Context, uriTemplate string, attrs ...attribute.KeyValue) (context.Context, trace.Span) {
+	allAttrs := append([]attribute.KeyValue{
+		attribute.String("mcp.resource_template.uri", uriTemplate),
+	}, attrs...)
+	
+	return tracer.Start(ctx, "mcp.resource_template.read",
 		trace.WithAttributes(allAttrs...),
 		trace.WithSpanKind(trace.SpanKindClient))
 }
@@ -518,7 +631,7 @@ func RecordListPrompts(ctx context.Context) {
 	}
 }
 
-// RecordListResources records a list resources call (placeholder for Phase 2.2)
+// RecordListResources records a list resources call
 func RecordListResources(ctx context.Context) {
 	if ListResourcesCounter == nil {
 		return // Telemetry not initialized
@@ -529,4 +642,159 @@ func RecordListResources(ctx context.Context) {
 	}
 	
 	ListResourcesCounter.Add(ctx, 1)
+}
+
+// RecordResourceRead records a resource read operation
+func RecordResourceRead(ctx context.Context, resourceURI string, serverName string) {
+	if ResourceReadCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resource read: %s from server %s\n", resourceURI, serverName)
+	}
+	
+	ResourceReadCounter.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("mcp.resource.uri", resourceURI),
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordResourceDuration records the duration of a resource operation
+func RecordResourceDuration(ctx context.Context, resourceURI string, serverName string, durationMs float64) {
+	if ResourceDuration == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resource duration: %s from %s took %.2fms\n", 
+			resourceURI, serverName, durationMs)
+	}
+	
+	ResourceDuration.Record(ctx, durationMs,
+		metric.WithAttributes(
+			attribute.String("mcp.resource.uri", resourceURI),
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordResourceError records a resource operation error
+func RecordResourceError(ctx context.Context, resourceURI string, serverName string, errorType string) {
+	if ResourceErrorCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resource error: %s from %s, error: %s\n", 
+			resourceURI, serverName, errorType)
+	}
+	
+	ResourceErrorCounter.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("mcp.resource.uri", resourceURI),
+			attribute.String("mcp.server.origin", serverName),
+			attribute.String("mcp.error.type", errorType),
+		))
+}
+
+// RecordResourceList records the number of resources discovered from a server
+func RecordResourceList(ctx context.Context, serverName string, resourceCount int) {
+	if ResourcesDiscovered == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resources discovered: %d from server %s\n", 
+			resourceCount, serverName)
+	}
+	
+	ResourcesDiscovered.Record(ctx, int64(resourceCount),
+		metric.WithAttributes(
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordListResourceTemplates records a list resource templates call
+func RecordListResourceTemplates(ctx context.Context) {
+	if ListResourceTemplatesCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List resource templates called\n")
+	}
+	
+	ListResourceTemplatesCounter.Add(ctx, 1)
+}
+
+// RecordResourceTemplateRead records a resource template read operation
+func RecordResourceTemplateRead(ctx context.Context, uriTemplate string, serverName string) {
+	if ResourceTemplateReadCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resource template read: %s from server %s\n", uriTemplate, serverName)
+	}
+	
+	ResourceTemplateReadCounter.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("mcp.resource_template.uri", uriTemplate),
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordResourceTemplateDuration records the duration of a resource template operation
+func RecordResourceTemplateDuration(ctx context.Context, uriTemplate string, serverName string, durationMs float64) {
+	if ResourceTemplateDuration == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resource template duration: %s from %s took %.2fms\n", 
+			uriTemplate, serverName, durationMs)
+	}
+	
+	ResourceTemplateDuration.Record(ctx, durationMs,
+		metric.WithAttributes(
+			attribute.String("mcp.resource_template.uri", uriTemplate),
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordResourceTemplateError records a resource template operation error
+func RecordResourceTemplateError(ctx context.Context, uriTemplate string, serverName string, errorType string) {
+	if ResourceTemplateErrorCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resource template error: %s from %s, error: %s\n", 
+			uriTemplate, serverName, errorType)
+	}
+	
+	ResourceTemplateErrorCounter.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("mcp.resource_template.uri", uriTemplate),
+			attribute.String("mcp.server.origin", serverName),
+			attribute.String("mcp.error.type", errorType),
+		))
+}
+
+// RecordResourceTemplateList records the number of resource templates discovered from a server
+func RecordResourceTemplateList(ctx context.Context, serverName string, templateCount int) {
+	if ResourceTemplatesDiscovered == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Resource templates discovered: %d from server %s\n", 
+			templateCount, serverName)
+	}
+	
+	ResourceTemplatesDiscovered.Record(ctx, int64(templateCount),
+		metric.WithAttributes(
+			attribute.String("mcp.server.origin", serverName),
+		))
 }

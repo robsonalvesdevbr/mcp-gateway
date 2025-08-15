@@ -196,12 +196,62 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig *catalog.ServerConfig, ser
 
 func (g *Gateway) mcpServerResourceHandler(serverConfig *catalog.ServerConfig, server *mcp.Server) mcp.ResourceHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.ReadResourceParams) (*mcp.ReadResourceResult, error) {
+		// Debug logging to stderr
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-HANDLER] Resource read received: %s from server: %s\n", params.URI, serverConfig.Name)
+		}
+		
+		// Start telemetry span for resource operation
+		startTime := time.Now()
+		serverType := inferServerType(serverConfig)
+		
+		// Build span attributes - include server-specific attributes
+		spanAttrs := []attribute.KeyValue{
+			attribute.String("mcp.server.origin", serverConfig.Name),
+			attribute.String("mcp.server.type", serverType),
+		}
+		
+		// Add additional server-specific attributes
+		if serverConfig.Spec.Image != "" {
+			spanAttrs = append(spanAttrs, attribute.String("mcp.server.image", serverConfig.Spec.Image))
+		}
+		if serverConfig.Spec.SSEEndpoint != "" {
+			spanAttrs = append(spanAttrs, attribute.String("mcp.server.endpoint", serverConfig.Spec.SSEEndpoint))
+		}
+		if serverConfig.Spec.Remote.URL != "" {
+			spanAttrs = append(spanAttrs, attribute.String("mcp.server.remote_url", serverConfig.Spec.Remote.URL))
+		}
+		
+		ctx, span := telemetry.StartResourceSpan(ctx, params.URI, spanAttrs...)
+		defer span.End()
+		
+		// Record counter with server attribution
+		telemetry.RecordResourceRead(ctx, params.URI, serverConfig.Name)
+		
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss, server))
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "Failed to acquire client")
+			telemetry.RecordResourceError(ctx, params.URI, serverConfig.Name, "acquire_failed")
 			return nil, err
 		}
 		defer g.clientPool.ReleaseClient(client)
 
-		return client.Session().ReadResource(ctx, params)
+		result, err := client.Session().ReadResource(ctx, params)
+		
+		// Record duration regardless of error
+		duration := time.Since(startTime).Milliseconds()
+		telemetry.RecordResourceDuration(ctx, params.URI, serverConfig.Name, float64(duration))
+		
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "Resource read failed")
+			telemetry.RecordResourceError(ctx, params.URI, serverConfig.Name, "read_failed")
+			return nil, err
+		}
+		
+		// Success
+		span.SetStatus(codes.Ok, "")
+		return result, nil
 	}
 }

@@ -101,6 +101,9 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 
 				resources, err := client.Session().ListResources(ctx, &mcp.ListResourcesParams{})
 				if err == nil {
+					// Record the number of resources discovered from this server
+					telemetry.RecordResourceList(ctx, serverConfig.Name, len(resources.Resources))
+					
 					for _, resource := range resources.Resources {
 						capabilities.Resources = append(capabilities.Resources, ResourceRegistration{
 							Resource: resource,
@@ -111,6 +114,9 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 
 				resourceTemplates, err := client.Session().ListResourceTemplates(ctx, &mcp.ListResourceTemplatesParams{})
 				if err == nil {
+					// Record the number of resource templates discovered from this server
+					telemetry.RecordResourceTemplateList(ctx, serverConfig.Name, len(resourceTemplates.ResourceTemplates))
+					
 					for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
 						capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ResourceTemplateRegistration{
 							ResourceTemplate: *resourceTemplate,
