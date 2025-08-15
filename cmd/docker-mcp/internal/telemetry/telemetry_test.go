@@ -253,10 +253,10 @@ func TestRecordToolError(t *testing.T) {
 	ctx := context.Background()
 	toolName := "test_tool"
 	serverName := "test_server"
-	errorType := "connection_refused"
+	serverType := "docker"
 
-	// Record a tool error
-	RecordToolError(ctx, toolName, serverName, errorType)
+	// Record a tool error (nil span is ok for testing)
+	RecordToolError(ctx, nil, serverName, serverType, toolName)
 
 	// Collect metrics
 	var rm metricdata.ResourceMetrics
@@ -278,11 +278,11 @@ func TestRecordToolError(t *testing.T) {
 				toolNameAttr, _ := attrs.Value(attribute.Key("mcp.tool.name"))
 				assert.Equal(t, toolName, toolNameAttr.AsString())
 				
-				serverOriginAttr, _ := attrs.Value(attribute.Key("mcp.server.origin"))
-				assert.Equal(t, serverName, serverOriginAttr.AsString())
+				serverNameAttr, _ := attrs.Value(attribute.Key("mcp.server.name"))
+				assert.Equal(t, serverName, serverNameAttr.AsString())
 				
-				errorTypeAttr, _ := attrs.Value(attribute.Key("error.type"))
-				assert.Equal(t, errorType, errorTypeAttr.AsString())
+				serverTypeAttr, _ := attrs.Value(attribute.Key("mcp.server.type"))
+				assert.Equal(t, serverType, serverTypeAttr.AsString())
 			}
 		}
 	}
