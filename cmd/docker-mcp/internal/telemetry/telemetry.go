@@ -37,6 +37,12 @@ var (
 	
 	// ToolErrorCounter tracks tool call errors by type and server
 	ToolErrorCounter metric.Int64Counter
+	
+	// GatewayStartCounter tracks gateway starts
+	GatewayStartCounter metric.Int64Counter
+	
+	// ListToolsCounter tracks list tools calls
+	ListToolsCounter metric.Int64Counter
 )
 
 // Init initializes the telemetry package with global providers
@@ -86,6 +92,26 @@ func Init() {
 		// Log error but don't fail
 		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating tool error counter: %v\n", err)
+		}
+	}
+	
+	GatewayStartCounter, err = meter.Int64Counter("mcp.gateway.starts",
+		metric.WithDescription("Number of gateway starts"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating gateway start counter: %v\n", err)
+		}
+	}
+	
+	ListToolsCounter, err = meter.Int64Counter("mcp.list.tools",
+		metric.WithDescription("Number of list tools calls"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating list tools counter: %v\n", err)
 		}
 	}
 	
@@ -176,4 +202,33 @@ func StartInterceptorSpan(ctx context.Context, when, interceptorType string, att
 	return tracer.Start(ctx, spanName,
 		trace.WithAttributes(allAttrs...),
 		trace.WithSpanKind(trace.SpanKindInternal))
+}
+
+// RecordGatewayStart records a gateway start event
+func RecordGatewayStart(ctx context.Context, transportMode string) {
+	if GatewayStartCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Gateway started with transport: %s\n", transportMode)
+	}
+	
+	GatewayStartCounter.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("mcp.gateway.transport", transportMode),
+		))
+}
+
+// RecordListTools records a list tools call
+func RecordListTools(ctx context.Context) {
+	if ListToolsCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List tools called\n")
+	}
+	
+	ListToolsCounter.Add(ctx, 1)
 }

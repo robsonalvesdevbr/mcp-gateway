@@ -77,6 +77,13 @@ func (g *Gateway) Run(ctx context.Context) error {
 	// Initialize telemetry
 	telemetry.Init()
 	
+	// Record gateway start
+	transportMode := "stdio"
+	if g.Port != 0 {
+		transportMode = "sse"
+	}
+	telemetry.RecordGatewayStart(ctx, transportMode)
+	
 	defer g.clientPool.Close()
 	defer func() {
 		// Clean up all session cache entries
@@ -149,7 +156,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 		HasTools:     true,
 	})
 
-	// Add interceptor middleware to the server
+	// Add interceptor middleware to the server (includes telemetry)
 	middlewares := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, parsedInterceptors)
 	if len(middlewares) > 0 {
 		g.mcpServer.AddReceivingMiddleware(middlewares...)

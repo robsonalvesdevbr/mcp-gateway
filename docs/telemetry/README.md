@@ -41,6 +41,8 @@ Docker CLI
 
 - **Scope**: `github.com/docker/mcp-gateway`
 - **Metrics Exported**:
+  - `mcp.gateway.starts` (Counter) - Gateway startup events with transport mode
+  - `mcp.list.tools` (Counter) - Number of list tools calls from clients
   - `mcp.tool.calls` (Counter) - Number of tool calls with server/tool attribution
   - `mcp.tool.duration` (Histogram) - Tool execution time in milliseconds
   - `mcp.tool.errors` (Counter) - Failed tool calls with error attribution
@@ -109,10 +111,20 @@ cd docs/telemetry/testing
 ### Manual Testing
 
 1. **Start an OTEL Collector**:
+
+For debug output only:
 ```bash
 docker run --rm -d --name otel-debug \
   -p 4317:4317 -p 4318:4318 \
   -v docs/telemetry/testing/otel-collector-config.yaml:/config.yaml \
+  otel/opentelemetry-collector:latest --config=/config.yaml
+```
+
+For Prometheus export (port 8889):
+```bash
+docker run --rm -d --name otel-prometheus \
+  -p 4317:4317 -p 4318:4318 -p 8889:8889 \
+  -v docs/telemetry/testing/otel-collector-prometheus.yaml:/config.yaml \
   otel/opentelemetry-collector:latest --config=/config.yaml
 ```
 
@@ -194,8 +206,10 @@ Value: 2
 
 ## Implementation Details
 
-### Phase 1: Tool Call Telemetry (Completed)
+### Phase 1: Core Telemetry (Completed)
 - ✅ Basic telemetry package setup
+- ✅ Gateway startup metrics
+- ✅ List tools metrics
 - ✅ Tool handler instrumentation
 - ✅ Server type inference
 - ✅ Debug logging capability
@@ -214,10 +228,11 @@ Value: 2
 
 ```
 docs/telemetry/
-├── README.md                      # This file
+├── README.md                           # This file
 └── testing/
-    ├── otel-collector-config.yaml # Collector configuration for testing
-    └── test-telemetry.sh          # Automated test script
+    ├── otel-collector-config.yaml      # Basic collector with debug output
+    ├── otel-collector-prometheus.yaml  # Collector with Prometheus exporter
+    └── test-telemetry.sh               # Automated test script
 ```
 
 ## Development Guidelines

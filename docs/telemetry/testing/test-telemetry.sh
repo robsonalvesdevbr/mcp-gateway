@@ -63,17 +63,42 @@ start_collector() {
         sleep 2
     fi
     
+    # Ask which config to use (with timeout for non-interactive mode)
+    if [ -t 0 ]; then
+        echo "Select collector configuration:"
+        echo "1) Debug output only (default)"
+        echo "2) Debug + Prometheus export (port 8889)"
+        read -t 5 -p "Choice [1]: " config_choice
+        config_choice=${config_choice:-1}
+    else
+        config_choice=1
+    fi
+    
+    if [ "$config_choice" = "2" ]; then
+        CONFIG_FILE="otel-collector-prometheus.yaml"
+        EXTRA_PORTS="-p 8889:8889"
+        echo "Using Prometheus configuration..."
+    else
+        CONFIG_FILE="otel-collector-config.yaml"
+        EXTRA_PORTS=""
+        echo "Using debug-only configuration..."
+    fi
+    
     # Start collector
     docker run --rm -d \
         --name otel-collector-debug \
         -p 4317:4317 \
         -p 4318:4318 \
-        -v "${SCRIPT_DIR}/otel-collector-config.yaml:/etc/otel-collector-config.yaml" \
+        ${EXTRA_PORTS} \
+        -v "${SCRIPT_DIR}/${CONFIG_FILE}:/etc/otel-collector-config.yaml" \
         otel/opentelemetry-collector:latest \
         --config=/etc/otel-collector-config.yaml
     
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✅ Collector started on localhost:4317 (gRPC) and localhost:4318 (HTTP)${NC}"
+        if [ "$config_choice" = "2" ]; then
+            echo -e "${GREEN}   Prometheus metrics available at http://localhost:8889/metrics${NC}"
+        fi
     else
         echo -e "${RED}❌ Failed to start collector${NC}"
         exit 1
@@ -222,7 +247,8 @@ if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
     echo ""
     echo "Options:"
     echo "  --full        Run full test suite"
-    echo "  --start       Start collector only"
+    echo "  --start       Start collector only (debug mode)"
+    echo "  --start-prom  Start collector with Prometheus export"
     echo "  --logs        View collector logs"
     echo "  --cleanup     Stop and remove collector"
     echo "  --help        Show this help"
@@ -236,6 +262,11 @@ elif [ "$1" == "--full" ]; then
     cleanup
 elif [ "$1" == "--start" ]; then
     check_prerequisites
+    config_choice=1
+    start_collector
+elif [ "$1" == "--start-prom" ]; then
+    check_prerequisites
+    config_choice=2
     start_collector
 elif [ "$1" == "--logs" ]; then
     view_logs
