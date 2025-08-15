@@ -43,6 +43,11 @@ var (
 	
 	// ListToolsCounter tracks list tools calls
 	ListToolsCounter metric.Int64Counter
+	
+	// Catalog operation metrics
+	CatalogOperationsCounter metric.Int64Counter
+	CatalogOperationDuration metric.Float64Histogram
+	CatalogServersGauge      metric.Int64Gauge
 )
 
 // Init initializes the telemetry package with global providers
@@ -112,6 +117,36 @@ func Init() {
 		// Log error but don't fail
 		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating list tools counter: %v\n", err)
+		}
+	}
+	
+	CatalogOperationsCounter, err = meter.Int64Counter("mcp.catalog.operations",
+		metric.WithDescription("Number of catalog operations"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating catalog operations counter: %v\n", err)
+		}
+	}
+	
+	CatalogOperationDuration, err = meter.Float64Histogram("mcp.catalog.operation.duration",
+		metric.WithDescription("Duration of catalog operations"),
+		metric.WithUnit("ms"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating catalog duration histogram: %v\n", err)
+		}
+	}
+	
+	CatalogServersGauge, err = meter.Int64Gauge("mcp.catalog.servers",
+		metric.WithDescription("Number of servers in catalogs"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating catalog servers gauge: %v\n", err)
 		}
 	}
 	
@@ -231,4 +266,41 @@ func RecordListTools(ctx context.Context) {
 	}
 	
 	ListToolsCounter.Add(ctx, 1)
+}
+
+// RecordCatalogOperation records a catalog operation with duration
+func RecordCatalogOperation(ctx context.Context, operation string, catalogName string, durationMs float64, success bool) {
+	if CatalogOperationsCounter == nil || CatalogOperationDuration == nil {
+		return // Telemetry not initialized
+	}
+	
+	attrs := []attribute.KeyValue{
+		attribute.String("mcp.catalog.operation", operation),
+		attribute.String("mcp.catalog.name", catalogName),
+		attribute.Bool("mcp.catalog.success", success),
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Catalog operation: %s on %s, duration: %.2fms, success: %v\n", 
+			operation, catalogName, durationMs, success)
+	}
+	
+	CatalogOperationsCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
+	CatalogOperationDuration.Record(ctx, durationMs, metric.WithAttributes(attrs...))
+}
+
+// RecordCatalogServers records the number of servers in catalogs
+func RecordCatalogServers(ctx context.Context, catalogName string, serverCount int64) {
+	if CatalogServersGauge == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Catalog %s has %d servers\n", catalogName, serverCount)
+	}
+	
+	CatalogServersGauge.Record(ctx, serverCount,
+		metric.WithAttributes(
+			attribute.String("mcp.catalog.name", catalogName),
+		))
 }
