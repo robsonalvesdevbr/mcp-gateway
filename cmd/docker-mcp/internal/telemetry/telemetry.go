@@ -2,6 +2,8 @@ package telemetry
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -45,6 +47,15 @@ func Init() {
 	// Get meter from global provider (set by Docker CLI)
 	meter = otel.GetMeterProvider().Meter(MeterName)
 	
+	// Debug logging to stderr - remove in production
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Init called\n")
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] TracerName=%s, MeterName=%s\n", TracerName, MeterName)
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Tracer provider type: %T\n", otel.GetTracerProvider())
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Meter provider type: %T\n", otel.GetMeterProvider())
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] OTEL endpoint env: %s\n", os.Getenv("DOCKER_CLI_OTEL_EXPORTER_OTLP_ENDPOINT"))
+	}
+	
 	// Create metrics
 	var err error
 	
@@ -53,7 +64,9 @@ func Init() {
 		metric.WithUnit("1"))
 	if err != nil {
 		// Log error but don't fail - telemetry should not break the application
-		// In production, we'd use proper logging here
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating tool call counter: %v\n", err)
+		}
 	}
 	
 	ToolCallDuration, err = meter.Float64Histogram("mcp.tool.duration",
@@ -61,6 +74,9 @@ func Init() {
 		metric.WithUnit("ms"))
 	if err != nil {
 		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating tool duration histogram: %v\n", err)
+		}
 	}
 	
 	ToolErrorCounter, err = meter.Int64Counter("mcp.tool.errors",
@@ -68,6 +84,13 @@ func Init() {
 		metric.WithUnit("1"))
 	if err != nil {
 		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating tool error counter: %v\n", err)
+		}
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Metrics created successfully\n")
 	}
 }
 
