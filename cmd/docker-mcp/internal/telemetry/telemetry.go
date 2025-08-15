@@ -48,6 +48,19 @@ var (
 	CatalogOperationsCounter metric.Int64Counter
 	CatalogOperationDuration metric.Float64Histogram
 	CatalogServersGauge      metric.Int64Gauge
+	
+	// Tool discovery metrics
+	ToolsDiscovered metric.Int64Gauge
+	
+	// Prompt operation metrics
+	PromptGetCounter    metric.Int64Counter
+	PromptDuration      metric.Float64Histogram
+	PromptErrorCounter  metric.Int64Counter
+	PromptsDiscovered   metric.Int64Gauge
+	ListPromptsCounter  metric.Int64Counter
+	
+	// Resource operation metrics (placeholder for Phase 2.2)
+	ListResourcesCounter metric.Int64Counter
 )
 
 // Init initializes the telemetry package with global providers
@@ -120,6 +133,16 @@ func Init() {
 		}
 	}
 	
+	ToolsDiscovered, err = meter.Int64Gauge("mcp.tools.discovered",
+		metric.WithDescription("Number of tools discovered from servers"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating tools discovered gauge: %v\n", err)
+		}
+	}
+	
 	CatalogOperationsCounter, err = meter.Int64Counter("mcp.catalog.operations",
 		metric.WithDescription("Number of catalog operations"),
 		metric.WithUnit("1"))
@@ -147,6 +170,68 @@ func Init() {
 		// Log error but don't fail
 		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating catalog servers gauge: %v\n", err)
+		}
+	}
+	
+	// Initialize prompt metrics
+	PromptGetCounter, err = meter.Int64Counter("mcp.prompt.gets",
+		metric.WithDescription("Number of prompt get operations"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating prompt get counter: %v\n", err)
+		}
+	}
+	
+	PromptDuration, err = meter.Float64Histogram("mcp.prompt.duration",
+		metric.WithDescription("Duration of prompt operations"),
+		metric.WithUnit("ms"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating prompt duration histogram: %v\n", err)
+		}
+	}
+	
+	PromptErrorCounter, err = meter.Int64Counter("mcp.prompt.errors",
+		metric.WithDescription("Number of prompt operation errors"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating prompt error counter: %v\n", err)
+		}
+	}
+	
+	PromptsDiscovered, err = meter.Int64Gauge("mcp.prompts.discovered",
+		metric.WithDescription("Number of prompts discovered from servers"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating prompts discovered gauge: %v\n", err)
+		}
+	}
+	
+	ListPromptsCounter, err = meter.Int64Counter("mcp.list.prompts",
+		metric.WithDescription("Number of list prompts calls"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating list prompts counter: %v\n", err)
+		}
+	}
+	
+	// Initialize resource metrics (placeholder for Phase 2.2)
+	ListResourcesCounter, err = meter.Int64Counter("mcp.list.resources",
+		metric.WithDescription("Number of list resources calls"),
+		metric.WithUnit("1"))
+	if err != nil {
+		// Log error but don't fail
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Error creating list resources counter: %v\n", err)
 		}
 	}
 	
@@ -214,6 +299,19 @@ func StartPromptSpan(ctx context.Context, promptName string, attrs ...attribute.
 		trace.WithSpanKind(trace.SpanKindClient))
 }
 
+// StartListSpan starts a new span for a list operation (tools, prompts, resources)
+func StartListSpan(ctx context.Context, listType string, attrs ...attribute.KeyValue) (context.Context, trace.Span) {
+	allAttrs := append([]attribute.KeyValue{
+		attribute.String("mcp.list.type", listType),
+	}, attrs...)
+	
+	spanName := "mcp.list." + listType
+	
+	return tracer.Start(ctx, spanName,
+		trace.WithAttributes(allAttrs...),
+		trace.WithSpanKind(trace.SpanKindServer))
+}
+
 // StartResourceSpan starts a new span for a resource operation
 func StartResourceSpan(ctx context.Context, resourceURI string, attrs ...attribute.KeyValue) (context.Context, trace.Span) {
 	allAttrs := append([]attribute.KeyValue{
@@ -258,14 +356,38 @@ func RecordGatewayStart(ctx context.Context, transportMode string) {
 // RecordListTools records a list tools call
 func RecordListTools(ctx context.Context) {
 	if ListToolsCounter == nil {
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] WARNING: ListToolsCounter is nil - metrics not initialized\n")
+		}
 		return // Telemetry not initialized
 	}
 	
 	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
-		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List tools called\n")
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List tools called - adding to counter\n")
 	}
 	
 	ListToolsCounter.Add(ctx, 1)
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List tools counter incremented\n")
+	}
+}
+
+// RecordToolList records the number of tools discovered from a server
+func RecordToolList(ctx context.Context, serverName string, toolCount int) {
+	if ToolsDiscovered == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Tools discovered: %d from server %s\n", 
+			toolCount, serverName)
+	}
+	
+	ToolsDiscovered.Record(ctx, int64(toolCount),
+		metric.WithAttributes(
+			attribute.String("mcp.server.origin", serverName),
+		))
 }
 
 // RecordCatalogOperation records a catalog operation with duration
@@ -303,4 +425,108 @@ func RecordCatalogServers(ctx context.Context, catalogName string, serverCount i
 		metric.WithAttributes(
 			attribute.String("mcp.catalog.name", catalogName),
 		))
+}
+
+// RecordPromptGet records a prompt get operation
+func RecordPromptGet(ctx context.Context, promptName string, serverName string) {
+	if PromptGetCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Prompt get: %s from server %s\n", promptName, serverName)
+	}
+	
+	PromptGetCounter.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("mcp.prompt.name", promptName),
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordPromptDuration records the duration of a prompt operation
+func RecordPromptDuration(ctx context.Context, promptName string, serverName string, durationMs float64) {
+	if PromptDuration == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Prompt duration: %s from %s took %.2fms\n", 
+			promptName, serverName, durationMs)
+	}
+	
+	PromptDuration.Record(ctx, durationMs,
+		metric.WithAttributes(
+			attribute.String("mcp.prompt.name", promptName),
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordPromptError records a prompt operation error
+func RecordPromptError(ctx context.Context, promptName string, serverName string, errorType string) {
+	if PromptErrorCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Prompt error: %s from %s, error: %s\n", 
+			promptName, serverName, errorType)
+	}
+	
+	PromptErrorCounter.Add(ctx, 1,
+		metric.WithAttributes(
+			attribute.String("mcp.prompt.name", promptName),
+			attribute.String("mcp.server.origin", serverName),
+			attribute.String("mcp.error.type", errorType),
+		))
+}
+
+// RecordPromptList records the number of prompts discovered from a server
+func RecordPromptList(ctx context.Context, serverName string, promptCount int) {
+	if PromptsDiscovered == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Prompts discovered: %d from server %s\n", 
+			promptCount, serverName)
+	}
+	
+	PromptsDiscovered.Record(ctx, int64(promptCount),
+		metric.WithAttributes(
+			attribute.String("mcp.server.origin", serverName),
+		))
+}
+
+// RecordListPrompts records a list prompts call (similar to RecordListTools)
+func RecordListPrompts(ctx context.Context) {
+	if ListPromptsCounter == nil {
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] WARNING: ListPromptsCounter is nil - metrics not initialized\n")
+		}
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List prompts called - adding to counter\n")
+	}
+	
+	ListPromptsCounter.Add(ctx, 1)
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List prompts counter incremented\n")
+	}
+}
+
+// RecordListResources records a list resources call (placeholder for Phase 2.2)
+func RecordListResources(ctx context.Context) {
+	if ListResourcesCounter == nil {
+		return // Telemetry not initialized
+	}
+	
+	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] List resources called\n")
+	}
+	
+	ListResourcesCounter.Add(ctx, 1)
 }

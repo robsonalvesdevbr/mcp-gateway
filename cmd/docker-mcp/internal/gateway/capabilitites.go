@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"golang.org/x/sync/errgroup"
@@ -71,6 +72,9 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				if err != nil {
 					logf("  > Can't list tools %s: %s", serverConfig.Name, err)
 				} else {
+					// Record the number of tools discovered from this server
+					telemetry.RecordToolList(ctx, serverConfig.Name, len(tools.Tools))
+					
 					for _, tool := range tools.Tools {
 						if !isToolEnabled(configuration, serverConfig.Name, serverConfig.Spec.Image, tool.Name, g.ToolNames) {
 							continue
@@ -84,6 +88,9 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 
 				prompts, err := client.Session().ListPrompts(ctx, &mcp.ListPromptsParams{})
 				if err == nil {
+					// Record the number of prompts discovered from this server
+					telemetry.RecordPromptList(ctx, serverConfig.Name, len(prompts.Prompts))
+					
 					for _, prompt := range prompts.Prompts {
 						capabilities.Prompts = append(capabilities.Prompts, PromptRegistration{
 							Prompt:  prompt,

@@ -136,13 +136,61 @@ func (g *Gateway) mcpServerToolHandler(serverConfig *catalog.ServerConfig, serve
 
 func (g *Gateway) mcpServerPromptHandler(serverConfig *catalog.ServerConfig, server *mcp.Server) mcp.PromptHandler {
 	return func(ctx context.Context, ss *mcp.ServerSession, params *mcp.GetPromptParams) (*mcp.GetPromptResult, error) {
+		// Debug logging to stderr
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-HANDLER] Prompt get received: %s from server: %s\n", params.Name, serverConfig.Name)
+		}
+		
+		// Start telemetry span for prompt operation
+		startTime := time.Now()
+		serverType := inferServerType(serverConfig)
+		
+		// Build span attributes
+		spanAttrs := []attribute.KeyValue{
+			attribute.String("mcp.server.name", serverConfig.Name),
+			attribute.String("mcp.server.type", serverType),
+		}
+		
+		// Add additional server-specific attributes
+		if serverConfig.Spec.Image != "" {
+			spanAttrs = append(spanAttrs, attribute.String("mcp.server.image", serverConfig.Spec.Image))
+		}
+		if serverConfig.Spec.SSEEndpoint != "" {
+			spanAttrs = append(spanAttrs, attribute.String("mcp.server.endpoint", serverConfig.Spec.SSEEndpoint))
+		} else if serverConfig.Spec.Remote.URL != "" {
+			spanAttrs = append(spanAttrs, attribute.String("mcp.server.endpoint", serverConfig.Spec.Remote.URL))
+		}
+		
+		ctx, span := telemetry.StartPromptSpan(ctx, params.Name, spanAttrs...)
+		defer span.End()
+		
+		// Record prompt get counter
+		telemetry.RecordPromptGet(ctx, params.Name, serverConfig.Name)
+		
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss, server))
 		if err != nil {
+			span.RecordError(err)
+			telemetry.RecordPromptError(ctx, params.Name, serverConfig.Name, "acquire_failed")
+			span.SetStatus(codes.Error, "Failed to acquire client")
 			return nil, err
 		}
 		defer g.clientPool.ReleaseClient(client)
 
-		return client.Session().GetPrompt(ctx, params)
+		result, err := client.Session().GetPrompt(ctx, params)
+		
+		// Record duration
+		duration := time.Since(startTime).Milliseconds()
+		telemetry.RecordPromptDuration(ctx, params.Name, serverConfig.Name, float64(duration))
+		
+		if err != nil {
+			span.RecordError(err)
+			telemetry.RecordPromptError(ctx, params.Name, serverConfig.Name, "execution_failed")
+			span.SetStatus(codes.Error, "Prompt execution failed")
+			return nil, err
+		}
+		
+		span.SetStatus(codes.Ok, "")
+		return result, nil
 	}
 }
 
