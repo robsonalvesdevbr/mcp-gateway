@@ -14,6 +14,7 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/health"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/interceptors"
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 )
 
 type ServerSessionCache struct {
@@ -73,6 +74,9 @@ func NewGateway(config Config, docker docker.Client) *Gateway {
 }
 
 func (g *Gateway) Run(ctx context.Context) error {
+	// Initialize telemetry
+	telemetry.Init()
+	
 	defer g.clientPool.Close()
 	defer func() {
 		// Clean up all session cache entries

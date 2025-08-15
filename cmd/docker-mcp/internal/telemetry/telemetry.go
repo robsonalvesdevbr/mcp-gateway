@@ -98,16 +98,24 @@ func StartCommandSpan(ctx context.Context, commandPath string, attrs ...attribut
 }
 
 // RecordToolError records a tool error with appropriate attributes
-func RecordToolError(ctx context.Context, toolName, serverName, errorType string) {
+func RecordToolError(ctx context.Context, span trace.Span, serverName, serverType, toolName string) {
 	if ToolErrorCounter == nil {
 		return // Telemetry not initialized
+	}
+	
+	// Record error in span if provided
+	if span != nil {
+		span.RecordError(nil, trace.WithAttributes(
+			attribute.String("mcp.server.name", serverName),
+			attribute.String("mcp.server.type", serverType),
+		))
 	}
 	
 	ToolErrorCounter.Add(ctx, 1,
 		metric.WithAttributes(
 			attribute.String("mcp.tool.name", toolName),
-			attribute.String("mcp.server.origin", serverName),
-			attribute.String("error.type", errorType),
+			attribute.String("mcp.server.name", serverName),
+			attribute.String("mcp.server.type", serverType),
 		))
 }
 
