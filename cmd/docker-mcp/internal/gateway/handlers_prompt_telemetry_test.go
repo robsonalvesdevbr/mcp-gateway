@@ -264,22 +264,26 @@ func TestPromptHandlerTelemetry(t *testing.T) {
 				config: &catalog.ServerConfig{
 					Name: "sse-test",
 					Spec: catalog.Server{
-						SSEEndpoint: "http://example.com/sse",
+						Remote: catalog.Remote{
+							URL:       "http://example.com/sse",
+							Transport: "sse",
+						},
 					},
 				},
 				expectedType: "sse",
 			},
 			{
-				name: "Remote URL server",
+				name: "HTTP streaming server",
 				config: &catalog.ServerConfig{
-					Name: "remote-test",
+					Name: "streaming-test",
 					Spec: catalog.Server{
 						Remote: catalog.Remote{
-							URL: "http://example.com/remote",
+							URL:       "http://example.com/remote",
+							Transport: "http",
 						},
 					},
 				},
-				expectedType: "sse",
+				expectedType: "streaming",
 			},
 			{
 				name: "Docker server",
@@ -292,14 +296,14 @@ func TestPromptHandlerTelemetry(t *testing.T) {
 				expectedType: "docker",
 			},
 			{
-				name: "Stdio server",
+				name: "Command server (unknown type)",
 				config: &catalog.ServerConfig{
-					Name: "stdio-test",
+					Name: "command-test",
 					Spec: catalog.Server{
 						Command: []string{"prompt-server", "--stdio"},
 					},
 				},
-				expectedType: "stdio",
+				expectedType: "unknown",  // Command field doesn't determine type in new implementation
 			},
 			{
 				name: "Unknown server",

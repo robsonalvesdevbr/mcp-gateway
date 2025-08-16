@@ -53,21 +53,37 @@ func TestInferServerType(t *testing.T) {
 			name: "SSE endpoint",
 			serverConfig: &catalog.ServerConfig{
 				Spec: catalog.Server{
-					SSEEndpoint: "http://example.com/sse",
+					Remote: catalog.Remote{
+						URL:       "http://example.com/sse",
+						Transport: "sse",
+					},
 				},
 			},
 			expected: "sse",
 		},
 		{
-			name: "Remote URL",
+			name: "Remote URL with SSE transport",
 			serverConfig: &catalog.ServerConfig{
 				Spec: catalog.Server{
 					Remote: catalog.Remote{
-						URL: "http://example.com/remote",
+						URL:       "http://example.com/remote",
+						Transport: "sse",
 					},
 				},
 			},
 			expected: "sse",
+		},
+		{
+			name: "HTTP streaming transport",
+			serverConfig: &catalog.ServerConfig{
+				Spec: catalog.Server{
+					Remote: catalog.Remote{
+						URL:       "http://example.com/streaming",
+						Transport: "http",
+					},
+				},
+			},
+			expected: "streaming",
 		},
 		{
 			name: "Docker image",
@@ -85,7 +101,7 @@ func TestInferServerType(t *testing.T) {
 					Command: []string{"node", "server.js"},
 				},
 			},
-			expected: "stdio",
+			expected: "unknown",  // Command field doesn't determine type in new implementation
 		},
 		{
 			name: "Unknown type",
