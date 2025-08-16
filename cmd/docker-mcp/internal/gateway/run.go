@@ -137,7 +137,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 			g.ListRoots(ctx, ss)
 		},
 		CompletionHandler: nil,
-		InitializedHandler: func(ctx context.Context, ss *mcp.ServerSession, _ *mcp.InitializedParams) {
+		InitializedHandler: func(_ context.Context, ss *mcp.ServerSession, _ *mcp.InitializedParams) {
 			log("- Client initialized: ", ss.ID())
 		},
 		HasPrompts:   true,
