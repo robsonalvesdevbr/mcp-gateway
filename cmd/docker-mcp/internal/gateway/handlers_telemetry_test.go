@@ -101,7 +101,7 @@ func TestInferServerType(t *testing.T) {
 					Command: []string{"node", "server.js"},
 				},
 			},
-			expected: "unknown",  // Command field doesn't determine type in new implementation
+			expected: "unknown", // Command field doesn't determine type in new implementation
 		},
 		{
 			name: "Unknown type",

@@ -303,7 +303,7 @@ func TestPromptHandlerTelemetry(t *testing.T) {
 						Command: []string{"prompt-server", "--stdio"},
 					},
 				},
-				expectedType: "unknown",  // Command field doesn't determine type in new implementation
+				expectedType: "unknown", // Command field doesn't determine type in new implementation
 			},
 			{
 				name: "Unknown server",

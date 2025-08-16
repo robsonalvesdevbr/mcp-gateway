@@ -191,7 +191,7 @@ func TestStdioClientInitialization(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	// Also skip if INTEGRATION_TEST env var is not set
 	if os.Getenv("INTEGRATION_TEST") == "" {
 		t.Skip("Skipping integration test - set INTEGRATION_TEST=1 to run")
