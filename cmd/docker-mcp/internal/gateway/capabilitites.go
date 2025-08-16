@@ -8,10 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 	"github.com/modelcontextprotocol/go-sdk/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 )
 
 type Capabilities struct {
@@ -74,7 +75,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				} else {
 					// Record the number of tools discovered from this server
 					telemetry.RecordToolList(ctx, serverConfig.Name, len(tools.Tools))
-					
+
 					for _, tool := range tools.Tools {
 						if !isToolEnabled(configuration, serverConfig.Name, serverConfig.Spec.Image, tool.Name, g.ToolNames) {
 							continue
@@ -90,7 +91,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				if err == nil {
 					// Record the number of prompts discovered from this server
 					telemetry.RecordPromptList(ctx, serverConfig.Name, len(prompts.Prompts))
-					
+
 					for _, prompt := range prompts.Prompts {
 						capabilities.Prompts = append(capabilities.Prompts, PromptRegistration{
 							Prompt:  prompt,
@@ -103,7 +104,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				if err == nil {
 					// Record the number of resources discovered from this server
 					telemetry.RecordResourceList(ctx, serverConfig.Name, len(resources.Resources))
-					
+
 					for _, resource := range resources.Resources {
 						capabilities.Resources = append(capabilities.Resources, ResourceRegistration{
 							Resource: resource,
@@ -116,7 +117,7 @@ func (g *Gateway) listCapabilities(ctx context.Context, configuration Configurat
 				if err == nil {
 					// Record the number of resource templates discovered from this server
 					telemetry.RecordResourceTemplateList(ctx, serverConfig.Name, len(resourceTemplates.ResourceTemplates))
-					
+
 					for _, resourceTemplate := range resourceTemplates.ResourceTemplates {
 						capabilities.ResourceTemplates = append(capabilities.ResourceTemplates, ResourceTemplateRegistration{
 							ResourceTemplate: *resourceTemplate,

@@ -77,14 +77,14 @@ func NewGateway(config Config, docker docker.Client) *Gateway {
 func (g *Gateway) Run(ctx context.Context) error {
 	// Initialize telemetry
 	telemetry.Init()
-	
+
 	// Record gateway start
 	transportMode := "stdio"
 	if g.Port != 0 {
 		transportMode = "sse"
 	}
 	telemetry.RecordGatewayStart(ctx, transportMode)
-	
+
 	// Start periodic metric export for long-running gateway
 	// This is critical because Docker CLI's ManualReader only exports on shutdown
 	// which is inappropriate for gateways that can run for hours, days, or weeks
@@ -93,7 +93,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 	if !g.DryRun {
 		go g.periodicMetricExport(ctx)
 	}
-	
+
 	defer g.clientPool.Close()
 	defer func() {
 		// Clean up all session cache entries
@@ -387,17 +387,17 @@ func (g *Gateway) periodicMetricExport(ctx context.Context) {
 			interval = parsed
 		}
 	}
-	
+
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-	
+
 	// Get the meter provider to force flush metrics
 	meterProvider := otel.GetMeterProvider()
-	
+
 	if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 		fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] Starting periodic metric export every %v\n", interval)
 	}
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -419,10 +419,8 @@ func (g *Gateway) periodicMetricExport(ctx context.Context) {
 					}
 				}
 				cancel()
-			} else {
-				if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
-					fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] WARNING: MeterProvider does not support ForceFlush\n")
-				}
+			} else if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+				fmt.Fprintf(os.Stderr, "[MCP-TELEMETRY] WARNING: MeterProvider does not support ForceFlush\n")
 			}
 		}
 	}

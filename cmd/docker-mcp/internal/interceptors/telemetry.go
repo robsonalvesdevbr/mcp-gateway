@@ -20,11 +20,11 @@ func TelemetryMiddleware() mcp.Middleware[*mcp.ServerSession] {
 			if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 				fmt.Fprintf(os.Stderr, "[MCP-MIDDLEWARE] Method called: %s\n", method)
 			}
-			
+
 			// Track list operations with spans and metrics
 			var span trace.Span
 			var tracked bool
-			
+
 			switch method {
 			case "tools/list":
 				ctx, span = telemetry.StartListSpan(ctx, "tools")
@@ -43,10 +43,10 @@ func TelemetryMiddleware() mcp.Middleware[*mcp.ServerSession] {
 				telemetry.RecordListResourceTemplates(ctx)
 				tracked = true
 			}
-			
+
 			// Call the next handler
 			result, err := next(ctx, session, method, params)
-			
+
 			// Complete the span if we created one
 			if tracked && span != nil {
 				if err != nil {
@@ -57,7 +57,7 @@ func TelemetryMiddleware() mcp.Middleware[*mcp.ServerSession] {
 				}
 				span.End()
 			}
-			
+
 			return result, err
 		}
 	}

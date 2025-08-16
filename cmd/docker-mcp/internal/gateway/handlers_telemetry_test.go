@@ -5,22 +5,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	otelcodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
-	otelcodes "go.opentelemetry.io/otel/codes"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 )
 
 // setupTestTelemetry sets up in-memory OTEL exporters for testing
-func setupTestTelemetry(t *testing.T) (*tracetest.SpanRecorder, *sdkmetric.ManualReader) {
+func setupTestTelemetry(_ *testing.T) (*tracetest.SpanRecorder, *sdkmetric.ManualReader) {
 	// Set up tracing
 	spanRecorder := tracetest.NewSpanRecorder()
 	tracerProvider := trace.NewTracerProvider(
@@ -115,9 +116,9 @@ func TestTelemetrySpanCreation(t *testing.T) {
 			Image: "test-image",
 		},
 	}
-	
+
 	// Create a span as the handler would
-	ctx, span := telemetry.StartToolCallSpan(ctx, "test-tool",
+	_, span := telemetry.StartToolCallSpan(ctx, "test-tool",
 		attribute.String("mcp.server.name", serverConfig.Name),
 		attribute.String("mcp.server.type", inferServerType(serverConfig)),
 	)
@@ -126,17 +127,17 @@ func TestTelemetrySpanCreation(t *testing.T) {
 	if serverConfig.Spec.Image != "" {
 		span.SetAttributes(attribute.String("mcp.server.image", serverConfig.Spec.Image))
 	}
-	
+
 	// End the span before checking
 	span.End()
 
 	// Check the span was created correctly
 	spans := spanRecorder.Ended()
 	require.Len(t, spans, 1)
-	
+
 	recordedSpan := spans[0]
 	assert.Equal(t, "mcp.tool.call", recordedSpan.Name())
-	
+
 	// Check attributes
 	attrs := recordedSpan.Attributes()
 	assertAttribute(t, attrs, "mcp.tool.name", "test-tool")
@@ -153,7 +154,7 @@ func TestTelemetryMetricRecording(t *testing.T) {
 	serverName := "test-server"
 	serverType := "docker"
 	toolName := "test-tool"
-	
+
 	// Record metrics as the handler would
 	telemetry.ToolCallCounter.Add(ctx, 1,
 		metric.WithAttributes(
@@ -162,7 +163,7 @@ func TestTelemetryMetricRecording(t *testing.T) {
 			attribute.String("mcp.tool.name", toolName),
 		),
 	)
-	
+
 	duration := 150.5 // milliseconds
 	telemetry.ToolCallDuration.Record(ctx, duration,
 		metric.WithAttributes(
@@ -187,23 +188,23 @@ func TestTelemetryMetricRecording(t *testing.T) {
 				require.True(t, ok)
 				require.Len(t, data.DataPoints, 1)
 				assert.Equal(t, int64(1), data.DataPoints[0].Value)
-				
+
 				// Check attributes
 				attrs := data.DataPoints[0].Attributes
 				assertMetricAttribute(t, attrs, "mcp.server.name", serverName)
 				assertMetricAttribute(t, attrs, "mcp.server.type", serverType)
 				assertMetricAttribute(t, attrs, "mcp.tool.name", toolName)
-				
+
 			case "mcp.tool.duration":
 				foundHistogram = true
 				data, ok := m.Data.(metricdata.Histogram[float64])
 				require.True(t, ok)
 				require.Len(t, data.DataPoints, 1)
-				assert.Equal(t, duration, data.DataPoints[0].Sum)
+				assert.InEpsilon(t, duration, data.DataPoints[0].Sum, 0.01)
 			}
 		}
 	}
-	
+
 	assert.True(t, foundCounter, "Tool call counter not found")
 	assert.True(t, foundHistogram, "Tool duration histogram not found")
 }
@@ -216,13 +217,13 @@ func TestTelemetryErrorRecording(t *testing.T) {
 	serverName := "error-server"
 	serverType := "sse"
 	toolName := "error-tool"
-	
+
 	// Start span
 	ctx, span := telemetry.StartToolCallSpan(ctx, toolName,
 		attribute.String("mcp.server.name", serverName),
 		attribute.String("mcp.server.type", serverType),
 	)
-	
+
 	// Record an error
 	telemetry.RecordToolError(ctx, span, serverName, serverType, toolName)
 	span.SetStatus(otelcodes.Error, "tool execution failed")
@@ -231,7 +232,7 @@ func TestTelemetryErrorRecording(t *testing.T) {
 	// Check span recorded error
 	spans := spanRecorder.Ended()
 	require.Len(t, spans, 1)
-	
+
 	recordedSpan := spans[0]
 	assert.Equal(t, "mcp.tool.call", recordedSpan.Name())
 	assert.Equal(t, otelcodes.Error, recordedSpan.Status().Code)
@@ -259,7 +260,7 @@ func TestTelemetryErrorRecording(t *testing.T) {
 // TestHandlerInstrumentationIntegration is a placeholder for full integration test
 func TestHandlerInstrumentationIntegration(t *testing.T) {
 	t.Skip("Full integration test will be enabled after handler instrumentation is complete")
-	
+
 	// This test will verify the complete flow once the handler is instrumented:
 	// 1. Handler receives a tool call request
 	// 2. Telemetry span is created with proper attributes
@@ -275,10 +276,10 @@ func TestToolCallDurationMeasurement(t *testing.T) {
 
 	ctx := context.Background()
 	startTime := time.Now()
-	
+
 	// Simulate some work
 	time.Sleep(10 * time.Millisecond)
-	
+
 	// Record duration as the handler would
 	duration := time.Since(startTime).Milliseconds()
 	telemetry.ToolCallDuration.Record(ctx, float64(duration),
@@ -322,7 +323,7 @@ func assertAttribute(t *testing.T, attrs []attribute.KeyValue, key string, expec
 	t.Errorf("Attribute %s not found", key)
 }
 
-// Helper function to assert metric attributes  
+// Helper function to assert metric attributes
 func assertMetricAttribute(t *testing.T, set attribute.Set, key string, expectedValue string) {
 	t.Helper()
 	value, found := set.Value(attribute.Key(key))

@@ -13,14 +13,14 @@ func Rm(name string) error {
 	// Initialize telemetry
 	telemetry.Init()
 	ctx := context.Background()
-	
+
 	start := time.Now()
 	var success bool
 	defer func() {
 		duration := time.Since(start)
 		telemetry.RecordCatalogOperation(ctx, "rm", name, float64(duration.Milliseconds()), success)
 	}()
-	
+
 	// Prevent users from removing the Docker catalog
 	if name == DockerCatalogName {
 		return fmt.Errorf("cannot remove catalog '%s' as it is managed by Docker", name)

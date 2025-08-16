@@ -55,17 +55,17 @@ func (g *Gateway) mcpServerToolHandler(serverConfig *catalog.ServerConfig, serve
 		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[MCP-HANDLER] Tool call received: %s from server: %s\n", params.Name, serverConfig.Name)
 		}
-		
+
 		// Start telemetry span for tool call
 		startTime := time.Now()
 		serverType := inferServerType(serverConfig)
-		
+
 		// Build span attributes
 		spanAttrs := []attribute.KeyValue{
 			attribute.String("mcp.server.name", serverConfig.Name),
 			attribute.String("mcp.server.type", serverType),
 		}
-		
+
 		// Add additional server-specific attributes
 		if serverConfig.Spec.Image != "" {
 			spanAttrs = append(spanAttrs, attribute.String("mcp.server.image", serverConfig.Spec.Image))
@@ -75,7 +75,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig *catalog.ServerConfig, serve
 		} else if serverConfig.Spec.Remote.URL != "" {
 			spanAttrs = append(spanAttrs, attribute.String("mcp.server.endpoint", serverConfig.Spec.Remote.URL))
 		}
-		
+
 		ctx, span := telemetry.StartToolCallSpan(ctx, params.Name, spanAttrs...)
 		defer span.End()
 
@@ -111,7 +111,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig *catalog.ServerConfig, serve
 
 		// Execute the tool call
 		result, err := client.Session().CallTool(ctx, genericParams)
-		
+
 		// Record duration
 		duration := time.Since(startTime).Milliseconds()
 		telemetry.ToolCallDuration.Record(ctx, float64(duration),
@@ -121,7 +121,7 @@ func (g *Gateway) mcpServerToolHandler(serverConfig *catalog.ServerConfig, serve
 				attribute.String("mcp.tool.name", params.Name),
 			),
 		)
-		
+
 		if err != nil {
 			// Record error in telemetry
 			telemetry.RecordToolError(ctx, span, serverConfig.Name, serverType, params.Name)
@@ -140,17 +140,17 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig *catalog.ServerConfig, ser
 		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[MCP-HANDLER] Prompt get received: %s from server: %s\n", params.Name, serverConfig.Name)
 		}
-		
+
 		// Start telemetry span for prompt operation
 		startTime := time.Now()
 		serverType := inferServerType(serverConfig)
-		
+
 		// Build span attributes
 		spanAttrs := []attribute.KeyValue{
 			attribute.String("mcp.server.name", serverConfig.Name),
 			attribute.String("mcp.server.type", serverType),
 		}
-		
+
 		// Add additional server-specific attributes
 		if serverConfig.Spec.Image != "" {
 			spanAttrs = append(spanAttrs, attribute.String("mcp.server.image", serverConfig.Spec.Image))
@@ -160,13 +160,13 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig *catalog.ServerConfig, ser
 		} else if serverConfig.Spec.Remote.URL != "" {
 			spanAttrs = append(spanAttrs, attribute.String("mcp.server.endpoint", serverConfig.Spec.Remote.URL))
 		}
-		
+
 		ctx, span := telemetry.StartPromptSpan(ctx, params.Name, spanAttrs...)
 		defer span.End()
-		
+
 		// Record prompt get counter
 		telemetry.RecordPromptGet(ctx, params.Name, serverConfig.Name)
-		
+
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss, server))
 		if err != nil {
 			span.RecordError(err)
@@ -177,18 +177,18 @@ func (g *Gateway) mcpServerPromptHandler(serverConfig *catalog.ServerConfig, ser
 		defer g.clientPool.ReleaseClient(client)
 
 		result, err := client.Session().GetPrompt(ctx, params)
-		
+
 		// Record duration
 		duration := time.Since(startTime).Milliseconds()
 		telemetry.RecordPromptDuration(ctx, params.Name, serverConfig.Name, float64(duration))
-		
+
 		if err != nil {
 			span.RecordError(err)
 			telemetry.RecordPromptError(ctx, params.Name, serverConfig.Name, "execution_failed")
 			span.SetStatus(codes.Error, "Prompt execution failed")
 			return nil, err
 		}
-		
+
 		span.SetStatus(codes.Ok, "")
 		return result, nil
 	}
@@ -200,17 +200,17 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig *catalog.ServerConfig, s
 		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
 			fmt.Fprintf(os.Stderr, "[MCP-HANDLER] Resource read received: %s from server: %s\n", params.URI, serverConfig.Name)
 		}
-		
+
 		// Start telemetry span for resource operation
 		startTime := time.Now()
 		serverType := inferServerType(serverConfig)
-		
+
 		// Build span attributes - include server-specific attributes
 		spanAttrs := []attribute.KeyValue{
 			attribute.String("mcp.server.origin", serverConfig.Name),
 			attribute.String("mcp.server.type", serverType),
 		}
-		
+
 		// Add additional server-specific attributes
 		if serverConfig.Spec.Image != "" {
 			spanAttrs = append(spanAttrs, attribute.String("mcp.server.image", serverConfig.Spec.Image))
@@ -221,13 +221,13 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig *catalog.ServerConfig, s
 		if serverConfig.Spec.Remote.URL != "" {
 			spanAttrs = append(spanAttrs, attribute.String("mcp.server.remote_url", serverConfig.Spec.Remote.URL))
 		}
-		
+
 		ctx, span := telemetry.StartResourceSpan(ctx, params.URI, spanAttrs...)
 		defer span.End()
-		
+
 		// Record counter with server attribution
 		telemetry.RecordResourceRead(ctx, params.URI, serverConfig.Name)
-		
+
 		client, err := g.clientPool.AcquireClient(ctx, serverConfig, getClientConfig(nil, ss, server))
 		if err != nil {
 			span.RecordError(err)
@@ -238,18 +238,18 @@ func (g *Gateway) mcpServerResourceHandler(serverConfig *catalog.ServerConfig, s
 		defer g.clientPool.ReleaseClient(client)
 
 		result, err := client.Session().ReadResource(ctx, params)
-		
+
 		// Record duration regardless of error
 		duration := time.Since(startTime).Milliseconds()
 		telemetry.RecordResourceDuration(ctx, params.URI, serverConfig.Name, float64(duration))
-		
+
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, "Resource read failed")
 			telemetry.RecordResourceError(ctx, params.URI, serverConfig.Name, "read_failed")
 			return nil, err
 		}
-		
+
 		// Success
 		span.SetStatus(codes.Ok, "")
 		return result, nil

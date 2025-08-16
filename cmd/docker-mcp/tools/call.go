@@ -42,23 +42,23 @@ func Call(ctx context.Context, version string, gatewayArgs []string, debug bool,
 	start := time.Now()
 	response, err := c.CallTool(ctx, params)
 	duration := time.Since(start)
-	
+
 	// Record metrics
 	attrs := []attribute.KeyValue{
 		attribute.String("mcp.tool.name", toolName),
 		attribute.String("mcp.cli.command", "tools.call"),
 	}
-	
+
 	if err != nil {
 		attrs = append(attrs, attribute.Bool("mcp.tool.error", true))
 		toolCallCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
 		return fmt.Errorf("calling tool: %w", err)
 	}
-	
+
 	attrs = append(attrs, attribute.Bool("mcp.tool.error", response.IsError))
 	toolCallCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
 	toolCallDuration.Record(ctx, float64(duration.Milliseconds()), metric.WithAttributes(attrs...))
-	
+
 	fmt.Println("Tool call took:", duration)
 
 	if response.IsError {

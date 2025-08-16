@@ -12,16 +12,16 @@ import (
 func Ls(ctx context.Context, outputJSON bool) error {
 	// Initialize telemetry
 	telemetry.Init()
-	
+
 	start := time.Now()
 	cfg, err := ReadConfigWithDefaultCatalog(ctx)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		telemetry.RecordCatalogOperation(ctx, "ls", "", float64(duration.Milliseconds()), false)
 		return err
 	}
-	
+
 	// Record successful operation
 	telemetry.RecordCatalogOperation(ctx, "ls", "all", float64(duration.Milliseconds()), true)
 

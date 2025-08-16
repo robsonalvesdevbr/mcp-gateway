@@ -4,8 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
@@ -14,6 +12,9 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
 )
 
 func TestPromptHandlerTelemetry(t *testing.T) {
@@ -60,18 +61,18 @@ func TestPromptHandlerTelemetry(t *testing.T) {
 			for _, metric := range sm.Metrics {
 				if metric.Name == "mcp.prompt.gets" {
 					foundCounter = true
-					
+
 					// Check it's a counter (Sum)
 					sum, ok := metric.Data.(metricdata.Sum[int64])
 					assert.True(t, ok, "Expected Sum[int64] for counter")
-					
+
 					// Verify data points
 					assert.Len(t, sum.DataPoints, 1)
 					dp := sum.DataPoints[0]
-					
+
 					// Check counter value
 					assert.Equal(t, int64(1), dp.Value)
-					
+
 					// Verify attributes
 					attrs := dp.Attributes.ToSlice()
 					assert.Contains(t, attrs,
@@ -122,19 +123,19 @@ func TestPromptHandlerTelemetry(t *testing.T) {
 			for _, metric := range sm.Metrics {
 				if metric.Name == "mcp.prompt.duration" {
 					foundHistogram = true
-					
+
 					// Check it's a histogram
 					hist, ok := metric.Data.(metricdata.Histogram[float64])
 					assert.True(t, ok, "Expected Histogram[float64] for duration")
-					
+
 					// Verify data points
 					assert.Len(t, hist.DataPoints, 1)
 					dp := hist.DataPoints[0]
-					
+
 					// Check histogram has recorded value
 					assert.Equal(t, uint64(1), dp.Count)
-					assert.Equal(t, duration, dp.Sum)
-					
+					assert.InEpsilon(t, duration, dp.Sum, 0.01)
+
 					// Verify attributes
 					attrs := dp.Attributes.ToSlice()
 					assert.Contains(t, attrs,
@@ -177,18 +178,18 @@ func TestPromptHandlerTelemetry(t *testing.T) {
 			for _, metric := range sm.Metrics {
 				if metric.Name == "mcp.prompt.errors" {
 					foundErrorCounter = true
-					
+
 					// Check it's a counter
 					sum, ok := metric.Data.(metricdata.Sum[int64])
 					assert.True(t, ok, "Expected Sum[int64] for error counter")
-					
+
 					// Verify data points
 					assert.Len(t, sum.DataPoints, 1)
 					dp := sum.DataPoints[0]
-					
+
 					// Check counter value
 					assert.Equal(t, int64(1), dp.Value)
-					
+
 					// Verify attributes
 					attrs := dp.Attributes.ToSlice()
 					assert.Contains(t, attrs,
@@ -226,22 +227,22 @@ func TestPromptHandlerTelemetry(t *testing.T) {
 		ctx := context.Background()
 		promptName := "test-prompt-span"
 		serverType := inferServerType(serverConfig)
-		
-		ctx, span := telemetry.StartPromptSpan(ctx, promptName,
+
+		_, span := telemetry.StartPromptSpan(ctx, promptName,
 			attribute.String("mcp.server.origin", serverConfig.Name),
 			attribute.String("mcp.server.type", serverType),
 			attribute.String("mcp.prompt.name", promptName))
-		
+
 		// End span
 		span.End()
 
 		// Check recorded spans
 		spans := spanRecorder.Ended()
 		require.Len(t, spans, 1)
-		
+
 		recordedSpan := spans[0]
 		assert.Equal(t, "mcp.prompt.get", recordedSpan.Name())
-		
+
 		// Check attributes
 		attrs := recordedSpan.Attributes()
 		assert.Contains(t, attrs,
@@ -365,18 +366,18 @@ func TestPromptListHandlerTelemetry(t *testing.T) {
 			for _, metric := range sm.Metrics {
 				if metric.Name == "mcp.prompts.discovered" {
 					foundGauge = true
-					
+
 					// Check it's a gauge
 					gauge, ok := metric.Data.(metricdata.Gauge[int64])
 					assert.True(t, ok, "Expected Gauge[int64] for prompts discovered")
-					
+
 					// Verify data points
 					assert.Len(t, gauge.DataPoints, 1)
 					dp := gauge.DataPoints[0]
-					
+
 					// Check gauge value
 					assert.Equal(t, int64(promptCount), dp.Value)
-					
+
 					// Verify attributes
 					attrs := dp.Attributes.ToSlice()
 					assert.Contains(t, attrs,

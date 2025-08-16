@@ -59,14 +59,14 @@ func Add(args ParsedAddArgs, force bool) error {
 	// Initialize telemetry
 	telemetry.Init()
 	ctx := context.Background()
-	
+
 	start := time.Now()
 	defer func() {
 		duration := time.Since(start)
 		success := recover() == nil
 		telemetry.RecordCatalogOperation(ctx, "add", args.Dst, float64(duration.Milliseconds()), success)
 	}()
-	
+
 	srcContent, err := os.ReadFile(args.Src)
 	if err != nil {
 		return err
