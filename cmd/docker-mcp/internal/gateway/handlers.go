@@ -21,18 +21,19 @@ func getClientConfig(readOnlyHint *bool, ss *mcp.ServerSession, server *mcp.Serv
 
 // inferServerType determines the type of MCP server based on its configuration
 func inferServerType(serverConfig *catalog.ServerConfig) string {
-	// Check for SSE endpoint first (including remote URLs)
-	if serverConfig.Spec.SSEEndpoint != "" || serverConfig.Spec.Remote.URL != "" {
+	if serverConfig.Spec.Remote.Transport == "http" {
+		return "streaming"
+	}
+
+	if serverConfig.Spec.Remote.Transport == "sse" {
 		return "sse"
 	}
+
 	// Check for Docker image
 	if serverConfig.Spec.Image != "" {
 		return "docker"
 	}
-	// Check for stdio command
-	if len(serverConfig.Spec.Command) > 0 {
-		return "stdio"
-	}
+
 	// Unknown type
 	return "unknown"
 }
