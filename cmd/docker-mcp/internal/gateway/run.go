@@ -167,7 +167,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 	})
 
 	// Add interceptor middleware to the server (includes telemetry)
-	middlewares := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, parsedInterceptors)
+	middlewares := interceptors.Callbacks(g.LogCalls, g.BlockSecrets, g.OAuthInterceptorEnabled, parsedInterceptors)
 	if len(middlewares) > 0 {
 		g.mcpServer.AddReceivingMiddleware(middlewares...)
 	}
