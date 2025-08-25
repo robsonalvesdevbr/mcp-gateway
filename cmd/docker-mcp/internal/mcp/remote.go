@@ -26,7 +26,7 @@ func NewRemoteMCPClient(config *catalog.ServerConfig) Client {
 	}
 }
 
-func (c *remoteMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParams, _ bool, _ *mcp.ServerSession, _ *mcp.Server) error {
+func (c *remoteMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParams, _ bool, _ *mcp.ServerSession, _ *mcp.Server, _ CapabilityRefresher) error {
 	if c.initialized.Load() {
 		return fmt.Errorf("client already initialized")
 	}
@@ -62,9 +62,9 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParam
 
 	switch strings.ToLower(transport) {
 	case "sse":
-		mcpTransport = mcp.NewSSEClientTransport(url, &mcp.SSEClientTransportOptions{})
+		mcpTransport = &mcp.SSEClientTransport{Endpoint: url}
 	case "http", "streamable", "streaming", "streamable-http":
-		mcpTransport = mcp.NewStreamableClientTransport(url, &mcp.StreamableClientTransportOptions{})
+		mcpTransport = &mcp.StreamableClientTransport{Endpoint: url}
 	default:
 		return fmt.Errorf("unsupported remote transport: %s", transport)
 	}
@@ -76,7 +76,7 @@ func (c *remoteMCPClient) Initialize(ctx context.Context, _ *mcp.InitializeParam
 
 	c.client.AddRoots(c.roots...)
 
-	session, err := c.client.Connect(ctx, mcpTransport)
+	session, err := c.client.Connect(ctx, mcpTransport, nil)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %w", err)
 	}
