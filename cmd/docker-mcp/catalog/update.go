@@ -58,7 +58,7 @@ func updateCatalog(ctx context.Context, name string, catalog Catalog) error {
 	if name == DockerCatalogName && (url == "" || !isValidURL(url)) {
 		url = DockerCatalogURL
 	}
-	
+
 	if isValidURL(url) {
 		catalogContent, err = DownloadFile(ctx, url)
 	} else {
