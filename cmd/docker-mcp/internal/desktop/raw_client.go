@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -51,6 +52,12 @@ func (c *RawClient) Get(ctx context.Context, endpoint string, v any) error {
 	}
 	defer response.Body.Close()
 
+	// Check for HTTP errors
+	if response.StatusCode >= 400 {
+		buf, _ := io.ReadAll(response.Body)
+		return fmt.Errorf("HTTP %d: %s", response.StatusCode, string(buf))
+	}
+
 	buf, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
@@ -90,6 +97,12 @@ func (c *RawClient) Post(ctx context.Context, endpoint string, v any, result any
 	}
 	defer response.Body.Close()
 
+	// Check for HTTP errors
+	if response.StatusCode >= 400 {
+		buf, _ := io.ReadAll(response.Body)
+		return fmt.Errorf("HTTP %d: %s", response.StatusCode, string(buf))
+	}
+
 	if result == nil {
 		_, err := io.Copy(io.Discard, response.Body)
 		return err
@@ -122,6 +135,12 @@ func (c *RawClient) Delete(ctx context.Context, endpoint string) error {
 		return err
 	}
 	defer response.Body.Close()
+
+	// Check for HTTP errors
+	if response.StatusCode >= 400 {
+		buf, _ := io.ReadAll(response.Body)
+		return fmt.Errorf("HTTP %d: %s", response.StatusCode, string(buf))
+	}
 
 	_, err = io.Copy(io.Discard, response.Body)
 	return err
