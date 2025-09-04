@@ -71,7 +71,7 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			// Check if OAuth interceptor feature is enabled
 			options.OAuthInterceptorEnabled = isOAuthInterceptorFeatureEnabled(dockerCli)
-			
+
 			// Check if dynamic tools feature is enabled
 			options.DynamicTools = isDynamicToolsFeatureEnabled(dockerCli)
 

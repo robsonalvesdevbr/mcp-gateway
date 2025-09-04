@@ -35,13 +35,13 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 		},
 	}
 
-	handler := func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(_ context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		// Parse parameters
 		var params struct {
 			Query string `json:"query"`
 			Limit int    `json:"limit"`
 		}
-		
+
 		if req.Params.Arguments == nil {
 			return nil, fmt.Errorf("missing arguments")
 		}
@@ -66,11 +66,11 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 		// Search through the catalog servers
 		query := strings.ToLower(strings.TrimSpace(params.Query))
 		var matches []ServerMatch
-		
+
 		for serverName, server := range configuration.servers {
 			match := false
 			score := 0
-			
+
 			// Check server name (exact match gets higher score)
 			serverNameLower := strings.ToLower(serverName)
 			if serverNameLower == query {
@@ -80,33 +80,33 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 				match = true
 				score = 50
 			}
-			
+
 			// Check if it has tools that might match
 			for _, tool := range server.Tools {
 				toolNameLower := strings.ToLower(tool.Name)
 				toolDescLower := strings.ToLower(tool.Description)
-				
+
 				if toolNameLower == query {
 					match = true
-					score = max(score, 90)
+					score = maxInt(score, 90)
 				} else if strings.Contains(toolNameLower, query) {
 					match = true
-					score = max(score, 40)
+					score = maxInt(score, 40)
 				} else if strings.Contains(toolDescLower, query) {
 					match = true
-					score = max(score, 30)
+					score = maxInt(score, 30)
 				}
 			}
-			
+
 			// Check image name
 			if server.Image != "" {
 				imageLower := strings.ToLower(server.Image)
 				if strings.Contains(imageLower, query) {
 					match = true
-					score = max(score, 20)
+					score = maxInt(score, 20)
 				}
 			}
-			
+
 			if match {
 				matches = append(matches, ServerMatch{
 					Name:   serverName,
@@ -117,7 +117,7 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 		}
 
 		// Sort matches by score (higher scores first)
-		for i := 0; i < len(matches)-1; i++ {
+		for i := range len(matches) - 1 {
 			for j := i + 1; j < len(matches); j++ {
 				if matches[i].Score < matches[j].Score {
 					matches[i], matches[j] = matches[j], matches[i]
@@ -131,9 +131,9 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 		}
 
 		// Format results
-		var results []map[string]interface{}
+		var results []map[string]any
 		for _, match := range matches {
-			serverInfo := map[string]interface{}{
+			serverInfo := map[string]any{
 				"name": match.Name,
 			}
 
@@ -174,7 +174,7 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 			results = append(results, serverInfo)
 		}
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"query":         params.Query,
 			"total_matches": len(results),
 			"servers":       results,
@@ -225,7 +225,7 @@ func (g *Gateway) createMcpAddTool(configuration Configuration) *ToolRegistratio
 		var params struct {
 			Name string `json:"name"`
 		}
-		
+
 		if req.Params.Arguments == nil {
 			return nil, fmt.Errorf("missing arguments")
 		}
@@ -270,7 +270,7 @@ func (g *Gateway) createMcpAddTool(configuration Configuration) *ToolRegistratio
 			}, nil
 		}
 
-		// Add server to registry  
+		// Add server to registry
 		if registry.Servers == nil {
 			registry.Servers = make(map[string]RegistryTile)
 		}
@@ -307,7 +307,7 @@ func (g *Gateway) createMcpAddTool(configuration Configuration) *ToolRegistratio
 }
 
 // mcpRemoveTool implements a tool for removing servers from the registry
-func (g *Gateway) createMcpRemoveTool(configuration Configuration) *ToolRegistration {
+func (g *Gateway) createMcpRemoveTool(_ Configuration) *ToolRegistration {
 	tool := &mcp.Tool{
 		Name:        "mcp-remove",
 		Description: "Remove an MCP server from the registry and reload the configuration. This will disable the server.",
@@ -328,7 +328,7 @@ func (g *Gateway) createMcpRemoveTool(configuration Configuration) *ToolRegistra
 		var params struct {
 			Name string `json:"name"`
 		}
-		
+
 		if req.Params.Arguments == nil {
 			return nil, fmt.Errorf("missing arguments")
 		}
@@ -400,7 +400,7 @@ func (g *Gateway) readRegistryConfig(ctx context.Context) (*RegistryConfig, erro
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert from config.Registry to our local RegistryConfig type
 	servers := make(map[string]RegistryTile)
 	for name, tile := range registry.Servers {
@@ -409,7 +409,7 @@ func (g *Gateway) readRegistryConfig(ctx context.Context) (*RegistryConfig, erro
 			Config: tile.Config,
 		}
 	}
-	
+
 	return &RegistryConfig{
 		Servers: servers,
 	}, nil
@@ -420,26 +420,26 @@ func (g *Gateway) writeRegistryConfig(registry *RegistryConfig) error {
 	configRegistry := config.Registry{
 		Servers: make(map[string]config.Tile),
 	}
-	
+
 	for name, tile := range registry.Servers {
 		configRegistry.Servers[name] = config.Tile{
 			Ref:    tile.Ref,
 			Config: tile.Config,
 		}
 	}
-	
+
 	// Marshal to YAML
 	output := struct {
 		Registry map[string]config.Tile `yaml:"registry"`
 	}{
 		Registry: configRegistry.Servers,
 	}
-	
+
 	data, err := yaml.Marshal(output)
 	if err != nil {
 		return err
 	}
-	
+
 	return g.writeRegistryFile(data)
 }
 
@@ -463,8 +463,8 @@ type RegistryTile struct {
 	Config map[string]any `yaml:"config,omitempty"`
 }
 
-// max returns the maximum of two integers
-func max(a, b int) int {
+// maxInt returns the maximum of two integers
+func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}
