@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"gopkg.in/yaml.v3"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/config"
 )
 
 // mcpFindTool implements a tool for finding MCP servers in the catalog
@@ -204,7 +203,7 @@ type ServerMatch struct {
 }
 
 // mcpAddTool implements a tool for adding new servers to the registry
-func (g *Gateway) createMcpAddTool(configuration Configuration) *ToolRegistration {
+func (g *Gateway) createMcpAddTool(configuration Configuration, clientConfig *clientConfig) *ToolRegistration {
 	tool := &mcp.Tool{
 		Name:        "mcp-add",
 		Description: "Add a new MCP server to the registry and reload the configuration. The server must exist in the catalog.",
@@ -255,47 +254,19 @@ func (g *Gateway) createMcpAddTool(configuration Configuration) *ToolRegistratio
 			}, nil
 		}
 
-		// Read current registry
-		registry, err := g.readRegistryConfig(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read registry: %w", err)
-		}
-
-		// Check if server is already in registry
-		if _, exists := registry.Servers[serverName]; exists {
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{&mcp.TextContent{
-					Text: fmt.Sprintf("Server '%s' is already enabled in the registry.", serverName),
-				}},
-			}, nil
-		}
-
-		// Add server to registry
-		if registry.Servers == nil {
-			registry.Servers = make(map[string]RegistryTile)
-		}
-		registry.Servers[serverName] = RegistryTile{
-			Ref: serverName, // Use the server name as ref for catalog servers
-		}
-
-		// Write updated registry
-		if err := g.writeRegistryConfig(registry); err != nil {
-			return nil, fmt.Errorf("failed to write registry: %w", err)
-		}
-
-		// Trigger configuration reload
-		newConfiguration, err := g.readConfigurationForReload(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read updated configuration: %w", err)
-		}
-
-		if err := g.reloadConfiguration(ctx, newConfiguration, nil, nil); err != nil {
+		// Append the new server to the current serverNames
+		updatedServerNames := append(configuration.serverNames, serverName)
+		
+		// Update the current configuration state
+		configuration.serverNames = updatedServerNames
+		
+		if err := g.reloadConfiguration(ctx, configuration, updatedServerNames, clientConfig); err != nil {
 			return nil, fmt.Errorf("failed to reload configuration: %w", err)
 		}
 
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{
-				Text: fmt.Sprintf("Successfully added server '%s' to the registry and reloaded configuration.", serverName),
+				Text: fmt.Sprintf("Successfully added server '%s'.", serverName),
 			}},
 		}, nil
 	}
@@ -307,7 +278,7 @@ func (g *Gateway) createMcpAddTool(configuration Configuration) *ToolRegistratio
 }
 
 // mcpRemoveTool implements a tool for removing servers from the registry
-func (g *Gateway) createMcpRemoveTool(_ Configuration) *ToolRegistration {
+func (g *Gateway) createMcpRemoveTool(_ Configuration, clientConfig *clientConfig) *ToolRegistration {
 	tool := &mcp.Tool{
 		Name:        "mcp-remove",
 		Description: "Remove an MCP server from the registry and reload the configuration. This will disable the server.",
@@ -348,42 +319,21 @@ func (g *Gateway) createMcpRemoveTool(_ Configuration) *ToolRegistration {
 
 		serverName := strings.TrimSpace(params.Name)
 
-		// Read current registry
-		registry, err := g.readRegistryConfig(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read registry: %w", err)
-		}
-
-		// Check if server is in registry
-		if _, exists := registry.Servers[serverName]; !exists {
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{&mcp.TextContent{
-					Text: fmt.Sprintf("Server '%s' is not found in the registry (not currently enabled).", serverName),
-				}},
-			}, nil
-		}
-
-		// Remove server from registry
-		delete(registry.Servers, serverName)
-
-		// Write updated registry
-		if err := g.writeRegistryConfig(registry); err != nil {
-			return nil, fmt.Errorf("failed to write registry: %w", err)
-		}
-
-		// Trigger configuration reload
-		newConfiguration, err := g.readConfigurationForReload(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read updated configuration: %w", err)
-		}
-
-		if err := g.reloadConfiguration(ctx, newConfiguration, nil, nil); err != nil {
+		// Remove the server from the current serverNames
+		updatedServerNames := slices.DeleteFunc(slices.Clone(g.configuration.serverNames), func(name string) bool {
+			return name == serverName
+		})
+		
+		// Update the current configuration state
+		g.configuration.serverNames = updatedServerNames
+		
+		if err := g.reloadConfiguration(ctx, g.configuration, updatedServerNames, clientConfig); err != nil {
 			return nil, fmt.Errorf("failed to reload configuration: %w", err)
 		}
 
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{
-				Text: fmt.Sprintf("Successfully removed server '%s' from the registry and reloaded configuration.", serverName),
+				Text: fmt.Sprintf("Successfully removed server '%s'.", serverName),
 			}},
 		}, nil
 	}
@@ -392,75 +342,6 @@ func (g *Gateway) createMcpRemoveTool(_ Configuration) *ToolRegistration {
 		Tool:    tool,
 		Handler: handler,
 	}
-}
-
-// Helper methods for registry management
-func (g *Gateway) readRegistryConfig(ctx context.Context) (*RegistryConfig, error) {
-	registry, err := g.configurator.(*FileBasedConfiguration).readRegistry(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert from config.Registry to our local RegistryConfig type
-	servers := make(map[string]RegistryTile)
-	for name, tile := range registry.Servers {
-		servers[name] = RegistryTile{
-			Ref:    tile.Ref,
-			Config: tile.Config,
-		}
-	}
-
-	return &RegistryConfig{
-		Servers: servers,
-	}, nil
-}
-
-func (g *Gateway) writeRegistryConfig(registry *RegistryConfig) error {
-	// Convert back to config.Registry format
-	configRegistry := config.Registry{
-		Servers: make(map[string]config.Tile),
-	}
-
-	for name, tile := range registry.Servers {
-		configRegistry.Servers[name] = config.Tile{
-			Ref:    tile.Ref,
-			Config: tile.Config,
-		}
-	}
-
-	// Marshal to YAML
-	output := struct {
-		Registry map[string]config.Tile `yaml:"registry"`
-	}{
-		Registry: configRegistry.Servers,
-	}
-
-	data, err := yaml.Marshal(output)
-	if err != nil {
-		return err
-	}
-
-	return g.writeRegistryFile(data)
-}
-
-func (g *Gateway) writeRegistryFile(data []byte) error {
-	// Use config.WriteRegistry if available, or manually write
-	return config.WriteRegistry(data)
-}
-
-func (g *Gateway) readConfigurationForReload(ctx context.Context) (Configuration, error) {
-	configuration, _, _, err := g.configurator.Read(ctx)
-	return configuration, err
-}
-
-// Helper types
-type RegistryConfig struct {
-	Servers map[string]RegistryTile
-}
-
-type RegistryTile struct {
-	Ref    string         `yaml:"ref"`
-	Config map[string]any `yaml:"config,omitempty"`
 }
 
 // maxInt returns the maximum of two integers

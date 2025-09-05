@@ -37,11 +37,12 @@ type ServerSessionCache struct {
 
 type Gateway struct {
 	Options
-	docker       docker.Client
-	configurator Configurator
-	clientPool   *clientPool
-	mcpServer    *mcp.Server
-	health       health.State
+	docker        docker.Client
+	configurator  Configurator
+	configuration Configuration
+	clientPool    *clientPool
+	mcpServer     *mcp.Server
+	health        health.State
 	// subsChannel  chan SubsMessage
 
 	sessionCacheMu sync.RWMutex
@@ -121,6 +122,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	// Read the configuration.
 	configuration, configurationUpdates, stopConfigWatcher, err := g.configurator.Read(ctx)
+	g.configuration = configuration
 	if err != nil {
 		return err
 	}
@@ -319,12 +321,12 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 		g.registeredToolNames = append(g.registeredToolNames, mcpFindTool.Tool.Name)
 
 		// Add mcp-add tool
-		mcpAddTool := g.createMcpAddTool(configuration)
+		mcpAddTool := g.createMcpAddTool(configuration, clientConfig)
 		g.mcpServer.AddTool(mcpAddTool.Tool, mcpAddTool.Handler)
 		g.registeredToolNames = append(g.registeredToolNames, mcpAddTool.Tool.Name)
 
 		// Add mcp-remove tool
-		mcpRemoveTool := g.createMcpRemoveTool(configuration)
+		mcpRemoveTool := g.createMcpRemoveTool(configuration, clientConfig)
 		g.mcpServer.AddTool(mcpRemoveTool.Tool, mcpRemoveTool.Handler)
 		g.registeredToolNames = append(g.registeredToolNames, mcpRemoveTool.Tool.Name)
 
@@ -366,6 +368,10 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 func (g *Gateway) RefreshCapabilities(ctx context.Context, server *mcp.Server, serverSession *mcp.ServerSession) error {
 	// Get current configuration
 	configuration, _, _, err := g.configurator.Read(ctx)
+	// hold on to current serverNames
+	configuration.serverNames = g.configuration.serverNames
+	// reset on Gateway
+	g.configuration = configuration
 	if err != nil {
 		return fmt.Errorf("failed to read configuration: %w", err)
 	}
