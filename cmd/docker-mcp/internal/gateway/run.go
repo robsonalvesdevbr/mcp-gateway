@@ -330,9 +330,21 @@ func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configu
 		g.mcpServer.AddTool(mcpRemoveTool.Tool, mcpRemoveTool.Handler)
 		g.registeredToolNames = append(g.registeredToolNames, mcpRemoveTool.Tool.Name)
 
+		// Add mcp-official-registry-import tool
+		mcpOfficialRegistryImportTool := g.createMcpOfficialRegistryImportTool(configuration, clientConfig)
+		g.mcpServer.AddTool(mcpOfficialRegistryImportTool.Tool, mcpOfficialRegistryImportTool.Handler)
+		g.registeredToolNames = append(g.registeredToolNames, mcpOfficialRegistryImportTool.Tool.Name)
+
+		// Add mcp-config-set tool
+		mcpConfigSetTool := g.createMcpConfigSetTool(configuration, clientConfig)
+		g.mcpServer.AddTool(mcpConfigSetTool.Tool, mcpConfigSetTool.Handler)
+		g.registeredToolNames = append(g.registeredToolNames, mcpConfigSetTool.Tool.Name)
+
 		log("  > mcp-find: tool for finding MCP servers in the catalog")
 		log("  > mcp-add: tool for adding MCP servers to the registry")
 		log("  > mcp-remove: tool for removing MCP servers from the registry")
+		log("  > mcp-official-registry-import: tool for importing servers from official registry URLs")
+		log("  > mcp-config-set: tool for setting configuration values for MCP servers")
 	}
 
 	for _, prompt := range capabilities.Prompts {
