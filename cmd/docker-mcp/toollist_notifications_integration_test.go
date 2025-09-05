@@ -59,14 +59,14 @@ func findProjectRootForToolNotifications() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	for {
 		// Check if test/servers/elicit/Dockerfile exists in current directory
 		dockerfilePath := filepath.Join(currentDir, "test", "servers", "elicit", "Dockerfile")
 		if _, err := os.Stat(dockerfilePath); err == nil {
 			return currentDir, nil
 		}
-		
+
 		// Move up one directory
 		parent := filepath.Dir(currentDir)
 		if parent == currentDir {
@@ -75,7 +75,7 @@ func findProjectRootForToolNotifications() (string, error) {
 		}
 		currentDir = parent
 	}
-	
+
 	return "", fmt.Errorf("could not find project root containing test/servers/elicit/Dockerfile")
 }
 
