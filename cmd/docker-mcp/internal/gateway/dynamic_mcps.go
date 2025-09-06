@@ -13,6 +13,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
+	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/oci"
 )
 
 // mcpFindTool implements a tool for finding MCP servers in the catalog
@@ -465,61 +466,26 @@ func (g *Gateway) readServersFromURL(ctx context.Context, url string) (map[strin
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	// Try to parse as an OCI-style catalog first (similar to oci.ReadArtifact)
-	var ociCatalog struct {
-		Registry []struct {
-			Server struct {
-				Name            string                `json:"name"`
-				Image           string                `json:"image,omitempty"`
-				SSEEndpoint     string                `json:"sseEndpoint,omitempty"`
-				Remote          catalog.Remote        `json:"remote,omitempty"`
-				Tools           []catalog.Tool        `json:"tools,omitempty"`
-				Secrets         []catalog.Secret      `json:"secrets,omitempty"`
-				LongLived       bool                  `json:"longLived,omitempty"`
-				DisableNetwork  bool                  `json:"disableNetwork,omitempty"`
-				ToCatalogServer func() catalog.Server `json:"-"`
-			} `json:"server"`
-		} `json:"registry"`
-	}
+	// Try to parse as oci.ServerDetail (the new structure)
+	var serverDetail oci.ServerDetail
+	if err := json.Unmarshal(body, &serverDetail); err == nil && serverDetail.Name != "" {
+		// Successfully parsed as ServerDetail - convert to catalog.Server
+		server := serverDetail.ToCatalogServer()
 
-	if err := json.Unmarshal(body, &ociCatalog); err == nil && len(ociCatalog.Registry) > 0 {
-		// Successfully parsed as OCI-style catalog
-		for i, ociServer := range ociCatalog.Registry {
-			serverDetail := ociServer.Server
-
-			// Convert to catalog.Server manually since we can't call the method
-			server := catalog.Server{
-				Image:          serverDetail.Image,
-				SSEEndpoint:    serverDetail.SSEEndpoint,
-				Remote:         serverDetail.Remote,
-				Tools:          serverDetail.Tools,
-				Secrets:        serverDetail.Secrets,
-				LongLived:      serverDetail.LongLived,
-				DisableNetwork: serverDetail.DisableNetwork,
-			}
-
-			serverName := serverDetail.Name
-			if serverName == "" {
-				serverName = fmt.Sprintf("url-server-%d", i)
-			}
-
-			servers[serverName] = server
-			log(fmt.Sprintf("  - Added server '%s' from URL %s", serverName, url))
-		}
-		return servers, nil
-	}
-
-	// Try to parse as direct catalog.Catalog
-	var directCatalog catalog.Catalog
-	if err := json.Unmarshal(body, &directCatalog); err == nil && len(directCatalog.Servers) > 0 {
-		for serverName, server := range directCatalog.Servers {
-			servers[serverName] = server
-			log(fmt.Sprintf("  - Added server '%s' from URL %s", serverName, url))
-		}
+		serverName := serverDetail.Name
+		servers[serverName] = server
+		log(fmt.Sprintf("  - Added server '%s' from URL %s", serverName, url))
 		return servers, nil
 	}
 
 	return nil, fmt.Errorf("unable to parse response as OCI catalog or direct catalog format")
+}
+
+//nolint:gofmt
+type configValue struct {
+	Server string      `json:"server"`
+	Key    string      `json:"key"`
+	Value  interface{} `json:"value"`
 }
 
 // mcpConfigSetTool implements a tool for setting configuration values for MCP servers
@@ -548,11 +514,7 @@ func (g *Gateway) createMcpConfigSetTool(configuration Configuration, clientConf
 
 	handler := func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		// Parse parameters
-		var params struct {
-			Server string      `json:"server"`
-			Key    string      `json:"key"`
-			Value  interface{} `json:"value"`
-		}
+		var params configValue
 
 		if req.Params.Arguments == nil {
 			return nil, fmt.Errorf("missing arguments")
