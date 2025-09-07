@@ -205,7 +205,7 @@ type ServerMatch struct {
 func (g *Gateway) createMcpAddTool(configuration Configuration, clientConfig *clientConfig) *ToolRegistration {
 	tool := &mcp.Tool{
 		Name:        "mcp-add",
-		Description: "Add a new MCP server to the registry and reload the configuration. The server must exist in the catalog.",
+		Description: "Add a new MCP server to the session. The server must exist in the catalog.",
 		InputSchema: &jsonschema.Schema{
 			Type: "object",
 			Properties: map[string]*jsonschema.Schema{
@@ -285,7 +285,7 @@ func (g *Gateway) createMcpAddTool(configuration Configuration, clientConfig *cl
 
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{
-				Text: fmt.Sprintf("Successfully added server '%s'.", serverName),
+				Text: fmt.Sprintf("Successfully added server '%s'. Assume that it is fully configured and ready to use.", serverName),
 			}},
 		}, nil
 	}
@@ -364,7 +364,7 @@ func (g *Gateway) createMcpRemoveTool(_ Configuration, clientConfig *clientConfi
 }
 
 // mcpOfficialRegistryImportTool implements a tool for importing servers from official registry URLs
-func (g *Gateway) createMcpOfficialRegistryImportTool(configuration Configuration, clientConfig *clientConfig) *ToolRegistration {
+func (g *Gateway) createMcpOfficialRegistryImportTool(configuration Configuration, _ *clientConfig) *ToolRegistration {
 	tool := &mcp.Tool{
 		Name:        "mcp-official-registry-import",
 		Description: "Import MCP servers from an official registry URL. Fetches server definitions via HTTP GET and adds them to the local catalog.",
@@ -432,50 +432,62 @@ func (g *Gateway) createMcpOfficialRegistryImportTool(configuration Configuratio
 			}, nil
 		}
 
-		// Add the imported servers to the current configuration
+		// Add the imported servers to the current configuration and build detailed summary
 		var importedServerNames []string
+		var serverSummaries []string
+
 		for serverName, server := range servers {
 			if _, exists := configuration.servers[serverName]; exists {
 				log(fmt.Sprintf("Warning: server '%s' from URL %s overwrites existing server", serverName, registryURL))
 			}
 			configuration.servers[serverName] = server
 			importedServerNames = append(importedServerNames, serverName)
-		}
 
-		// Update serverNames with imported servers
-		for _, serverName := range importedServerNames {
-			found := false
-			for _, existing := range configuration.serverNames {
-				if existing == serverName {
-					found = true
-					break
+			// Build detailed summary for this server
+			summary := fmt.Sprintf("• %s", serverName)
+
+			if server.Description != "" {
+				summary += fmt.Sprintf("\n  Description: %s", server.Description)
+			}
+
+			if server.Image != "" {
+				summary += fmt.Sprintf("\n  Image: %s", server.Image)
+			}
+
+			// List required secrets
+			if len(server.Secrets) > 0 {
+				var secretNames []string
+				for _, secret := range server.Secrets {
+					secretNames = append(secretNames, secret.Name)
 				}
+				summary += fmt.Sprintf("\n  Required Secrets: %s", strings.Join(secretNames, ", "))
+				summary += "\n  ⚠️  Configure these secrets before using this server"
 			}
-			if !found {
-				configuration.serverNames = append(configuration.serverNames, serverName)
+
+			// List configuration schemas available
+			if len(server.Config) > 0 {
+				summary += fmt.Sprintf("\n  Configuration Schemas: %d available", len(server.Config))
+				summary += "\n  ℹ️  Use mcp-config-set to configure optional settings"
 			}
+
+			if server.LongLived {
+				summary += "\n  🔄 Long-lived server (stays running)"
+			}
+
+			serverSummaries = append(serverSummaries, summary)
 		}
 
-		// Fetch updated secrets for the new server list
-		if g.configurator != nil {
-			if fbc, ok := g.configurator.(*FileBasedConfiguration); ok {
-				updatedSecrets, err := fbc.readDockerDesktopSecrets(ctx, configuration.servers, configuration.serverNames)
-				if err == nil {
-					configuration.secrets = updatedSecrets
-				} else {
-					log("Warning: Failed to update secrets:", err)
-				}
-			}
-		}
+		// Create comprehensive result message
+		resultText := fmt.Sprintf("Successfully imported %d servers from %s\n\n", len(importedServerNames), registryURL)
+		resultText += strings.Join(serverSummaries, "\n\n")
 
-		// Reload configuration with updated server list
-		if err := g.reloadConfiguration(ctx, configuration, configuration.serverNames, clientConfig); err != nil {
-			return nil, fmt.Errorf("failed to reload configuration: %w", err)
+		if len(importedServerNames) > 0 {
+			resultText += fmt.Sprintf("\n\n✅ Servers ready to use: %s", strings.Join(importedServerNames, ", "))
 		}
 
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{&mcp.TextContent{
-				Text: fmt.Sprintf("Successfully imported %d servers from %s: %s", len(importedServerNames), registryURL, strings.Join(importedServerNames, ", ")),
+				Text: resultText,
 			}},
 		}, nil
 	}
@@ -534,11 +546,10 @@ func (g *Gateway) readServersFromURL(ctx context.Context, url string) (map[strin
 	return nil, fmt.Errorf("unable to parse response as OCI catalog or direct catalog format")
 }
 
-//nolint:gofmt
 type configValue struct {
-	Server string      `json:"server"`
-	Key    string      `json:"key"`
-	Value  interface{} `json:"value"`
+	Server string `json:"server"`
+	Key    string `json:"key"`
+	Value  any    `json:"value"`
 }
 
 // mcpConfigSetTool implements a tool for setting configuration values for MCP servers

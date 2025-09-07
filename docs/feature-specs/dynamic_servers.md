@@ -110,7 +110,13 @@ When enabled, the gateway adds five internal management tools to the available t
 - Adds imported servers to the local catalog
 - Automatically enables imported servers
 - Reloads the gateway configuration
-- Returns list of imported servers
+- Returns detailed summary of each imported server including:
+  - Server name and description
+  - Docker image information  
+  - Required secrets with configuration warnings
+  - Available configuration schemas
+  - Long-lived server indicators
+  - Ready-to-use server list
 
 ### 5. mcp-config-set
 
