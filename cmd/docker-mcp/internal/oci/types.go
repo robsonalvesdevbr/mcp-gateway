@@ -119,13 +119,30 @@ func (sd *ServerDetail) ToCatalogServer() catalog.Server {
 			}
 		}
 
-		// Convert inputs to secrets for credential-type inputs
+		// Convert inputs to secrets for credential-type inputs and config schemas for configurable inputs
 		for _, input := range pkg.Inputs {
-			if input.Type == "secret" {
+			switch input.Type {
+			case "secret":
 				server.Secrets = append(server.Secrets, catalog.Secret{
 					Name: input.Name,
 					Env:  strings.ToUpper(input.Name),
 				})
+			case "configurable":
+				// Convert configurable input to JSON schema object
+				schema := map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						input.Name: map[string]any{
+							"type":        "string", // Default to string, could be enhanced based on input validation
+							"description": input.Description,
+						},
+					},
+					"required": []string{},
+				}
+				if input.Required {
+					schema["required"] = []string{input.Name}
+				}
+				server.Config = append(server.Config, schema)
 			}
 		}
 	}
@@ -139,13 +156,30 @@ func (sd *ServerDetail) ToCatalogServer() catalog.Server {
 			Headers:   remote.Headers,
 		}
 
-		// Convert remote inputs to secrets
+		// Convert remote inputs to secrets and config schemas
 		for _, input := range remote.Inputs {
-			if input.Type == "secret" {
+			switch input.Type {
+			case "secret":
 				server.Secrets = append(server.Secrets, catalog.Secret{
 					Name: input.Name,
 					Env:  strings.ToUpper(input.Name),
 				})
+			case "configurable":
+				// Convert configurable input to JSON schema object
+				schema := map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						input.Name: map[string]any{
+							"type":        "string", // Default to string, could be enhanced based on input validation
+							"description": input.Description,
+						},
+					},
+					"required": []string{},
+				}
+				if input.Required {
+					schema["required"] = []string{input.Name}
+				}
+				server.Config = append(server.Config, schema)
 			}
 		}
 	}

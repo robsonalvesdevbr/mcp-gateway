@@ -147,6 +147,10 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 				serverInfo["required_secrets"] = secrets
 			}
 
+			if len(match.Server.Config) > 0 {
+				serverInfo["config_schema"] = match.Server.Config
+			}
+
 			serverInfo["long_lived"] = match.Server.LongLived
 
 			results = append(results, serverInfo)
@@ -233,8 +237,29 @@ func (g *Gateway) createMcpAddTool(configuration Configuration, clientConfig *cl
 			}, nil
 		}
 
-		// Append the new server to the current serverNames
-		configuration.serverNames = append(configuration.serverNames, serverName)
+		// Append the new server to the current serverNames if not already present
+		found = false
+		for _, existing := range configuration.serverNames {
+			if existing == serverName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			configuration.serverNames = append(configuration.serverNames, serverName)
+		}
+
+		// Fetch updated secrets for the new server list
+		if g.configurator != nil {
+			if fbc, ok := g.configurator.(*FileBasedConfiguration); ok {
+				updatedSecrets, err := fbc.readDockerDesktopSecrets(ctx, configuration.servers, configuration.serverNames)
+				if err == nil {
+					configuration.secrets = updatedSecrets
+				} else {
+					log("Warning: Failed to update secrets:", err)
+				}
+			}
+		}
 
 		// Update the current configuration state
 		updatedServerNames := configuration.serverNames

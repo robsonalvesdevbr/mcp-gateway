@@ -25,6 +25,7 @@ type Server struct {
 	DisableNetwork bool     `yaml:"disableNetwork,omitempty" json:"disableNetwork,omitempty"`
 	AllowHosts     []string `yaml:"allowHosts,omitempty" json:"allowHosts,omitempty"`
 	Tools          []Tool   `yaml:"tools,omitempty" json:"tools,omitempty"`
+	Config         []any    `yaml:"config,omitempty" json:"config,omitempty"`
 }
 
 type Secret struct {
