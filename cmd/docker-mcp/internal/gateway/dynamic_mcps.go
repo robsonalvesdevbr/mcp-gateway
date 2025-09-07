@@ -456,6 +456,18 @@ func (g *Gateway) createMcpOfficialRegistryImportTool(configuration Configuratio
 			}
 		}
 
+		// Fetch updated secrets for the new server list
+		if g.configurator != nil {
+			if fbc, ok := g.configurator.(*FileBasedConfiguration); ok {
+				updatedSecrets, err := fbc.readDockerDesktopSecrets(ctx, configuration.servers, configuration.serverNames)
+				if err == nil {
+					configuration.secrets = updatedSecrets
+				} else {
+					log("Warning: Failed to update secrets:", err)
+				}
+			}
+		}
+
 		// Reload configuration with updated server list
 		if err := g.reloadConfiguration(ctx, configuration, configuration.serverNames, clientConfig); err != nil {
 			return nil, fmt.Errorf("failed to reload configuration: %w", err)
