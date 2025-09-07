@@ -39,7 +39,7 @@ When enabled, the gateway adds five internal management tools to the available t
 }
 ```
 
-**Response**: Returns matching servers with their details including required secrets and long-lived status.
+**Response**: Returns matching servers with their details including name, description, required secrets, config schema, and long-lived status.
 
 ### 2. mcp-add
 

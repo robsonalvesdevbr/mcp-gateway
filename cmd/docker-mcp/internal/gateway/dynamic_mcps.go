@@ -83,6 +83,18 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 				score = 50
 			}
 
+			// Check server description
+			if server.Description != "" {
+				descriptionLower := strings.ToLower(server.Description)
+				if descriptionLower == query {
+					match = true
+					score = maxInt(score, 95)
+				} else if strings.Contains(descriptionLower, query) {
+					match = true
+					score = maxInt(score, 45)
+				}
+			}
+
 			// Check if it has tools that might match
 			for _, tool := range server.Tools {
 				toolNameLower := strings.ToLower(tool.Name)
@@ -137,6 +149,10 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 		for _, match := range matches {
 			serverInfo := map[string]any{
 				"name": match.Name,
+			}
+
+			if match.Server.Description != "" {
+				serverInfo["description"] = match.Server.Description
 			}
 
 			if len(match.Server.Secrets) > 0 {

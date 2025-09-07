@@ -14,6 +14,7 @@ type topLevel struct {
 
 type Server struct {
 	Image          string   `yaml:"image" json:"image"`
+	Description    string   `yaml:"description,omitempty" json:"description,omitempty"`
 	LongLived      bool     `yaml:"longLived,omitempty" json:"longLived,omitempty"`
 	Remote         Remote   `yaml:"remote,omitempty" json:"remote,omitempty"`
 	SSEEndpoint    string   `yaml:"sseEndpoint,omitempty" json:"sseEndpoint,omitempty"` // Deprecated: Use Remote instead
