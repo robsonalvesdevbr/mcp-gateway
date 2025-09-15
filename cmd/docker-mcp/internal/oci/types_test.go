@@ -135,8 +135,8 @@ func TestServerDetailToCatalogServer(t *testing.T) {
 
 	// Verify secrets conversion (both GARMIN_EMAIL and GARMIN_PASSWORD should be secrets)
 	expectedSecrets := []catalog.Secret{
-		{Name: "GARMIN_EMAIL", Env: "GARMIN_EMAIL"},
-		{Name: "GARMIN_PASSWORD", Env: "GARMIN_PASSWORD"},
+		{Name: "io_github_slimslenderslacks/garmin_mcp.GARMIN_EMAIL", Env: "GARMIN_EMAIL"},
+		{Name: "io_github_slimslenderslacks/garmin_mcp.GARMIN_PASSWORD", Env: "GARMIN_PASSWORD"},
 	}
 	if len(catalogServer.Secrets) != len(expectedSecrets) {
 		t.Errorf("Expected %d secrets, got %d", len(expectedSecrets), len(catalogServer.Secrets))
@@ -541,7 +541,7 @@ func TestRemoteServerConversion(t *testing.T) {
 
 	// Verify headers conversion
 	expectedHeaders := map[string]string{
-		"X-API-Key": "${X-API-Key}", // Secret header should become template
+		"X-API-Key": "${X_API_Key}", // Secret header should become template (canonicalized)
 		"X-Region":  "us-east-1",    // Non-secret header should use default value
 	}
 	if len(catalogServer.Remote.Headers) != len(expectedHeaders) {
@@ -560,11 +560,11 @@ func TestRemoteServerConversion(t *testing.T) {
 		t.Errorf("Expected 1 secret, got %d", len(catalogServer.Secrets))
 	} else {
 		secret := catalogServer.Secrets[0]
-		if secret.Name != "X-API-Key" {
-			t.Errorf("Expected secret name 'X-API-Key', got '%s'", secret.Name)
+		if secret.Name != "io_github_slimslenderslacks/remote.X-API-Key" {
+			t.Errorf("Expected secret name 'io_github_slimslenderslacks/remote.X-API-Key', got '%s'", secret.Name)
 		}
-		if secret.Env != "X-API-Key" {
-			t.Errorf("Expected secret env 'X-API-Key', got '%s'", secret.Env)
+		if secret.Env != "X_API_Key" {
+			t.Errorf("Expected secret env 'X_API_Key', got '%s'", secret.Env)
 		}
 	}
 }

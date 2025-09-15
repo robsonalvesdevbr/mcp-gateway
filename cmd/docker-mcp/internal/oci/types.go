@@ -35,30 +35,34 @@ type VersionDetail struct {
 
 // Package represents a package definition
 type Package struct {
-	RegistryType     string          `json:"registry_type"`
-	Identifier       string          `json:"identifier"`
-	Version          string          `json:"version,omitempty"`
-	Args             []string        `json:"args,omitempty"`
+	RegistryType     string          `json:"registry_type"`     // npm, pypi, oci, nuget, mcpb
+	Identifier       string          `json:"identifier"`        // registry name
+	Version          string          `json:"version,omitempty"` // tag or digest
+	RegistryBaseURL  string          `json:"registry_base_url,omitempty"`
 	Env              []KeyValueInput `json:"environment_variables,omitempty"`
 	RuntimeOptions   []Argument      `json:"runtime_arguments,omitempty"`
 	PackageArguments []Argument      `json:"package_arguments,omitempty"`
-	Inputs           []Input         `json:"inputs,omitempty"`
+}
+
+type InputWithVariables struct {
+	Input
+
+	Variables map[string]Input `json:"variables,omitempty"`
 }
 
 type Argument struct {
-	Input
-	Variables map[string]Input `json:"variables,omitempty"`
+	InputWithVariables
 
-	Type       string `json:"type"`
+	Type       string `json:"type"` // named, positional
 	ValueHint  string `json:"value_hint,omitempty"`
 	IsRepeated bool   `json:"is_repeated,omitempty"`
-	Name       string `json:"name,omitempty"`
+	Name       string `json:"name,omitempty"` // required if named
 }
 
 type KeyValueInput struct {
-	Input
-	Name      string           `json:"name"`
-	Variables map[string]Input `json:"variables,omitempty"`
+	InputWithVariables
+
+	Name string `json:"name"`
 }
 
 // RuntimeOptions contains runtime configuration
@@ -71,27 +75,19 @@ type RuntimeOptions struct {
 
 // Input represents input configuration
 type Input struct {
-	Type         string   `json:"type,omitempty"` // "positional", "named", "secret", "configurable"
 	Description  string   `json:"description,omitempty"`
 	Value        string   `json:"value,omitempty"`
 	Required     bool     `json:"is_required,omitempty"`
 	Secret       bool     `json:"is_secret,omitempty"`
-	DefaultValue any      `json:"default,omitempty"`
+	DefaultValue string   `json:"default,omitempty"`
 	Choices      []string `json:"choices,omitempty"`
-	Format       string   `json:"format,omitempty"`
-}
-
-// InputOption represents an option for input validation
-type InputOption struct {
-	Value       any    `json:"value,omitempty"`
-	Label       string `json:"label,omitempty"`
-	Description string `json:"description,omitempty"`
+	Format       string   `json:"format,omitempty"` // "string", "number", "boolean", "filepath"
 }
 
 // Remote represents a remote server configuration
 type RemoteServer struct {
 	URL           string          `json:"url,omitempty"`
-	TransportType string          `json:"type,omitempty"`
+	TransportType string          `json:"type,omitempty"` // "streamable-http", "sse"
 	Headers       []KeyValueInput `json:"headers,omitempty"`
 }
 
@@ -112,33 +108,54 @@ func (sd *ServerDetail) ToCatalogServer() catalog.Server {
 
 		// Convert environment variables to secrets, env vars, and config schemas
 		for _, envVar := range pkg.Env {
-			if envVar.Secret || envVar.Type == "secret" {
-				server.Secrets = append(server.Secrets, catalog.Secret{
-					Name: envVar.Name,
-					Env:  envVar.Name,
-				})
+			value, secrets, config := getKeyValueInput(envVar, CanonicalizeServerName(sd.Name), false)
+			if len(secrets) > 0 {
+				// don't need explicit env because secret adds it
+				server.Secrets = append(server.Secrets, secrets...)
 			} else {
-				// Add as environment variable
-				value := envVar.Value
-				if value == "" {
-					value = fmt.Sprintf("%v", envVar.DefaultValue)
-				}
 				server.Env = append(server.Env, catalog.Env{
 					Name:  envVar.Name,
 					Value: value,
 				})
+				server.Config = mergeConfig(server.Config, CanonicalizeServerName(sd.Name), config)
 			}
 		}
 
 		// Process package arguments and append positional ones to command
 		for _, arg := range pkg.PackageArguments {
-			if arg.Type == "positional" {
-				server.Command = append(server.Command, arg.Value)
+			switch arg.Type {
+			case "positional":
+				value, secrets, configSchema := getInput(arg.InputWithVariables, CanonicalizeServerName(sd.Name))
+				server.Command = append(server.Command, value)
+
+				// Add any secrets from the argument
+				if len(secrets) > 0 {
+					server.Secrets = append(server.Secrets, secrets...)
+				}
+
+				// Add any config schema from the argument
+				if configSchema != nil {
+					server.Config = mergeConfig(server.Config, CanonicalizeServerName(sd.Name), configSchema)
+				}
+			case "named":
+				value, secrets, configSchema := getInput(arg.InputWithVariables, CanonicalizeServerName(sd.Name))
+				server.Command = append(server.Command, fmt.Sprintf("--%s", arg.Name), value)
+
+				// Add any secrets from the argument
+				if len(secrets) > 0 {
+					server.Secrets = append(server.Secrets, secrets...)
+				}
+
+				// Add any config schema from the argument
+				if configSchema != nil {
+					server.Config = mergeConfig(server.Config, CanonicalizeServerName(sd.Name), configSchema)
+				}
 			}
 		}
 
-		// Process runtime arguments for volume mounting
+		// Process runtime arguments
 		for _, arg := range pkg.RuntimeOptions {
+			// volume arguments have special meaning
 			if arg.Type == "named" && (arg.Name == "-v" || arg.Name == "--mount") {
 				config, volume := createVolume(arg, CanonicalizeServerName(sd.Name))
 				if volume != "" {
@@ -148,6 +165,7 @@ func (sd *ServerDetail) ToCatalogServer() catalog.Server {
 					server.Config = mergeConfig(server.Config, CanonicalizeServerName(sd.Name), config)
 				}
 			}
+			// TODO support User args explicitly
 		}
 	}
 
@@ -159,7 +177,7 @@ func (sd *ServerDetail) ToCatalogServer() catalog.Server {
 		headers := make(map[string]string)
 		headerSecrets := []catalog.Secret{}
 		for _, header := range remote.Headers {
-			value, secrets := getHeaderInput(header)
+			value, secrets, _ := getKeyValueInput(header, CanonicalizeServerName(sd.Name), true)
 			headers[header.Name] = value
 			headerSecrets = append(headerSecrets, secrets...)
 		}
@@ -177,23 +195,126 @@ func (sd *ServerDetail) ToCatalogServer() catalog.Server {
 	return server
 }
 
-func getHeaderInput(header KeyValueInput) (string, []catalog.Secret) {
-	// If this is a secret with no variables, return template expression and secret
-	if header.Secret && len(header.Variables) == 0 {
-		templateValue := fmt.Sprintf("${%s}", header.Name)
-		secrets := catalog.Secret{
-			Name: header.Name,
-			Env:  header.Name,
+func getKeyValueInput(kvi KeyValueInput, serverName string, useEnvForm bool) (string, []catalog.Secret, map[string]any) {
+	if len(kvi.Variables) == 0 {
+		if kvi.Secret {
+			var templateValue string
+			if useEnvForm {
+				templateValue = fmt.Sprintf("${%s}", canonicalizeEnvName(kvi.Name))
+			} else {
+				templateValue = fmt.Sprintf("{{%s}}", kvi.Name)
+			}
+			secret := catalog.Secret{
+				Name: fmt.Sprintf("%s.%s", serverName, kvi.Name),
+				Env:  canonicalizeEnvName(kvi.Name),
+			}
+			return templateValue, []catalog.Secret{secret}, map[string]any{}
+		} else if kvi.Value != "" {
+			return kvi.Value, []catalog.Secret{}, map[string]any{}
+		} else if kvi.DefaultValue != "" {
+			// Use default value when no explicit value is provided
+			return fmt.Sprintf("%v", kvi.DefaultValue), []catalog.Secret{}, map[string]any{}
 		}
-		return templateValue, []catalog.Secret{secrets}
-	} else if header.Value != "" {
-		return header.Value, []catalog.Secret{}
-	} else if header.Description != "" {
-		return header.DefaultValue.(string), []catalog.Secret{}
+		config := map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				kvi.Name: map[string]any{
+					"type": "string",
+				},
+			},
+		}
+		return fmt.Sprintf("{{%s}}", fmt.Sprintf("%s.%s", serverName, kvi.Name)), []catalog.Secret{}, config
+	}
+	value, secrets, config := getInput(kvi.InputWithVariables, serverName)
+	return value, secrets, config
+}
+
+func getInput(arg InputWithVariables, serverName string) (string, []catalog.Secret, map[string]any) {
+	var secrets []catalog.Secret
+	var configSchema map[string]any
+
+	// Process the main input
+	value := arg.Value
+	if arg.Secret {
+		// TODO - this is bad practice (visible to docker inspect)
+		secret := catalog.Secret{
+			Name: fmt.Sprintf("%s.%s", serverName, arg.Description),
+			Env:  canonicalizeEnvName(arg.Description),
+		}
+		secrets = append(secrets, secret)
+
+		// Replace with template reference
+		value = fmt.Sprintf("{{%s}}", arg.Description)
+	} else if len(arg.Variables) > 0 {
+		// This input has variables, create config schema
+		properties := make(map[string]any)
+		required := []string{}
+
+		for varName, variable := range arg.Variables {
+			prop := map[string]any{
+				"type":        "string", // Default to string
+				"description": variable.Description,
+			}
+
+			// Add default value if present
+			if variable.DefaultValue != "" {
+				prop["default"] = variable.DefaultValue
+			}
+
+			// Add format if specified
+			if variable.Format != "" {
+				prop["format"] = variable.Format
+			}
+
+			// Add choices as enum if present
+			if len(variable.Choices) > 0 {
+				prop["enum"] = variable.Choices
+			}
+
+			properties[varName] = prop
+
+			// Add to required if the variable is required
+			if variable.Required {
+				required = append(required, varName)
+			}
+
+			// Handle secret variables
+			if variable.Secret {
+				secret := catalog.Secret{
+					Name: fmt.Sprintf("%s.%s", serverName, varName),
+					Env:  canonicalizeEnvName(varName),
+				}
+				secrets = append(secrets, secret)
+
+				// Replace in value string using secret reference
+				value = replaceVariables(value, serverName)
+			}
+		}
+
+		// Create the config schema
+		configSchema = map[string]any{
+			"type":       "object",
+			"properties": properties,
+		}
+
+		if len(required) > 0 {
+			configSchema["required"] = required
+		}
+
+		// Replace variables in the value string
+		value = replaceVariables(value, serverName)
 	}
 
-	// For non-secret headers, return the value directly
-	return header.Value, []catalog.Secret{}
+	// If we have a default value and no explicit value, use the default
+	if value == "" && arg.DefaultValue != "" {
+		value = fmt.Sprintf("%v", arg.DefaultValue)
+	}
+
+	return value, secrets, configSchema
+}
+
+func canonicalizeEnvName(s string) string {
+	return strings.ReplaceAll(s, "-", "_")
 }
 
 // createVolume creates both a config schema and volume string from a runtime argument
@@ -215,7 +336,7 @@ func createVolume(arg Argument, serverName string) (map[string]any, string) {
 					"description": variable.Description,
 				}
 
-				if variable.DefaultValue != nil {
+				if variable.DefaultValue != "" {
 					prop["default"] = variable.DefaultValue
 				}
 
