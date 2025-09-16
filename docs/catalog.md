@@ -19,21 +19,6 @@ This creates a YAML file with real server definitions that you can:
 - Import directly into your catalog collection
 - Use as a source for copying individual servers to other catalogs
 
-## Feature Activation
-
-Custom catalogs can be managed by enabling the `configured-catalogs` feature:
-
-```bash
-# Enable the feature
-docker mcp feature enable configured-catalogs
-
-# Verify it's enabled
-docker mcp feature list
-
-# Use configured catalogs with the gateway
-docker mcp gateway run --use-configured-catalogs
-```
-
 ## Catalog Management Commands
 
 ### Listing Catalogs
@@ -153,9 +138,6 @@ registry:
     title: "Server Display Name"
     type: "server"  # or "poci" for container tools
     image: "namespace/image:tag"
-    tools:
-      - name: "tool1"
-      - name: "tool2"
     # Additional server configuration...
 ```
 
@@ -288,10 +270,6 @@ EOF
 
 # 5. Add your custom server
 docker mcp catalog add dev-servers my-dev-server ./my-server.yaml
-
-# 6. Enable the feature and run with your catalog
-docker mcp feature enable configured-catalogs
-docker mcp gateway run --use-configured-catalogs
 ```
 
 ### Team Sharing Workflow
@@ -308,7 +286,7 @@ docker mcp catalog export team-servers ./team-catalog.yaml
 # Team members: Import the shared catalog
 docker mcp catalog import ./team-catalog.yaml
 docker mcp feature enable configured-catalogs
-docker mcp gateway run --use-configured-catalogs
+docker mcp gateway run
 ```
 
 ### Testing New Servers
@@ -321,7 +299,7 @@ docker mcp catalog create test-servers
 docker mcp catalog add test-servers test-server ./test-server.yaml
 
 # 3. Run gateway with test catalog
-docker mcp gateway run --use-configured-catalogs
+docker mcp gateway run
 
 # 4. When done testing, clean up
 docker mcp catalog rm test-servers
@@ -347,7 +325,7 @@ docker mcp gateway run --use-configured-catalogs
 
 ## Catalog Precedence
 
-When using `--use-configured-catalogs`, catalogs are loaded in this order:
+Catalogs are loaded in this order:
 
 1. **Docker Official Catalog** (always loaded first)
 2. **Configured Catalogs** (user-imported catalogs)
@@ -364,12 +342,6 @@ For servers you want to share with the broader community, consider submitting th
 This process makes your servers available to all Docker MCP users through the official catalog.
 
 ## Troubleshooting
-
-### Feature Not Enabled
-```bash
-Error: configured catalogs feature is not enabled
-```
-**Solution**: Run `docker mcp feature enable configured-catalogs`
 
 ### File Already Exists
 ```bash
