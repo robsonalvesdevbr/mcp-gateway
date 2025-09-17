@@ -21,8 +21,8 @@ func serverCommand(docker docker.Client) *cobra.Command {
 
 	var outputJSON bool
 	lsCommand := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
+		Use:     "ls",
+		Aliases: []string{"list"},
 		Short:   "List enabled servers",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {

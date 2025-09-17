@@ -110,7 +110,7 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 			if len(mcpRegistryUrls) > 0 {
 				var mcpServers []catalogTypes.Server
 				for _, registryURL := range mcpRegistryUrls {
-					if err := runOfficialregistryImport(cmd.Context(), registryURL, &mcpServers); err != nil {
+					if err := runMcpregistryImport(cmd.Context(), registryURL, &mcpServers); err != nil {
 						return fmt.Errorf("failed to fetch server from MCP registry %s: %w", registryURL, err)
 					}
 				}

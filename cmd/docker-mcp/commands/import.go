@@ -11,7 +11,7 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/oci"
 )
 
-func runOfficialregistryImport(ctx context.Context, serverURL string, servers *[]catalog.Server) error {
+func runMcpregistryImport(ctx context.Context, serverURL string, servers *[]catalog.Server) error {
 	// Validate URL
 	parsedURL, err := url.Parse(serverURL)
 	if err != nil {

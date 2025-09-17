@@ -5,9 +5,9 @@ List all configured catalogs including Docker's official catalog and any locally
 
 ### Options
 
-| Name     | Type   | Default | Description    |
-|:---------|:-------|:--------|:---------------|
-| `--json` | `bool` |         | Print as JSON. |
+| Name       | Type     | Default | Description                               |
+|:-----------|:---------|:--------|:------------------------------------------|
+| `--format` | `format` |         | Output format. Supported: "json", "yaml". |
 
 
 <!---MARKER_GEN_END-->

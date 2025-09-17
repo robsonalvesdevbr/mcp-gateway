@@ -28,7 +28,7 @@ This creates a YAML file with real server definitions that you can:
 docker mcp catalog ls
 
 # List in JSON format
-docker mcp catalog ls --json
+docker mcp catalog ls --format=json
 ```
 
 ### Creating Catalogs
@@ -64,7 +64,14 @@ docker mcp catalog add my-custom-catalog server-name ./source-catalog.yaml
 docker mcp catalog add my-custom-catalog server-name ./source-catalog.yaml --force
 ```
 
-### Importing Catalogs
+### Importing Servers from OSS MCP Community Registry
+
+```bash
+# replace {id} in the url below
+docker mcp catalog import my-custom-catalog --mcp-registry https://registry.modelcontextprotocol.io/v0/servers/{id}
+```
+
+### Importing Other Catalogs
 
 ```bash
 # Import a catalog from a local file
@@ -272,6 +279,19 @@ EOF
 docker mcp catalog add dev-servers my-dev-server ./my-server.yaml
 ```
 
+### Importing from the OSS MCP Community Registry
+
+```bash
+# 1. Create a destination catalog for your community servers
+docker mcp catalog create community-catalog
+
+# 2. import the OSS MCP community server resource
+docker mcp catalog import --mcp-registry http://registry.modelcontextprotocol.io/v0/servers/71de5a2a-6cfb-4250-a196-f93080ecc860
+
+# 3. show the imported server
+docker mcp catalog show community-catalog --format=json | jq .
+```
+
 ### Team Sharing Workflow
 
 ```bash
@@ -285,7 +305,6 @@ docker mcp catalog export team-servers ./team-catalog.yaml
 
 # Team members: Import the shared catalog
 docker mcp catalog import ./team-catalog.yaml
-docker mcp feature enable configured-catalogs
 docker mcp gateway run
 ```
 
@@ -319,8 +338,7 @@ docker mcp catalog add prod-servers logging ./logging-server.yaml
 docker mcp catalog export prod-servers ./prod-catalog-backup.yaml
 
 # 4. Deploy with production catalog
-docker mcp feature enable configured-catalogs
-docker mcp gateway run --use-configured-catalogs
+docker mcp gateway run
 ```
 
 ## Catalog Precedence

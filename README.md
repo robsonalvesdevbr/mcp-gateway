@@ -84,7 +84,8 @@ docker mcp catalog ls
 docker mcp catalog show docker-mcp
 ```
 
-More about [the MCP Catalog](docs/catalog.md).
+* more about [the MCP Catalog](docs/catalog.md).
+* more about [importing from the OSS MCP Community Registry](docs/catalog.md#importing-from-the-oss-mcp-community-registry).
 
 ### MCP Gateway Operations
 
@@ -106,7 +107,7 @@ Enable and disable the set of MCP servers that will be available for default cli
 
 ```bash
 # List enabled servers
-docker mcp server list
+docker mcp server ls
 
 # Enable one or more servers
 docker mcp server enable <server-name> [server-name...]
@@ -166,10 +167,10 @@ docker mcp --help
 docker mcp tools count
 
 # List all available MCP tools
-docker mcp tools list
+docker mcp tools ls
 
 # List all available MCP tools in JSON format
-docker mcp tools list --format=json
+docker mcp tools ls --format=json
 
 # Inspect a specific tool
 docker mcp tools inspect <tool-name>
