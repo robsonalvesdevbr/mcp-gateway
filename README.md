@@ -84,7 +84,8 @@ docker mcp catalog ls
 docker mcp catalog show docker-mcp
 ```
 
-More about [the MCP Catalog](docs/catalog.md).
+* more about [the MCP Catalog](docs/catalog.md).
+* more about [importing from the OSS MCP Community Registry](docs/catalog.md#importing-from-the-oss-mcp-community-registry).
 
 ### MCP Gateway Operations
 
