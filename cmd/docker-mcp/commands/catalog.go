@@ -58,7 +58,7 @@ command will import servers from the MCP registry URL into that catalog.`,
 			// If mcp-registry flag is provided, import to existing catalog
 			if mcpRegistry != "" {
 				if dryRun {
-					return runOfficialregistryImport(cmd.Context(), mcpRegistry, nil)
+					return runMcpregistryImport(cmd.Context(), mcpRegistry, nil)
 				}
 				return importMCPRegistryToCatalog(cmd.Context(), args[0], mcpRegistry)
 			}
@@ -281,7 +281,7 @@ func importMCPRegistryToCatalog(ctx context.Context, catalogName, mcpRegistryURL
 
 	// Fetch server from MCP registry
 	var servers []catalogTypes.Server
-	if err := runOfficialregistryImport(ctx, mcpRegistryURL, &servers); err != nil {
+	if err := runMcpregistryImport(ctx, mcpRegistryURL, &servers); err != nil {
 		return fmt.Errorf("failed to fetch server from MCP registry: %w", err)
 	}
 

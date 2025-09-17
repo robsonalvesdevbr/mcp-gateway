@@ -11,7 +11,7 @@ import (
 
 func TestServerDetailParsing(t *testing.T) {
 	// Read test data from external JSON file
-	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "officialregistry", "server_garmin_mcp.json")
+	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "mcpregistry", "server_garmin_mcp.json")
 	jsonData, err := os.ReadFile(testDataPath)
 	if err != nil {
 		t.Fatalf("Failed to read test data file %s: %v", testDataPath, err)
@@ -109,7 +109,7 @@ func TestServerDetailParsing(t *testing.T) {
 
 func TestServerDetailToCatalogServer(t *testing.T) {
 	// Read test data from external JSON file
-	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "officialregistry", "server_garmin_mcp.json")
+	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "mcpregistry", "server_garmin_mcp.json")
 	jsonData, err := os.ReadFile(testDataPath)
 	if err != nil {
 		t.Fatalf("Failed to read test data file %s: %v", testDataPath, err)
@@ -159,7 +159,7 @@ func TestServerDetailToCatalogServer(t *testing.T) {
 
 func TestConversionForFileSystem(t *testing.T) {
 	// Read test data from external JSON file
-	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "officialregistry", "server_filesystem.json")
+	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "mcpregistry", "server_filesystem.json")
 	jsonData, err := os.ReadFile(testDataPath)
 	if err != nil {
 		t.Fatalf("Failed to read test data file %s: %v", testDataPath, err)
@@ -343,7 +343,7 @@ func TestConversionForFileSystem(t *testing.T) {
 
 func TestBasicServerConversion(t *testing.T) {
 	// Read test data from the basic test JSON file
-	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "officialregistry", "server.test.json")
+	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "mcpregistry", "server.test.json")
 	jsonData, err := os.ReadFile(testDataPath)
 	if err != nil {
 		t.Fatalf("Failed to read test data file %s: %v", testDataPath, err)
@@ -431,7 +431,7 @@ func TestBasicServerConversion(t *testing.T) {
 
 func TestRemoteServerConversion(t *testing.T) {
 	// Read test data from remote server JSON file
-	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "officialregistry", "server.remote.json")
+	testDataPath := filepath.Join("..", "..", "..", "..", "test", "testdata", "mcpregistry", "server.remote.json")
 	jsonData, err := os.ReadFile(testDataPath)
 	if err != nil {
 		t.Fatalf("Failed to read test data file %s: %v", testDataPath, err)

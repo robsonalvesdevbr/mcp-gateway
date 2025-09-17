@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestOfficialregistryImportCommand(t *testing.T) {
+func TestMcpregistryImportCommand(t *testing.T) {
 	// Test server that serves the Garmin MCP example JSON
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -69,29 +69,29 @@ func TestOfficialregistryImportCommand(t *testing.T) {
 
 	// Test the import function
 	ctx := context.Background()
-	err := runOfficialregistryImport(ctx, testServer.URL, nil)
+	err := runMcpregistryImport(ctx, testServer.URL, nil)
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
 }
 
-func TestOfficialregistryImportCommand_InvalidURL(t *testing.T) {
+func TestMcpregistryImportCommand_InvalidURL(t *testing.T) {
 	ctx := context.Background()
 
 	// Test invalid URL
-	err := runOfficialregistryImport(ctx, "not-a-url", nil)
+	err := runMcpregistryImport(ctx, "not-a-url", nil)
 	if err == nil {
 		t.Error("Expected error for invalid URL, got none")
 	}
 
 	// Test unsupported scheme
-	err = runOfficialregistryImport(ctx, "ftp://example.com", nil)
+	err = runMcpregistryImport(ctx, "ftp://example.com", nil)
 	if err == nil {
 		t.Error("Expected error for unsupported scheme, got none")
 	}
 }
 
-func TestOfficialregistryImportCommand_HTTPError(t *testing.T) {
+func TestMcpregistryImportCommand_HTTPError(t *testing.T) {
 	// Test server that returns 404
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
@@ -99,13 +99,13 @@ func TestOfficialregistryImportCommand_HTTPError(t *testing.T) {
 	defer testServer.Close()
 
 	ctx := context.Background()
-	err := runOfficialregistryImport(ctx, testServer.URL, nil)
+	err := runMcpregistryImport(ctx, testServer.URL, nil)
 	if err == nil {
 		t.Error("Expected error for 404 response, got none")
 	}
 }
 
-func TestOfficialregistryImportCommand_InvalidJSON(t *testing.T) {
+func TestMcpregistryImportCommand_InvalidJSON(t *testing.T) {
 	// Test server that returns invalid JSON
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -118,7 +118,7 @@ func TestOfficialregistryImportCommand_InvalidJSON(t *testing.T) {
 	defer testServer.Close()
 
 	ctx := context.Background()
-	err := runOfficialregistryImport(ctx, testServer.URL, nil)
+	err := runMcpregistryImport(ctx, testServer.URL, nil)
 	if err == nil {
 		t.Error("Expected error for invalid JSON, got none")
 	}
