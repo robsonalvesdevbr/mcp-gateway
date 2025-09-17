@@ -11,7 +11,7 @@ import (
 	"github.com/mikefarah/yq/v4/pkg/yqlib"
 	"github.com/tailscale/hujson"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/yq"
+	"github.com/docker/mcp-gateway/pkg/yq"
 )
 
 type YQ struct {

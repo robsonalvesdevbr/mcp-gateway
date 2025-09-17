@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/config"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/oci"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/server"
+	"github.com/docker/mcp-gateway/pkg/config"
+	"github.com/docker/mcp-gateway/pkg/docker"
+	"github.com/docker/mcp-gateway/pkg/oci"
 )
 
 func serverCommand(docker docker.Client) *cobra.Command {

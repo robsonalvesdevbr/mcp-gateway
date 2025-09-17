@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/tui"
+	"github.com/docker/mcp-gateway/pkg/desktop"
+	"github.com/docker/mcp-gateway/pkg/tui"
 )
 
 const (

@@ -3,8 +3,8 @@ package commands
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/tools"
+	"github.com/docker/mcp-gateway/pkg/docker"
 )
 
 func toolsCommand(docker docker.Client) *cobra.Command {
