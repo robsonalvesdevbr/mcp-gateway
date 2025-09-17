@@ -12,7 +12,7 @@ and control optional functionality that may change in future versions.
 |:------------------------------------|:---------------------------------------------|
 | [`disable`](mcp_feature_disable.md) | Disable an experimental feature              |
 | [`enable`](mcp_feature_enable.md)   | Enable an experimental feature               |
-| [`list`](mcp_feature_list.md)       | List all available features and their status |
+| [`ls`](mcp_feature_ls.md)           | List all available features and their status |
 
 
 

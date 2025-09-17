@@ -87,7 +87,7 @@ cannot be exported as it is managed by Docker.`,
 
 func lsCatalogCommand() *cobra.Command {
 	var opts struct {
-		JSON bool
+		Format catalog.Format
 	}
 	cmd := &cobra.Command{
 		Use:   "ls",
@@ -96,15 +96,15 @@ func lsCatalogCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Example: `  # List all catalogs
   docker mcp catalog ls
-  
+
   # List catalogs in JSON format
-  docker mcp catalog ls --json`,
+  docker mcp catalog ls --format=json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return catalog.Ls(cmd.Context(), opts.JSON)
+			return catalog.Ls(cmd.Context(), opts.Format)
 		},
 	}
 	flags := cmd.Flags()
-	flags.BoolVar(&opts.JSON, "json", false, "Print as JSON.")
+	flags.Var(&opts.Format, "format", fmt.Sprintf("Output format. Supported: %s.", catalog.SupportedFormats()))
 	return cmd
 }
 

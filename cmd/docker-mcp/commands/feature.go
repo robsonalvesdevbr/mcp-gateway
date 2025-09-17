@@ -118,9 +118,10 @@ func featureDisableCommand(dockerCli command.Cli) *cobra.Command {
 // featureListCommand creates the `feature list` command
 func featureListCommand(dockerCli command.Cli) *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
-		Short: "List all available features and their status",
-		Long:  "List all available experimental features and show whether they are enabled or disabled.",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List all available features and their status",
+		Long:    "List all available experimental features and show whether they are enabled or disabled.",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			configFile := dockerCli.ConfigFile()
 

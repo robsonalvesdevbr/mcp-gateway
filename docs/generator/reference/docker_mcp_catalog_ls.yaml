@@ -6,17 +6,21 @@ usage: docker mcp catalog ls
 pname: docker mcp catalog
 plink: docker_mcp_catalog.yaml
 options:
-    - option: json
-      value_type: bool
-      default_value: "false"
-      description: Print as JSON.
+    - option: format
+      value_type: format
+      description: 'Output format. Supported: "json", "yaml".'
       deprecated: false
       hidden: false
       experimental: false
       experimentalcli: false
       kubernetes: false
       swarm: false
-examples: "  # List all catalogs\n  docker mcp catalog ls\n  \n  # List catalogs in JSON format\n  docker mcp catalog ls --json"
+examples: |4-
+      # List all catalogs
+      docker mcp catalog ls
+
+      # List catalogs in JSON format
+      docker mcp catalog ls --format=json
 deprecated: false
 hidden: false
 experimental: false

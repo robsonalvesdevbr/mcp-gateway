@@ -10,11 +10,11 @@ plink: docker_mcp.yaml
 cname:
     - docker mcp feature disable
     - docker mcp feature enable
-    - docker mcp feature list
+    - docker mcp feature ls
 clink:
     - docker_mcp_feature_disable.yaml
     - docker_mcp_feature_enable.yaml
-    - docker_mcp_feature_list.yaml
+    - docker_mcp_feature_ls.yaml
 deprecated: false
 hidden: false
 experimental: false

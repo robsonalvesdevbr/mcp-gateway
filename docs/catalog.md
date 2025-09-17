@@ -28,7 +28,7 @@ This creates a YAML file with real server definitions that you can:
 docker mcp catalog ls
 
 # List in JSON format
-docker mcp catalog ls --json
+docker mcp catalog ls --format=json
 ```
 
 ### Creating Catalogs
@@ -319,8 +319,7 @@ docker mcp catalog add prod-servers logging ./logging-server.yaml
 docker mcp catalog export prod-servers ./prod-catalog-backup.yaml
 
 # 4. Deploy with production catalog
-docker mcp feature enable configured-catalogs
-docker mcp gateway run --use-configured-catalogs
+docker mcp gateway run
 ```
 
 ## Catalog Precedence
