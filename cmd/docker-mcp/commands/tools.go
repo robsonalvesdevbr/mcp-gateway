@@ -25,8 +25,8 @@ func toolsCommand(docker docker.Client) *cobra.Command {
 	cmd.PersistentFlags().StringSliceVar(&gatewayArgs, "gateway-arg", nil, "Additional arguments passed to the gateway")
 
 	cmd.AddCommand(&cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
+		Use:     "ls",
+		Aliases: []string{"list"},
 		Short:   "List tools",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {

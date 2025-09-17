@@ -58,7 +58,7 @@ command will import servers from the MCP registry URL into that catalog.`,
 			// If mcp-registry flag is provided, import to existing catalog
 			if mcpRegistry != "" {
 				if dryRun {
-					return runOfficialregistryImport(cmd.Context(), mcpRegistry, nil)
+					return runMcpregistryImport(cmd.Context(), mcpRegistry, nil)
 				}
 				return importMCPRegistryToCatalog(cmd.Context(), args[0], mcpRegistry)
 			}
@@ -87,7 +87,7 @@ cannot be exported as it is managed by Docker.`,
 
 func lsCatalogCommand() *cobra.Command {
 	var opts struct {
-		JSON bool
+		Format catalog.Format
 	}
 	cmd := &cobra.Command{
 		Use:   "ls",
@@ -96,15 +96,15 @@ func lsCatalogCommand() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Example: `  # List all catalogs
   docker mcp catalog ls
-  
+
   # List catalogs in JSON format
-  docker mcp catalog ls --json`,
+  docker mcp catalog ls --format=json`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return catalog.Ls(cmd.Context(), opts.JSON)
+			return catalog.Ls(cmd.Context(), opts.Format)
 		},
 	}
 	flags := cmd.Flags()
-	flags.BoolVar(&opts.JSON, "json", false, "Print as JSON.")
+	flags.Var(&opts.Format, "format", fmt.Sprintf("Output format. Supported: %s.", catalog.SupportedFormats()))
 	return cmd
 }
 
@@ -281,7 +281,7 @@ func importMCPRegistryToCatalog(ctx context.Context, catalogName, mcpRegistryURL
 
 	// Fetch server from MCP registry
 	var servers []catalogTypes.Server
-	if err := runOfficialregistryImport(ctx, mcpRegistryURL, &servers); err != nil {
+	if err := runMcpregistryImport(ctx, mcpRegistryURL, &servers); err != nil {
 		return fmt.Errorf("failed to fetch server from MCP registry: %w", err)
 	}
 

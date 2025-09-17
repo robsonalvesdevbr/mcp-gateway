@@ -363,17 +363,16 @@ func (g *Gateway) createMcpRemoveTool(_ Configuration, clientConfig *clientConfi
 	}
 }
 
-// mcpOfficialRegistryImportTool implements a tool for importing servers from official registry URLs
-func (g *Gateway) createMcpOfficialRegistryImportTool(configuration Configuration, _ *clientConfig) *ToolRegistration {
+func (g *Gateway) createMcpRegistryImportTool(configuration Configuration, _ *clientConfig) *ToolRegistration {
 	tool := &mcp.Tool{
-		Name:        "mcp-official-registry-import",
-		Description: "Import MCP servers from an official registry URL. Fetches server definitions via HTTP GET and adds them to the local catalog.",
+		Name:        "mcp-registry-import",
+		Description: "Import MCP servers from an MCP registry URL. Fetches server definitions via HTTP GET and adds them to the local catalog.",
 		InputSchema: &jsonschema.Schema{
 			Type: "object",
 			Properties: map[string]*jsonschema.Schema{
 				"url": {
 					Type:        "string",
-					Description: "URL to fetch the official registry JSON from (must be a valid HTTP/HTTPS URL)",
+					Description: "URL to fetch the server details JSON (must be a valid HTTP/HTTPS URL)",
 				},
 			},
 			Required: []string{"url"},

@@ -1,19 +1,11 @@
-# docker mcp tools
+# docker mcp tools ls
 
 <!---MARKER_GEN_START-->
-Manage tools
+List tools
 
-### Subcommands
+### Aliases
 
-| Name                              | Description               |
-|:----------------------------------|:--------------------------|
-| [`call`](mcp_tools_call.md)       | Call a tool               |
-| [`count`](mcp_tools_count.md)     | Count tools               |
-| [`disable`](mcp_tools_disable.md) | disable one or more tools |
-| [`enable`](mcp_tools_enable.md)   | enable one or more tools  |
-| [`inspect`](mcp_tools_inspect.md) | Inspect a tool            |
-| [`ls`](mcp_tools_ls.md)           | List tools                |
-
+`docker mcp tools ls`, `docker mcp tools list`
 
 ### Options
 
