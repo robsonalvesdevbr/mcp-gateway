@@ -24,9 +24,10 @@ import (
 // - Gracefully handles malformed headers (best-effort parsing)
 //
 // Example inputs:
-//   Bearer realm="example.com", scope="read write", resource_metadata="https://example.com/.well-known/oauth-protected-resource"
-//   Bearer realm=example.com scope="read write"
-//   Basic realm="example.com", Bearer realm="api.example.com" scope="read"
+//
+//	Bearer realm="example.com", scope="read write", resource_metadata="https://example.com/.well-known/oauth-protected-resource"
+//	Bearer realm=example.com scope="read write"
+//	Basic realm="example.com", Bearer realm="api.example.com" scope="read"
 func ParseWWWAuthenticate(headerValue string) ([]WWWAuthenticateChallenge, error) {
 	if headerValue == "" {
 		return nil, fmt.Errorf("empty WWW-Authenticate header")
@@ -97,9 +98,10 @@ func parseSingleScheme(headerValue string) ([]WWWAuthenticateChallenge, error) {
 // - Mixed: param1="quoted value", param2=unquoted
 //
 // Examples:
-//   realm="example.com", scope="read write"
-//   realm=example.com scope="read write"
-//   realm="example.com", resource_metadata="https://example.com/.well-known/oauth-protected-resource"
+//
+//	realm="example.com", scope="read write"
+//	realm=example.com scope="read write"
+//	realm="example.com", resource_metadata="https://example.com/.well-known/oauth-protected-resource"
 func parseAuthParameters(paramString string) map[string]string {
 	parameters := make(map[string]string)
 
