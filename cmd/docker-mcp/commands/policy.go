@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/tui"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/policy"
+	"github.com/docker/mcp-gateway/pkg/tui"
 )
 
 const setPolicyExample = `

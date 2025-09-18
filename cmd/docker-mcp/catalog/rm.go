@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/config"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
+	"github.com/docker/mcp-gateway/pkg/config"
+	"github.com/docker/mcp-gateway/pkg/telemetry"
 )
 
 func Rm(name string) error {

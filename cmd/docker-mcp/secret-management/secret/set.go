@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/tui"
+	"github.com/docker/mcp-gateway/pkg/tui"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/provider"
 )
 

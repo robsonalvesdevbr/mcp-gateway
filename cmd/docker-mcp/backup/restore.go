@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/config"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
+	"github.com/docker/mcp-gateway/pkg/config"
+	"github.com/docker/mcp-gateway/pkg/desktop"
 )
 
 func Restore(ctx context.Context, backupData []byte) error {

@@ -1,5 +1,6 @@
 *
 !/cmd
+!/pkg
 !/tools/docker-mcp-bridge/**/*
 !/go.mod
 !/go.sum

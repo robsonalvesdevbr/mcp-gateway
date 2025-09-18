@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
-	catalogTypes "github.com/docker/mcp-gateway/cmd/docker-mcp/internal/catalog"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/docker"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/gateway"
+	catalogTypes "github.com/docker/mcp-gateway/pkg/catalog"
+	"github.com/docker/mcp-gateway/pkg/docker"
+	"github.com/docker/mcp-gateway/pkg/gateway"
 )
 
 func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command {

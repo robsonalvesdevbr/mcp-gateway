@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/telemetry"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/yq"
+	"github.com/docker/mcp-gateway/pkg/telemetry"
+	"github.com/docker/mcp-gateway/pkg/yq"
 )
 
 type ParsedAddArgs struct {
