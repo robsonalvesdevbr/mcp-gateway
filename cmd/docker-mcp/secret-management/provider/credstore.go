@@ -8,7 +8,7 @@ import (
 
 	"github.com/docker/docker-credential-helpers/client"
 	"github.com/docker/docker-credential-helpers/credentials"
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
+	"github.com/docker/mcp-gateway/pkg/desktop"
 )
 
 // CredStoreProvider implements SecretProvider using Docker credential helpers.

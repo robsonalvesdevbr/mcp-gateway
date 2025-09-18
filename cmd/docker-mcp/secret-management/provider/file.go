@@ -13,7 +13,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/user"
+	"github.com/docker/mcp-gateway/pkg/user"
 )
 
 // FileProvider implements SecretProvider using local file storage.

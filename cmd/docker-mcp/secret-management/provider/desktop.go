@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 
-	"github.com/docker/mcp-gateway/cmd/docker-mcp/internal/desktop"
+	"github.com/docker/mcp-gateway/pkg/desktop"
 )
 
 // DesktopProvider implements SecretProvider using Docker Desktop's secrets API.
@@ -73,7 +73,9 @@ func (d *DesktopProvider) ListSecrets(ctx context.Context) ([]StoredSecret, erro
 
 // IsAvailable checks if Docker Desktop is available.
 func (d *DesktopProvider) IsAvailable(ctx context.Context) bool {
-	return desktop.IsDockerDesktopAvailable(ctx)
+	// Test if we can connect to Docker Desktop by trying to list secrets
+	_, err := d.client.ListJfsSecrets(ctx)
+	return err == nil
 }
 
 // ProviderName returns the name of this provider.
