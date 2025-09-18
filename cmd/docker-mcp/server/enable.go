@@ -12,15 +12,15 @@ import (
 	"github.com/docker/mcp-gateway/pkg/docker"
 )
 
-func Disable(ctx context.Context, docker docker.Client, serverNames []string) error {
-	return update(ctx, docker, nil, serverNames)
+func Disable(ctx context.Context, docker docker.Client, serverNames []string, mcpOAuthDcrEnabled bool) error {
+	return update(ctx, docker, nil, serverNames, mcpOAuthDcrEnabled)
 }
 
-func Enable(ctx context.Context, docker docker.Client, serverNames []string) error {
-	return update(ctx, docker, serverNames, nil)
+func Enable(ctx context.Context, docker docker.Client, serverNames []string, mcpOAuthDcrEnabled bool) error {
+	return update(ctx, docker, serverNames, nil, mcpOAuthDcrEnabled)
 }
 
-func update(ctx context.Context, docker docker.Client, add []string, remove []string) error {
+func update(ctx context.Context, docker docker.Client, add []string, remove []string, mcpOAuthDcrEnabled bool) error {
 	// Read registry.yaml that contains which servers are enabled.
 	registryYAML, err := config.ReadRegistry(ctx, docker)
 	if err != nil {
