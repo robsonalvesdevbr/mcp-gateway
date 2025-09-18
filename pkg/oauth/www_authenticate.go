@@ -3,7 +3,6 @@ package oauth
 import (
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -208,46 +207,4 @@ func FindRealm(challenges []WWWAuthenticateChallenge) string {
 		}
 	}
 	return ""
-}
-
-// FormatWWWAuthenticate formats a WWW-Authenticate challenge back to header string format
-//
-// Used for testing and debugging purposes
-func FormatWWWAuthenticate(challenge WWWAuthenticateChallenge) string {
-	if len(challenge.Parameters) == 0 {
-		return challenge.Scheme
-	}
-
-	var parts []string
-	for key, value := range challenge.Parameters {
-		// Quote values that contain spaces or special characters
-		if needsQuoting(value) {
-			parts = append(parts, fmt.Sprintf(`%s="%s"`, key, value))
-		} else {
-			parts = append(parts, fmt.Sprintf(`%s=%s`, key, value))
-		}
-	}
-
-	return fmt.Sprintf("%s %s", challenge.Scheme, strings.Join(parts, ", "))
-}
-
-// needsQuoting determines if a parameter value needs to be quoted
-func needsQuoting(value string) bool {
-	if value == "" {
-		return true
-	}
-
-	// Quote if contains spaces, commas, quotes, or special characters
-	for _, r := range value {
-		if r == ' ' || r == ',' || r == '"' || r == '=' {
-			return true
-		}
-	}
-
-	// Quote if looks like a number but we want to keep it as string
-	if _, err := strconv.Atoi(value); err == nil {
-		return false // Numbers don't need quoting
-	}
-
-	return false
 }
