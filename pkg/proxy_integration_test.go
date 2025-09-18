@@ -129,7 +129,7 @@ func getProxyTestDir(t *testing.T) string {
 	require.NoError(t, err)
 
 	// Navigate up to project root (cmd/docker-mcp -> project root)
-	projectRoot := filepath.Join(wd, "..", "..")
+	projectRoot := filepath.Join(wd, "..")
 	proxyDir := filepath.Join(projectRoot, "test", "testdata", "proxy")
 
 	// Verify the directory exists
