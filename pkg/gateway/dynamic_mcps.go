@@ -6,14 +6,20 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/docker/mcp-gateway/pkg/catalog"
 	"github.com/docker/mcp-gateway/pkg/oci"
+	"github.com/docker/mcp-gateway/pkg/telemetry"
 )
 
 // mcpFindTool implements a tool for finding MCP servers in the catalog
@@ -190,7 +196,7 @@ func (g *Gateway) createMcpFindTool(configuration Configuration) *ToolRegistrati
 
 	return &ToolRegistration{
 		Tool:    tool,
-		Handler: handler,
+		Handler: withToolTelemetry("mcp-find", handler),
 	}
 }
 
@@ -292,7 +298,7 @@ func (g *Gateway) createMcpAddTool(configuration Configuration, clientConfig *cl
 
 	return &ToolRegistration{
 		Tool:    tool,
-		Handler: handler,
+		Handler: withToolTelemetry("mcp-add", handler),
 	}
 }
 
@@ -359,7 +365,7 @@ func (g *Gateway) createMcpRemoveTool(_ Configuration, clientConfig *clientConfi
 
 	return &ToolRegistration{
 		Tool:    tool,
-		Handler: handler,
+		Handler: withToolTelemetry("mcp-remove", handler),
 	}
 }
 
@@ -493,7 +499,7 @@ func (g *Gateway) createMcpRegistryImportTool(configuration Configuration, _ *cl
 
 	return &ToolRegistration{
 		Tool:    tool,
-		Handler: handler,
+		Handler: withToolTelemetry("mcp-registry-import", handler),
 	}
 }
 
@@ -643,7 +649,7 @@ func (g *Gateway) createMcpConfigSetTool(configuration Configuration, clientConf
 
 	return &ToolRegistration{
 		Tool:    tool,
-		Handler: handler,
+		Handler: withToolTelemetry("mcp-config-set", handler),
 	}
 }
 
@@ -653,4 +659,63 @@ func maxInt(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// withToolTelemetry wraps a tool handler with telemetry instrumentation
+func withToolTelemetry(toolName string, handler mcp.ToolHandler) mcp.ToolHandler {
+	return func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		serverName := "dynamic-mcps"
+
+		// Debug logging to stderr
+		if os.Getenv("DOCKER_MCP_TELEMETRY_DEBUG") != "" {
+			fmt.Fprintf(os.Stderr, "[MCP-HANDLER] Tool call received: %s from server: %s\n", toolName, serverName)
+		}
+
+		// Start telemetry span for tool call
+		startTime := time.Now()
+		serverType := "dynamic"
+
+		// Build span attributes
+		spanAttrs := []attribute.KeyValue{
+			attribute.String("mcp.server.name", serverName),
+			attribute.String("mcp.server.type", serverType),
+		}
+
+		ctx, span := telemetry.StartToolCallSpan(ctx, toolName, spanAttrs...)
+		defer span.End()
+
+		// Record tool call counter
+		telemetry.ToolCallCounter.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.String("mcp.server.name", serverName),
+				attribute.String("mcp.server.type", serverType),
+				attribute.String("mcp.tool.name", toolName),
+				attribute.String("mcp.client.name", req.Session.InitializeParams().ClientInfo.Name),
+			),
+		)
+
+		// Execute the wrapped handler
+		result, err := handler(ctx, req)
+
+		// Record duration
+		duration := time.Since(startTime).Milliseconds()
+		telemetry.ToolCallDuration.Record(ctx, float64(duration),
+			metric.WithAttributes(
+				attribute.String("mcp.server.name", serverName),
+				attribute.String("mcp.server.type", serverType),
+				attribute.String("mcp.tool.name", toolName),
+				attribute.String("mcp.client.name", req.Session.InitializeParams().ClientInfo.Name),
+			),
+		)
+
+		if err != nil {
+			// Record error in telemetry
+			telemetry.RecordToolError(ctx, span, serverName, serverType, toolName)
+			span.SetStatus(codes.Error, "Tool execution failed")
+			return nil, err
+		}
+
+		span.SetStatus(codes.Ok, "")
+		return result, nil
+	}
 }
