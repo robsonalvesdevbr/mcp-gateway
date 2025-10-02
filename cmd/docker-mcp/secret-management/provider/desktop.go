@@ -82,3 +82,8 @@ func (d *DesktopProvider) IsAvailable(ctx context.Context) bool {
 func (d *DesktopProvider) ProviderName() string {
 	return "docker-desktop"
 }
+
+// SupportsSecureMount returns true - Desktop supports secure mount via labels
+func (d *DesktopProvider) SupportsSecureMount() bool {
+	return true
+}
