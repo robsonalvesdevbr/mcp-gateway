@@ -2,11 +2,9 @@ package gateway
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -17,21 +15,12 @@ import (
 	"github.com/docker/mcp-gateway/pkg/docker"
 	"github.com/docker/mcp-gateway/pkg/health"
 	"github.com/docker/mcp-gateway/pkg/interceptors"
+	"github.com/docker/mcp-gateway/pkg/oauth"
 	"github.com/docker/mcp-gateway/pkg/telemetry"
 )
 
-const TokenEventFilename = "token-event.json"
-
 type ServerSessionCache struct {
 	Roots []*mcp.Root
-}
-
-// TokenEvent represents a token refresh or acquisition event
-type TokenEvent struct {
-	Provider   string    `json:"provider"`
-	Timestamp  time.Time `json:"timestamp"`
-	EventType  string    `json:"event_type"` // EventTypeTokenAcquired or EventTypeTokenRefreshed
-	ServerName string    `json:"server_name"`
 }
 
 // type SubsAction int
@@ -57,12 +46,14 @@ type ServerCapabilities struct {
 
 type Gateway struct {
 	Options
-	docker        docker.Client
-	configurator  Configurator
-	configuration Configuration
-	clientPool    *clientPool
-	mcpServer     *mcp.Server
-	health        health.State
+	docker         docker.Client
+	configurator   Configurator
+	configuration  Configuration
+	clientPool     *clientPool
+	mcpServer      *mcp.Server
+	health         health.State
+	oauthProviders map[string]*oauth.Provider
+	providersMu    sync.RWMutex
 	// subsChannel  chan SubsMessage
 
 	sessionCacheMu sync.RWMutex
@@ -75,8 +66,9 @@ type Gateway struct {
 
 func NewGateway(config Config, docker docker.Client) *Gateway {
 	g := &Gateway{
-		Options: config.Options,
-		docker:  docker,
+		Options:        config.Options,
+		docker:         docker,
+		oauthProviders: make(map[string]*oauth.Provider),
 		configurator: &FileBasedConfiguration{
 			ServerNames:        config.ServerNames,
 			CatalogPath:        config.CatalogPath,
@@ -220,6 +212,29 @@ func (g *Gateway) Run(ctx context.Context) error {
 		return fmt.Errorf("loading configuration: %w", err)
 	}
 
+	if g.McpOAuthDcrEnabled {
+		// Start OAuth notification monitor to receive OAuth related events from Docker Desktop
+		log("- Starting OAuth notification monitor")
+		monitor := oauth.NewNotificationMonitor()
+		monitor.OnOAuthEvent = func(event oauth.Event) {
+			// Route event to specific provider
+			g.routeEventToProvider(event)
+		}
+		monitor.Start(ctx)
+
+		// Start OAuth provider for each OAuth server
+		// Each provider runs in its own goroutine with dynamic timing based on token expiry
+		log("- Starting OAuth provider loops...")
+		for _, serverName := range configuration.ServerNames() {
+			serverConfig, _, found := configuration.Find(serverName)
+			if !found || serverConfig == nil || !serverConfig.Spec.IsRemoteOAuthServer() {
+				continue
+			}
+
+			g.startProvider(ctx, serverName)
+		}
+	}
+
 	// Central mode.
 	if g.Central {
 		log("> Initialized (in central mode) in", time.Since(start))
@@ -242,9 +257,6 @@ func (g *Gateway) Run(ctx context.Context) error {
 					log("> Stop watching for updates")
 					return
 				case configuration := <-configurationUpdates:
-					// First, check and handle any token events
-					g.handleTokenEvent(ctx)
-
 					log("> Configuration updated, reloading...")
 
 					if err := g.pullAndVerify(ctx, configuration); err != nil {
@@ -254,6 +266,7 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 					if err := g.reloadConfiguration(ctx, configuration, nil, nil); err != nil {
 						logf("> Unable to list capabilities: %s", err)
+						g.configuration = configuration
 						continue
 					}
 				}
@@ -284,291 +297,6 @@ func (g *Gateway) Run(ctx context.Context) error {
 	default:
 		return fmt.Errorf("unknown transport %q, expected 'stdio', 'sse' or 'streaming", g.Transport)
 	}
-}
-
-func (g *Gateway) reloadConfiguration(ctx context.Context, configuration Configuration, serverNames []string, clientConfig *clientConfig) error {
-	// Which servers are enabled in the registry.yaml?
-	if len(serverNames) == 0 {
-		serverNames = configuration.ServerNames()
-	}
-	if len(serverNames) == 0 {
-		log("- No server is enabled")
-	} else {
-		log("- Those servers are enabled:", strings.Join(serverNames, ", "))
-	}
-
-	// List all the available tools.
-	startList := time.Now()
-	log("- Listing MCP tools...")
-	capabilities, err := g.listCapabilities(ctx, configuration, serverNames, clientConfig)
-	if err != nil {
-		return fmt.Errorf("listing resources: %w", err)
-	}
-	log(">", len(capabilities.Tools), "tools listed in", time.Since(startList))
-
-	// Update capabilities
-	// Clear existing capabilities per server and register new ones
-
-	// Lock for reading/writing capability tracking
-	g.capabilitiesMu.Lock()
-	defer g.capabilitiesMu.Unlock()
-
-	// Clear all existing capabilities from tracked servers
-	for _, oldCaps := range g.serverCapabilities {
-		if len(oldCaps.ToolNames) > 0 {
-			g.mcpServer.RemoveTools(oldCaps.ToolNames...)
-		}
-		if len(oldCaps.PromptNames) > 0 {
-			g.mcpServer.RemovePrompts(oldCaps.PromptNames...)
-		}
-		if len(oldCaps.ResourceURIs) > 0 {
-			g.mcpServer.RemoveResources(oldCaps.ResourceURIs...)
-		}
-		if len(oldCaps.ResourceTemplateURIs) > 0 {
-			g.mcpServer.RemoveResourceTemplates(oldCaps.ResourceTemplateURIs...)
-		}
-	}
-
-	// Clear the tracking map - we'll rebuild it
-	g.serverCapabilities = make(map[string]*ServerCapabilities)
-
-	// Add new capabilities and track them per server
-	for _, tool := range capabilities.Tools {
-		g.mcpServer.AddTool(tool.Tool, tool.Handler)
-
-		// Track by server
-		if g.serverCapabilities[tool.ServerName] == nil {
-			g.serverCapabilities[tool.ServerName] = &ServerCapabilities{}
-		}
-		g.serverCapabilities[tool.ServerName].ToolNames = append(
-			g.serverCapabilities[tool.ServerName].ToolNames,
-			tool.Tool.Name,
-		)
-	}
-
-	// Add internal tools when dynamic-tools feature is enabled
-	if g.DynamicTools {
-		log("- Adding internal tools (dynamic-tools feature enabled)")
-
-		// Add mcp-find tool
-		mcpFindTool := g.createMcpFindTool(configuration)
-		g.mcpServer.AddTool(mcpFindTool.Tool, mcpFindTool.Handler)
-
-		// Add mcp-add tool
-		mcpAddTool := g.createMcpAddTool(configuration, clientConfig)
-		g.mcpServer.AddTool(mcpAddTool.Tool, mcpAddTool.Handler)
-
-		// Add mcp-remove tool
-		mcpRemoveTool := g.createMcpRemoveTool(configuration, clientConfig)
-		g.mcpServer.AddTool(mcpRemoveTool.Tool, mcpRemoveTool.Handler)
-
-		// Add mcp-registry-import tool
-		mcpRegistryImportTool := g.createMcpRegistryImportTool(configuration, clientConfig)
-		g.mcpServer.AddTool(mcpRegistryImportTool.Tool, mcpRegistryImportTool.Handler)
-
-		// Add mcp-config-set tool
-		mcpConfigSetTool := g.createMcpConfigSetTool(configuration, clientConfig)
-		g.mcpServer.AddTool(mcpConfigSetTool.Tool, mcpConfigSetTool.Handler)
-
-		log("  > mcp-find: tool for finding MCP servers in the catalog")
-		log("  > mcp-add: tool for adding MCP servers to the registry")
-		log("  > mcp-remove: tool for removing MCP servers from the registry")
-		log("  > mcp-registry-import: tool for importing servers from MCP registry URLs")
-		log("  > mcp-config-set: tool for setting configuration values for MCP servers")
-	}
-
-	for _, prompt := range capabilities.Prompts {
-		g.mcpServer.AddPrompt(prompt.Prompt, prompt.Handler)
-
-		// Track by server
-		if g.serverCapabilities[prompt.ServerName] == nil {
-			g.serverCapabilities[prompt.ServerName] = &ServerCapabilities{}
-		}
-		g.serverCapabilities[prompt.ServerName].PromptNames = append(
-			g.serverCapabilities[prompt.ServerName].PromptNames,
-			prompt.Prompt.Name,
-		)
-	}
-
-	for _, resource := range capabilities.Resources {
-		g.mcpServer.AddResource(resource.Resource, resource.Handler)
-
-		// Track by server
-		if g.serverCapabilities[resource.ServerName] == nil {
-			g.serverCapabilities[resource.ServerName] = &ServerCapabilities{}
-		}
-		g.serverCapabilities[resource.ServerName].ResourceURIs = append(
-			g.serverCapabilities[resource.ServerName].ResourceURIs,
-			resource.Resource.URI,
-		)
-	}
-
-	// Resource templates are handled as regular resources in the new SDK
-	for _, template := range capabilities.ResourceTemplates {
-		// Convert ResourceTemplate to Resource
-		resource := &mcp.ResourceTemplate{
-			URITemplate: template.ResourceTemplate.URITemplate,
-			Name:        template.ResourceTemplate.Name,
-			Description: template.ResourceTemplate.Description,
-			MIMEType:    template.ResourceTemplate.MIMEType,
-		}
-		g.mcpServer.AddResourceTemplate(resource, template.Handler)
-
-		// Track by server
-		if g.serverCapabilities[template.ServerName] == nil {
-			g.serverCapabilities[template.ServerName] = &ServerCapabilities{}
-		}
-		g.serverCapabilities[template.ServerName].ResourceTemplateURIs = append(
-			g.serverCapabilities[template.ServerName].ResourceTemplateURIs,
-			resource.URITemplate,
-		)
-	}
-
-	g.health.SetHealthy()
-
-	return nil
-}
-
-// stringSliceToSet converts a slice to a map for efficient lookup
-func stringSliceToSet(slice []string) map[string]bool {
-	set := make(map[string]bool, len(slice))
-	for _, s := range slice {
-		set[s] = true
-	}
-	return set
-}
-
-// diffStringSlices returns items that are in 'newer' but not in 'older' (additions),
-// and items that are in 'older' but not in 'newer' (removals)
-func diffStringSlices(older, newer []string) (additions, removals []string) {
-	oldSet := stringSliceToSet(older)
-	newSet := stringSliceToSet(newer)
-
-	for s := range newSet {
-		if !oldSet[s] {
-			additions = append(additions, s)
-		}
-	}
-
-	for s := range oldSet {
-		if !newSet[s] {
-			removals = append(removals, s)
-		}
-	}
-
-	return additions, removals
-}
-
-func (g *Gateway) reloadServerConfiguration(ctx context.Context, serverName string, clientConfig *clientConfig) error {
-	// Find the server configuration in current config
-	serverConfig, _, found := g.configuration.Find(serverName)
-	if !found || serverConfig == nil {
-		return fmt.Errorf("server %s not found in configuration", serverName)
-	}
-
-	// Get current capabilities from the server (this reflects the server's current state after it notified us of changes)
-	capabilities, err := g.listCapabilities(ctx, g.configuration, []string{serverName}, clientConfig)
-	if err != nil {
-		return fmt.Errorf("failed to list capabilities for %s: %w", serverName, err)
-	}
-
-	// Lock for reading/writing capability tracking
-	g.capabilitiesMu.Lock()
-	defer g.capabilitiesMu.Unlock()
-
-	// Get old capabilities for this server
-	oldCaps := g.serverCapabilities[serverName]
-	if oldCaps == nil {
-		oldCaps = &ServerCapabilities{}
-	}
-
-	// Build new capability name/URI lists
-	newCaps := &ServerCapabilities{
-		ToolNames:            make([]string, 0, len(capabilities.Tools)),
-		PromptNames:          make([]string, 0, len(capabilities.Prompts)),
-		ResourceURIs:         make([]string, 0, len(capabilities.Resources)),
-		ResourceTemplateURIs: make([]string, 0, len(capabilities.ResourceTemplates)),
-	}
-
-	for _, tool := range capabilities.Tools {
-		newCaps.ToolNames = append(newCaps.ToolNames, tool.Tool.Name)
-	}
-	for _, prompt := range capabilities.Prompts {
-		newCaps.PromptNames = append(newCaps.PromptNames, prompt.Prompt.Name)
-	}
-	for _, resource := range capabilities.Resources {
-		newCaps.ResourceURIs = append(newCaps.ResourceURIs, resource.Resource.URI)
-	}
-	for _, template := range capabilities.ResourceTemplates {
-		newCaps.ResourceTemplateURIs = append(newCaps.ResourceTemplateURIs, template.ResourceTemplate.URITemplate)
-	}
-
-	// Determine what changed
-	addedTools, removedTools := diffStringSlices(oldCaps.ToolNames, newCaps.ToolNames)
-	addedPrompts, removedPrompts := diffStringSlices(oldCaps.PromptNames, newCaps.PromptNames)
-	addedResources, removedResources := diffStringSlices(oldCaps.ResourceURIs, newCaps.ResourceURIs)
-	addedTemplates, removedTemplates := diffStringSlices(oldCaps.ResourceTemplateURIs, newCaps.ResourceTemplateURIs)
-
-	// Remove old capabilities that are no longer present
-	if len(removedTools) > 0 {
-		g.mcpServer.RemoveTools(removedTools...)
-		log("  - Removed", len(removedTools), "tools for", serverName)
-	}
-
-	if len(removedPrompts) > 0 {
-		g.mcpServer.RemovePrompts(removedPrompts...)
-		log("  - Removed", len(removedPrompts), "prompts for", serverName)
-	}
-
-	if len(removedResources) > 0 {
-		g.mcpServer.RemoveResources(removedResources...)
-		log("  - Removed", len(removedResources), "resources for", serverName)
-	}
-
-	if len(removedTemplates) > 0 {
-		g.mcpServer.RemoveResourceTemplates(removedTemplates...)
-		log("  - Removed", len(removedTemplates), "resource templates for", serverName)
-	}
-
-	// Add/update all capabilities from this server
-	for _, tool := range capabilities.Tools {
-		g.mcpServer.AddTool(tool.Tool, tool.Handler)
-	}
-	if len(addedTools) > 0 {
-		log("  - Added/updated", len(addedTools), "tools for", serverName)
-	}
-
-	for _, prompt := range capabilities.Prompts {
-		g.mcpServer.AddPrompt(prompt.Prompt, prompt.Handler)
-	}
-	if len(addedPrompts) > 0 {
-		log("  - Added/updated", len(addedPrompts), "prompts for", serverName)
-	}
-
-	for _, resource := range capabilities.Resources {
-		g.mcpServer.AddResource(resource.Resource, resource.Handler)
-	}
-	if len(addedResources) > 0 {
-		log("  - Added/updated", len(addedResources), "resources for", serverName)
-	}
-
-	for _, template := range capabilities.ResourceTemplates {
-		resourceTemplate := &mcp.ResourceTemplate{
-			URITemplate: template.ResourceTemplate.URITemplate,
-			Name:        template.ResourceTemplate.Name,
-			Description: template.ResourceTemplate.Description,
-			MIMEType:    template.ResourceTemplate.MIMEType,
-		}
-		g.mcpServer.AddResourceTemplate(resourceTemplate, template.Handler)
-	}
-	if len(addedTemplates) > 0 {
-		log("  - Added/updated", len(addedTemplates), "resource templates for", serverName)
-	}
-
-	// Update tracking with new capabilities
-	g.serverCapabilities[serverName] = newCaps
-
-	return nil
 }
 
 // RefreshCapabilities implements the CapabilityRefresher interface
@@ -683,45 +411,105 @@ func (g *Gateway) periodicMetricExport(ctx context.Context) {
 	}
 }
 
-// handleTokenEvent checks for and processes OAuth token events
-func (g *Gateway) handleTokenEvent(_ context.Context) {
-	// Small delay to ensure token is fully written to credential store
-	// This handles the race condition where registry.yaml updates before token is stored
-	time.Sleep(200 * time.Millisecond)
+// OAuth Provider Management Methods
 
-	tokenEventPath := filepath.Join(os.Getenv("HOME"), ".docker", "mcp", TokenEventFilename)
+// startProvider creates and starts an OAuth provider goroutine for a server
+func (g *Gateway) startProvider(ctx context.Context, serverName string) {
+	g.providersMu.Lock()
+	defer g.providersMu.Unlock()
 
-	// Check if token event file exists
-	if _, err := os.Stat(tokenEventPath); os.IsNotExist(err) {
-		// File doesn't exist, no token event
+	// Check if provider already running
+	if _, exists := g.oauthProviders[serverName]; exists {
 		return
 	}
 
-	// Read and parse token event
-	data, err := os.ReadFile(tokenEventPath)
-	if err != nil {
-		log(fmt.Sprintf("Failed to read token event file: %v", err))
-		return
+	// Create reload function for this provider
+	reloadFn := func(ctx context.Context, name string) error {
+		logf("> Reloading OAuth server: %s", name)
+
+		// Close old client connection with stale token
+		g.clientPool.InvalidateOAuthClients(name)
+
+		// Reload server configuration
+		if err := g.reloadServerConfiguration(ctx, name, nil); err != nil {
+			return err
+		}
+
+		logf("> OAuth server %s reconnected and tools registered", name)
+		return nil
 	}
 
-	// Skip if file is empty or just placeholder
-	if len(data) == 0 || string(data) == "{}" {
-		return
+	// Create and start provider
+	provider := oauth.NewProvider(serverName, reloadFn)
+	g.oauthProviders[serverName] = provider
+
+	// Wrapper goroutine handles cleanup after provider exits
+	go func() {
+		provider.Run(ctx) // Blocks until provider stops
+
+		// Provider exited - remove from map
+		g.providersMu.Lock()
+		delete(g.oauthProviders, serverName)
+		g.providersMu.Unlock()
+
+		logf("- Removed provider %s from map after exit", serverName)
+	}()
+}
+
+// stopProvider stops an OAuth provider goroutine for a server
+func (g *Gateway) stopProvider(serverName string) {
+	g.providersMu.Lock()
+	defer g.providersMu.Unlock()
+
+	if provider, exists := g.oauthProviders[serverName]; exists {
+		provider.Stop()
+		delete(g.oauthProviders, serverName)
 	}
+}
 
-	var event TokenEvent
-	if err := json.Unmarshal(data, &event); err != nil {
-		log(fmt.Sprintf("Failed to parse token event: %v", err))
-		return
+// routeEventToProvider routes SSE events to the appropriate provider
+func (g *Gateway) routeEventToProvider(event oauth.Event) {
+	g.providersMu.RLock()
+	provider, exists := g.oauthProviders[event.Provider]
+	g.providersMu.RUnlock()
+
+	switch event.Type {
+	case oauth.EventLoginSuccess:
+		// User just authorized - ensure provider exists
+		if !exists {
+			logf("- Creating provider for %s after login", event.Provider)
+			g.startProvider(context.Background(), event.Provider)
+		}
+
+		// Always send event to trigger reload (connects server and lists tools)
+		// Wait briefly if we just created the provider
+		if !exists {
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		g.providersMu.RLock()
+		provider, exists = g.oauthProviders[event.Provider]
+		g.providersMu.RUnlock()
+
+		if exists {
+			provider.SendEvent(event)
+		}
+
+	case oauth.EventTokenRefresh:
+		// Token refreshed - route to provider if exists
+		if exists {
+			provider.SendEvent(event)
+		}
+		// If doesn't exist, drop (another gateway or disabled server)
+
+	case oauth.EventLogoutSuccess:
+		// User logged out - stop provider if exists
+		if exists {
+			logf("- Stopping provider for %s after logout", event.Provider)
+			g.stopProvider(event.Provider)
+		}
+
+	default:
+		// Other events (login-start, code-received, error) - ignore
 	}
-
-	log(fmt.Sprintf("Processing %s event for provider %s at %v",
-		event.EventType, event.Provider, event.Timestamp.Format(time.RFC3339)))
-
-	// Invalidate OAuth clients for the specified provider
-	g.clientPool.InvalidateOAuthClients(event.Provider)
-
-	// Don't delete the file - allow all MCP Gateway instances to process the event
-	// File will be overwritten on next token event or cleaned up on DD startup
-	log(fmt.Sprintf("Token event processed for %s", event.Provider))
 }
