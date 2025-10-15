@@ -15,6 +15,7 @@ import (
 	"github.com/docker/mcp-gateway/pkg/catalog"
 	"github.com/docker/mcp-gateway/pkg/config"
 	"github.com/docker/mcp-gateway/pkg/docker"
+	"github.com/docker/mcp-gateway/pkg/log"
 	"github.com/docker/mcp-gateway/pkg/oci"
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/secret-management/provider"
 )
@@ -43,7 +44,7 @@ func (c *Configuration) DockerImages() []string {
 
 		switch {
 		case !found:
-			log("MCP server not found:", serverName)
+			log.Log("MCP server not found:", serverName)
 		case serverConfig != nil && serverConfig.Spec.Image != "":
 			uniqueDockerImages[serverConfig.Spec.Image] = true
 		case tools != nil:
@@ -100,7 +101,6 @@ type FileBasedConfiguration struct {
 	OciRef             []string         // OCI references to fetch server definitions from
 	MCPRegistryServers []catalog.Server // Servers fetched from MCP registries
 	Watch              bool
-	Central            bool
 	McpOAuthDcrEnabled bool
 
 	docker docker.Client
@@ -176,7 +176,7 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 
 				configuration, err := c.readOnce(ctx)
 				if err != nil {
-					log("Error reading configuration:", err)
+					log.Log("Error reading configuration:", err)
 					continue
 				}
 
@@ -214,20 +214,18 @@ func (c *FileBasedConfiguration) Read(ctx context.Context) (Configuration, chan 
 
 func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, error) {
 	start := time.Now()
-	log("- Reading configuration...")
+	log.Log("- Reading configuration...")
 
 	var serverNames []string
-	if !c.Central {
-		if len(c.ServerNames) > 0 {
-			serverNames = c.ServerNames
-		} else {
-			registryConfig, err := c.readRegistry(ctx)
-			if err != nil {
-				return Configuration{}, fmt.Errorf("reading registry: %w", err)
-			}
-
-			serverNames = registryConfig.ServerNames()
+	if len(c.ServerNames) > 0 {
+		serverNames = c.ServerNames
+	} else {
+		registryConfig, err := c.readRegistry(ctx)
+		if err != nil {
+			return Configuration{}, fmt.Errorf("reading registry: %w", err)
 		}
+
+		serverNames = registryConfig.ServerNames()
 	}
 
 	// check for docker.io self-contained servers
@@ -258,7 +256,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 	// Merge OCI servers into the main servers map and add to serverNames list
 	for serverName, server := range ociServers {
 		if _, exists := servers[serverName]; exists {
-			log(fmt.Sprintf("Warning: server '%s' from OCI reference overwrites server from catalog", serverName))
+			log.Log(fmt.Sprintf("Warning: server '%s' from OCI reference overwrites server from catalog", serverName))
 		}
 		servers[serverName] = server
 
@@ -313,11 +311,10 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 				serverNames = append(serverNames, serverName)
 			}
 
-			log(fmt.Sprintf("Added MCP registry server: %s (image: %s)", serverName, mcpServer.Image))
+			log.Log(fmt.Sprintf("Added MCP registry server: %s (image: %s)", serverName, mcpServer.Image))
 		}
 	}
 
-	// TODO(dga): Do we expect every server to have a config, in Central mode?
 	serversConfig, err := c.readConfig(ctx)
 	if err != nil {
 		return Configuration{}, fmt.Errorf("reading config: %w", err)
@@ -328,7 +325,6 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 		return Configuration{}, fmt.Errorf("reading tools: %w", err)
 	}
 
-	// TODO(dga): How do we know which secrets to read, in Central mode?
 	var secrets map[string]string
 	if c.SecretsPath == "docker-desktop" {
 		secrets, err = c.readDockerDesktopSecrets(ctx, servers, serverNames)
@@ -353,7 +349,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 		}
 	}
 
-	log("- Configuration read in", time.Since(start))
+	log.Log("- Configuration read in", time.Since(start))
 	return Configuration{
 		serverNames: serverNames,
 		servers:     servers,
@@ -364,7 +360,7 @@ func (c *FileBasedConfiguration) readOnce(ctx context.Context) (Configuration, e
 }
 
 func (c *FileBasedConfiguration) readCatalog(ctx context.Context) (catalog.Catalog, error) {
-	log("  - Reading catalog from", c.CatalogPath)
+	log.Log("  - Reading catalog from", c.CatalogPath)
 	return catalog.ReadFrom(ctx, c.CatalogPath)
 }
 
@@ -382,7 +378,7 @@ func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Regis
 			continue
 		}
 
-		log("  - Reading registry from", registryPath)
+		log.Log("  - Reading registry from", registryPath)
 		yaml, err := config.ReadConfigFile(ctx, c.docker, registryPath)
 		if err != nil {
 			return config.Registry{}, fmt.Errorf("reading registry file %s: %w", registryPath, err)
@@ -396,7 +392,7 @@ func (c *FileBasedConfiguration) readRegistry(ctx context.Context) (config.Regis
 		// Merge servers into the combined registry, checking for overlaps
 		for serverName, tile := range cfg.Servers {
 			if _, exists := mergedRegistry.Servers[serverName]; exists {
-				log(fmt.Sprintf("Warning: overlapping server '%s' found in registry '%s', overwriting previous value", serverName, registryPath))
+				log.Log(fmt.Sprintf("Warning: overlapping server '%s' found in registry '%s', overwriting previous value", serverName, registryPath))
 			}
 			mergedRegistry.Servers[serverName] = tile
 		}
@@ -417,7 +413,7 @@ func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map
 			continue
 		}
 
-		log("  - Reading config from", configPath)
+		log.Log("  - Reading config from", configPath)
 		yaml, err := config.ReadConfigFile(ctx, c.docker, configPath)
 		if err != nil {
 			return nil, fmt.Errorf("reading config file %s: %w", configPath, err)
@@ -431,7 +427,7 @@ func (c *FileBasedConfiguration) readConfig(ctx context.Context) (map[string]map
 		// Merge configs into the combined config, checking for overlaps
 		for serverName, serverConfig := range cfg {
 			if _, exists := mergedConfig[serverName]; exists {
-				log(fmt.Sprintf("Warning: overlapping server config '%s' found in config file '%s', overwriting previous value", serverName, configPath))
+				log.Log(fmt.Sprintf("Warning: overlapping server config '%s' found in config file '%s', overwriting previous value", serverName, configPath))
 			}
 			mergedConfig[serverName] = serverConfig
 		}
@@ -454,7 +450,7 @@ func (c *FileBasedConfiguration) readToolsConfig(ctx context.Context) (config.To
 			continue
 		}
 
-		log("  - Reading tools from", toolsPath)
+		log.Log("  - Reading tools from", toolsPath)
 		yaml, err := config.ReadConfigFile(ctx, c.docker, toolsPath)
 		if err != nil {
 			return config.ToolsConfig{}, fmt.Errorf("reading tools file %s: %w", toolsPath, err)
@@ -468,7 +464,7 @@ func (c *FileBasedConfiguration) readToolsConfig(ctx context.Context) (config.To
 		// Merge tools into the combined tools, checking for overlaps
 		for serverName, serverTools := range toolsConfig.ServerTools {
 			if _, exists := mergedToolsConfig.ServerTools[serverName]; exists {
-				log(fmt.Sprintf("Warning: overlapping server tools '%s' found in tools file '%s', overwriting previous value", serverName, toolsPath))
+				log.Log(fmt.Sprintf("Warning: overlapping server tools '%s' found in tools file '%s', overwriting previous value", serverName, toolsPath))
 			}
 			mergedToolsConfig.ServerTools[serverName] = serverTools
 		}
@@ -504,10 +500,10 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 		secretNames = append(secretNames, name)
 	}
 
-	log("  - Reading secrets", secretNames)
+	log.Log("  - Reading secrets", secretNames)
 	secretsByName, err := c.docker.ReadSecrets(ctx, secretNames, true)
 	if err != nil {
-		log("  - Docker ReadSecrets failed, trying direct provider fallback:", err)
+		log.Log("  - Docker ReadSecrets failed, trying direct provider fallback:", err)
 		return c.readSecretsViaProviders(ctx, secretNames)
 	}
 
@@ -520,10 +516,10 @@ func (c *FileBasedConfiguration) readDockerDesktopSecrets(ctx context.Context, s
 			}
 		}
 		if len(missing) > 0 {
-			log("  - Some secrets missing from Docker, trying providers for:", missing)
+			log.Log("  - Some secrets missing from Docker, trying providers for:", missing)
 			fallbackSecrets, err := c.readSecretsViaProviders(ctx, missing)
 			if err != nil {
-				log("    - Provider fallback failed:", err)
+				log.Log("    - Provider fallback failed:", err)
 			} else {
 				// Merge fallback secrets
 				for name, value := range fallbackSecrets {
@@ -545,7 +541,7 @@ func (c *FileBasedConfiguration) readSecretsViaProviders(ctx context.Context, se
 	for _, name := range secretNames {
 		if value, err := fileProvider.GetSecret(ctx, name); err == nil {
 			secrets[name] = value
-			log("    - Successfully read", name, "via file provider")
+			log.Log("    - Successfully read", name, "via file provider")
 		}
 	}
 	
@@ -554,11 +550,11 @@ func (c *FileBasedConfiguration) readSecretsViaProviders(ctx context.Context, se
 		if _, found := secrets[name]; found {
 			continue // Already found via file provider
 		}
-		
+
 		credstoreProvider := provider.NewCredStoreProvider()
 		if value, err := credstoreProvider.GetSecret(ctx, name); err == nil {
 			secrets[name] = value
-			log("    - Successfully read", name, "via credstore provider")
+			log.Log("    - Successfully read", name, "via credstore provider")
 		}
 	}
 	
@@ -567,11 +563,11 @@ func (c *FileBasedConfiguration) readSecretsViaProviders(ctx context.Context, se
 		if _, found := secrets[name]; found {
 			continue // Already found via other providers
 		}
-		
+
 		desktopProvider := provider.NewDesktopProvider()
 		if value, err := desktopProvider.GetSecret(ctx, name); err == nil {
 			secrets[name] = value
-			log("    - Successfully read", name, "via desktop provider")
+			log.Log("    - Successfully read", name, "via desktop provider")
 		}
 	}
 	
@@ -626,7 +622,7 @@ func (c *FileBasedConfiguration) readServersFromOci(_ context.Context) (map[stri
 		return ociServers, nil
 	}
 
-	log("  - Reading servers from OCI references", c.OciRef)
+	log.Log("  - Reading servers from OCI references", c.OciRef)
 
 	for _, ociRef := range c.OciRef {
 		if ociRef == "" {
@@ -654,10 +650,10 @@ func (c *FileBasedConfiguration) readServersFromOci(_ context.Context) (map[stri
 			}
 
 			if _, exists := ociServers[serverName]; exists {
-				log(fmt.Sprintf("Warning: overlapping server '%s' found in OCI reference '%s', overwriting previous value", serverName, ociRef))
+				log.Log(fmt.Sprintf("Warning: overlapping server '%s' found in OCI reference '%s', overwriting previous value", serverName, ociRef))
 			}
 			ociServers[serverName] = server
-			log(fmt.Sprintf("  - Added server '%s' from OCI reference %s", serverName, ociRef))
+			log.Log(fmt.Sprintf("  - Added server '%s' from OCI reference %s", serverName, ociRef))
 		}
 	}
 
