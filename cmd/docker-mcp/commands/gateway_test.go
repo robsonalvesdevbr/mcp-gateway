@@ -88,12 +88,12 @@ func TestIsDynamicToolsFeatureEnabled(t *testing.T) {
 			Features: map[string]string{},
 		}
 		enabled := isDynamicToolsFeatureEnabledFromConfig(configFile)
-		assert.True(t, enabled, "should return true when dynamic-tools is not set")
+		assert.True(t, enabled, "should return true when dynamic-tools is not set (default enabled)")
 	})
 
 	t.Run("nil config", func(t *testing.T) {
 		enabled := isDynamicToolsFeatureEnabledFromConfig(nil)
-		assert.True(t, enabled, "should return true when config is nil")
+		assert.True(t, enabled, "should return true when config is nil (default enabled)")
 	})
 
 	t.Run("nil features", func(t *testing.T) {
@@ -101,7 +101,7 @@ func TestIsDynamicToolsFeatureEnabled(t *testing.T) {
 			Features: nil,
 		}
 		enabled := isDynamicToolsFeatureEnabledFromConfig(configFile)
-		assert.True(t, enabled, "should return true when features is nil")
+		assert.True(t, enabled, "should return true when features is nil (default enabled)")
 	})
 }
 

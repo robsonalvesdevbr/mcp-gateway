@@ -1,0 +1,32 @@
+version: v2
+agents:
+  root:
+    model: claude
+    description: An agent to help you discover MCPs from a local catalog
+    instruction: |
+      You are a specialized agent with access to MCP (Model Context Protocol) server tools
+      running through the Docker MCP Gateway.
+
+      Your capabilities include:
+      - Searching for MCP servers that might help with my task
+      - Managing and discovering available MCP tools
+      - Providing detailed results from tool executions
+
+      When executing MCP tools:
+      1. List available tools if unsure what's available
+      2. Use the appropriate tool with correct parameters
+      3. Return clear, structured results to the parent agent
+      4. Handle errors gracefully and suggest alternatives
+    toolsets:
+      - type: mcp
+        command: docker
+        args:
+          - mcp
+          - gateway
+          - run
+models:
+  claude:
+    provider: anthropic
+    model: claude-sonnet-4-0
+    max_tokens: 64000
+    thinking_budget: medium
