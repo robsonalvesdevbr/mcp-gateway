@@ -18,6 +18,7 @@ import (
 	"github.com/docker/mcp-gateway/pkg/interceptors"
 	"github.com/docker/mcp-gateway/pkg/log"
 	"github.com/docker/mcp-gateway/pkg/oauth"
+	"github.com/docker/mcp-gateway/pkg/oci"
 	"github.com/docker/mcp-gateway/pkg/telemetry"
 )
 
@@ -78,9 +79,7 @@ type Gateway struct {
 func NewGateway(config Config, docker docker.Client) *Gateway {
 	var configurator Configurator
 	if config.WorkingSet != "" {
-		configurator = &WorkingSetConfiguration{
-			WorkingSet: config.WorkingSet,
-		}
+		configurator = NewWorkingSetConfiguration(config.WorkingSet, oci.NewService(), docker)
 	} else {
 		// Prepend session-specific paths if SessionName is set
 		registryPath := config.RegistryPath
@@ -276,13 +275,16 @@ func (g *Gateway) Run(ctx context.Context) error {
 
 	if g.McpOAuthDcrEnabled && !inContainer {
 		// Start OAuth notification monitor to receive OAuth related events from Docker Desktop
-		log.Log("- Starting OAuth notification monitor")
-		monitor := oauth.NewNotificationMonitor()
-		monitor.OnOAuthEvent = func(event oauth.Event) {
-			// Route event to specific provider
-			g.routeEventToProvider(event)
+		// Skip in CE mode (no Desktop to connect to)
+		if !oauth.IsCEMode() {
+			log.Log("- Starting OAuth notification monitor")
+			monitor := oauth.NewNotificationMonitor()
+			monitor.OnOAuthEvent = func(event oauth.Event) {
+				// Route event to specific provider
+				g.routeEventToProvider(event)
+			}
+			monitor.Start(ctx)
 		}
-		monitor.Start(ctx)
 
 		// Start OAuth provider for each OAuth server
 		// Each provider runs in its own goroutine with dynamic timing based on token expiry
