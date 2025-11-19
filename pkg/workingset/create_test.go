@@ -14,15 +14,20 @@ import (
 )
 
 func getMockOciService() oci.Service {
-	return mocks.NewMockOCIService(mocks.WithDigests(map[string]string{
-		"myimage:latest":    "sha256:1234567890",
-		"anotherimage:v1.0": "sha256:1234567890",
-	}), mocks.WithLabels(map[string]map[string]string{
-		"myimage:latest": {
-			"io.docker.server.metadata": "name: My Image",
+	return mocks.NewMockOCIService(mocks.WithLocalImages([]mocks.MockImage{
+		{
+			Ref: "myimage:latest",
+			Labels: map[string]string{
+				"io.docker.server.metadata": "name: My Image",
+			},
+			DigestString: "sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 		},
-		"anotherimage:v1.0": {
-			"io.docker.server.metadata": "name: Another Image",
+		{
+			Ref: "anotherimage:v1.0",
+			Labels: map[string]string{
+				"io.docker.server.metadata": "name: Another Image",
+			},
+			DigestString: "sha256:1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 		},
 	}))
 }
@@ -64,7 +69,7 @@ func TestCreateWithDockerImages(t *testing.T) {
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "My Test Set", []string{
 		"docker://myimage:latest",
 		"docker://anotherimage:v1.0",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Verify the working set was created
@@ -77,10 +82,10 @@ func TestCreateWithDockerImages(t *testing.T) {
 	assert.Len(t, dbSet.Servers, 2)
 
 	assert.Equal(t, "image", dbSet.Servers[0].Type)
-	assert.Equal(t, "myimage:latest@sha256:1234567890", dbSet.Servers[0].Image)
+	assert.Equal(t, "myimage:latest", dbSet.Servers[0].Image)
 
 	assert.Equal(t, "image", dbSet.Servers[1].Type)
-	assert.Equal(t, "anotherimage:v1.0@sha256:1234567890", dbSet.Servers[1].Image)
+	assert.Equal(t, "anotherimage:v1.0", dbSet.Servers[1].Image)
 }
 
 func TestCreateWithRegistryServers(t *testing.T) {
@@ -90,7 +95,7 @@ func TestCreateWithRegistryServers(t *testing.T) {
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Registry Set", []string{
 		"https://example.com/v0/servers/server1",
 		"https://example.com/v0/servers/server2",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Verify the working set was created
@@ -114,7 +119,7 @@ func TestCreateWithMixedServers(t *testing.T) {
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Mixed Set", []string{
 		"docker://myimage:latest",
 		"https://example.com/v0/servers/server1",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Verify the working set was created
@@ -133,7 +138,7 @@ func TestCreateWithCustomId(t *testing.T) {
 
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "custom-id", "Test Set", []string{
 		"docker://myimage:latest",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Verify the working set was created with custom ID
@@ -152,13 +157,13 @@ func TestCreateWithExistingId(t *testing.T) {
 	// Create first working set
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "test-id", "Test Set 1", []string{
 		"docker://myimage:latest",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Try to create another with the same ID
 	err = Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "test-id", "Test Set 2", []string{
 		"docker://anotherimage:latest",
-	})
+	}, []string{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already exists")
 }
@@ -170,19 +175,19 @@ func TestCreateGeneratesUniqueIds(t *testing.T) {
 	// Create first working set
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Test Set", []string{
 		"docker://myimage:latest",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Create second with same name
 	err = Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Test Set", []string{
 		"docker://anotherimage:v1.0",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Create third with same name
 	err = Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Test Set", []string{
 		"docker://anotherimage:v1.0",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// List all working sets
@@ -209,7 +214,7 @@ func TestCreateWithInvalidServerFormat(t *testing.T) {
 
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Test Set", []string{
 		"invalid-format",
-	})
+	}, []string{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid server value")
 }
@@ -220,16 +225,16 @@ func TestCreateWithEmptyName(t *testing.T) {
 
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "test-id", "", []string{
 		"docker://myimage:latest",
-	})
+	}, []string{})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid working set")
+	assert.Contains(t, err.Error(), "invalid profile")
 }
 
 func TestCreateWithEmptyServers(t *testing.T) {
 	dao := setupTestDB(t)
 	ctx := t.Context()
 
-	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Empty Set", []string{})
+	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Empty Set", []string{}, []string{})
 	require.NoError(t, err)
 
 	// Verify the working set was created with no servers
@@ -246,7 +251,7 @@ func TestCreateAddsDefaultSecrets(t *testing.T) {
 
 	err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", "Test Set", []string{
 		"docker://myimage:latest",
-	})
+	}, []string{})
 	require.NoError(t, err)
 
 	// Verify default secrets were added
@@ -295,7 +300,7 @@ func TestCreateNameWithSpecialCharacters(t *testing.T) {
 
 			err := Create(ctx, dao, getMockRegistryClient(), getMockOciService(), "", tt.inputName, []string{
 				"docker://myimage:latest",
-			})
+			}, []string{})
 			require.NoError(t, err)
 
 			// Verify the ID was generated correctly

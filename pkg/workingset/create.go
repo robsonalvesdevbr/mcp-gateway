@@ -5,26 +5,36 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/docker/mcp-gateway/pkg/client"
 	"github.com/docker/mcp-gateway/pkg/db"
 	"github.com/docker/mcp-gateway/pkg/oci"
 	"github.com/docker/mcp-gateway/pkg/registryapi"
 )
 
-func Create(ctx context.Context, dao db.DAO, registryClient registryapi.Client, ociService oci.Service, id string, name string, servers []string) error {
+func Create(ctx context.Context, dao db.DAO, registryClient registryapi.Client, ociService oci.Service, id string, name string, servers []string, connectClients []string) error {
+	var cfg client.Config
+	if len(connectClients) > 0 {
+		cfg = *client.ReadConfig()
+		if err := verifySupportedClients(cfg, connectClients); err != nil {
+			return err
+		}
+	}
+
 	var err error
 	if id != "" {
 		_, err := dao.GetWorkingSet(ctx, id)
 		if err == nil {
-			return fmt.Errorf("working set with id %s already exists", id)
+			return fmt.Errorf("profile with id %s already exists", id)
 		}
 		if !errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("failed to look for existing working set: %w", err)
+			return fmt.Errorf("failed to look for existing profile: %w", err)
 		}
 	} else {
 		id, err = createWorkingSetID(ctx, name, dao)
 		if err != nil {
-			return fmt.Errorf("failed to create working set id: %w", err)
+			return fmt.Errorf("failed to create profile id: %w", err)
 		}
 	}
 
@@ -45,21 +55,44 @@ func Create(ctx context.Context, dao db.DAO, registryClient registryapi.Client, 
 	for i, server := range servers {
 		s, err := resolveServerFromString(ctx, registryClient, ociService, server)
 		if err != nil {
-			return fmt.Errorf("invalid server value: %w", err)
+			return err
 		}
 		workingSet.Servers[i] = s
 	}
 
 	if err := workingSet.Validate(); err != nil {
-		return fmt.Errorf("invalid working set: %w", err)
+		return fmt.Errorf("invalid profile: %w", err)
 	}
 
 	err = dao.CreateWorkingSet(ctx, workingSet.ToDb())
 	if err != nil {
-		return fmt.Errorf("failed to create working set: %w", err)
+		return fmt.Errorf("failed to create profile: %w", err)
 	}
 
-	fmt.Printf("Created working set %s with %d servers\n", id, len(workingSet.Servers))
+	if len(connectClients) > 0 {
+		for _, c := range connectClients {
+			if err := client.Connect(ctx, "", cfg, c, true, workingSet.ID); err != nil {
+				return fmt.Errorf("profile created, but failed to connect to client %s: %w", c, err)
+			}
+		}
+	}
 
+	fmt.Printf("Created profile %s with %d servers\n", id, len(workingSet.Servers))
+	if len(connectClients) > 0 {
+		fmt.Printf("Connected to clients: %s\n", strings.Join(connectClients, ", "))
+	}
+
+	return nil
+}
+
+func verifySupportedClients(cfg client.Config, clients []string) error {
+	for _, c := range clients {
+		if c == client.VendorGordon {
+			return fmt.Errorf("gordon cannot be connected to a profile")
+		}
+		if !client.IsSupportedMCPClient(cfg, c, true) {
+			return fmt.Errorf("client %s is not supported. Supported clients: %s", c, strings.Join(client.GetSupportedMCPClients(cfg), ", "))
+		}
+	}
 	return nil
 }
