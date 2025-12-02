@@ -26,11 +26,9 @@ func TestIsCEMode(t *testing.T) {
 			envValue: "false",
 			expected: false,
 		},
-		{
-			name:     "CE mode not set",
-			envValue: "",
-			expected: false,
-		},
+		// Note: When env var is not set, IsCEMode() now auto-detects based on
+		// Docker Desktop socket existence. In Linux CE (no Desktop), it returns true.
+		// This test is removed since the result depends on the environment.
 	}
 
 	for _, tt := range tests {
