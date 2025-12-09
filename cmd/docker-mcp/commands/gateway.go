@@ -12,10 +12,11 @@ import (
 	"github.com/docker/mcp-gateway/cmd/docker-mcp/catalog"
 	catalogTypes "github.com/docker/mcp-gateway/pkg/catalog"
 	"github.com/docker/mcp-gateway/pkg/docker"
+	"github.com/docker/mcp-gateway/pkg/features"
 	"github.com/docker/mcp-gateway/pkg/gateway"
 )
 
-func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command {
+func gatewayCommand(docker docker.Client, dockerCli command.Cli, features features.Features) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gateway",
 		Short: "Manage the MCP Server gateway",
@@ -57,7 +58,7 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 			},
 		}
 	}
-	if !isWorkingSetsFeatureEnabled(dockerCli) {
+	if !features.IsProfilesFeatureEnabled() {
 		// Default these only if we aren't defaulting to profiles
 		setLegacyDefaults(&options)
 	}
@@ -67,7 +68,7 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 		Short: "Run the gateway",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if isWorkingSetsFeatureEnabled(dockerCli) {
+			if features.IsProfilesFeatureEnabled() {
 				if len(options.ServerNames) > 0 || enableAllServers ||
 					len(options.CatalogPath) > 0 || len(options.RegistryPath) > 0 || len(options.ConfigPath) > 0 || len(options.ToolsPath) > 0 ||
 					len(additionalCatalogs) > 0 || len(additionalRegistries) > 0 || len(additionalConfigs) > 0 || len(additionalToolsConfig) > 0 ||
@@ -178,7 +179,7 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 	}
 
 	runCmd.Flags().StringSliceVar(&options.ServerNames, "servers", nil, "Names of the servers to enable (if non empty, ignore --registry flag)")
-	if isWorkingSetsFeatureEnabled(dockerCli) {
+	if features.IsProfilesFeatureEnabled() {
 		runCmd.Flags().StringVar(&options.WorkingSet, "profile", "", "Profile ID to use (mutually exclusive with --servers and --enable-all-servers)")
 	}
 	runCmd.Flags().BoolVar(&enableAllServers, "enable-all-servers", false, "Enable all servers in the catalog (instead of using individual --servers options)")
@@ -210,7 +211,6 @@ func gatewayCommand(docker docker.Client, dockerCli command.Cli) *cobra.Command 
 	runCmd.Flags().StringVar(&options.Memory, "memory", options.Memory, "Memory allocated to each MCP Server (default is 2Gb)")
 	runCmd.Flags().BoolVar(&options.Static, "static", options.Static, "Enable static mode (aka pre-started servers)")
 	runCmd.Flags().StringVar(&options.LogFilePath, "log", options.LogFilePath, "Path to log file for stderr output (relative or absolute)")
-	runCmd.Flags().StringVar(&options.SessionName, "session", "", "Session name for loading and persisting configuration from ~/.docker/mcp/{SessionName}/")
 
 	// Very experimental features
 	_ = runCmd.Flags().MarkHidden("log")
@@ -352,20 +352,6 @@ func isToolNamePrefixFeatureEnabled(dockerCli command.Cli) bool {
 		return false
 	}
 
-	return value == "enabled"
-}
-
-// isWorkingSetsFeatureEnabled checks if the profiles feature is enabled
-func isWorkingSetsFeatureEnabled(dockerCli command.Cli) bool {
-	configFile := dockerCli.ConfigFile()
-	if configFile == nil || configFile.Features == nil {
-		return false
-	}
-
-	value, exists := configFile.Features["profiles"]
-	if !exists {
-		return false
-	}
 	return value == "enabled"
 }
 
